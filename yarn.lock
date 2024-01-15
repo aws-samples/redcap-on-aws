@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 6
   cacheKey: 10c0
 
 "@aashutoshrathi/word-wrap@npm:^1.2.3":
@@ -3966,10 +3966,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sst/core@workspace:packages/core"
   dependencies:
-    "@types/node": "npm:^18.15.11"
-    chalk: "npm:^5.2.0"
-    sst: "npm:2.36.1"
-    vitest: "npm:^0.30.1"
+    "@types/node": ^18.15.11
+    chalk: ^5.2.0
+    sst: 2.36.1
+    vitest: ^0.30.1
   languageName: unknown
   linkType: soft
 
@@ -3977,13 +3977,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sst/functions@workspace:packages/functions"
   dependencies:
-    "@aws-sdk/client-codebuild": "npm:^3.379.1"
-    "@aws-sdk/client-iam": "npm:^3.382.0"
-    "@aws-sdk/client-secrets-manager": "npm:^3.382.0"
-    "@types/aws-lambda": "npm:^8.10.115"
-    "@types/node": "npm:^20.1.2"
-    deasync: "npm:^0.1.28"
-    sst: "npm:2.36.1"
+    "@aws-sdk/client-codebuild": ^3.379.1
+    "@aws-sdk/client-iam": ^3.382.0
+    "@aws-sdk/client-secrets-manager": ^3.382.0
+    "@types/aws-lambda": ^8.10.115
+    "@types/node": ^20.1.2
+    deasync: ^0.1.28
+    sst: 2.36.1
   languageName: unknown
   linkType: soft
 
@@ -6366,14 +6366,14 @@ __metadata:
   linkType: hard
 
 "fast-jwt@npm:^3.1.1":
-  version: 3.3.1
-  resolution: "fast-jwt@npm:3.3.1"
+  version: 3.3.2
+  resolution: "fast-jwt@npm:3.3.2"
   dependencies:
-    "@lukeed/ms": "npm:^2.0.1"
-    asn1.js: "npm:^5.4.1"
-    ecdsa-sig-formatter: "npm:^1.0.11"
-    mnemonist: "npm:^0.39.5"
-  checksum: dd340ea79d9e281a6e134567e499fe02fd063ba732773bb70055778be54a97d72c58c5f44e21fdec0074b1df181a7911c92b92d1b8c9dd75474dbca5b86b3efe
+    "@lukeed/ms": ^2.0.1
+    asn1.js: ^5.4.1
+    ecdsa-sig-formatter: ^1.0.11
+    mnemonist: ^0.39.5
+  checksum: 8/eade6c8de56a1350f2aa228f3354e045232aae860620419f68992639bf9c1a9e2daf5f73d4a7fe82e09927f4f6834c5ecd81e7b534f3da3750f91d20e4f3e9f3
   languageName: node
   linkType: hard
 
@@ -6657,18 +6657,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+"fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>":
   version: 2.3.2
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
   dependencies:
     node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
 
-"fsevents@patch:fsevents@npm%3A~2.3.2#optional!builtin<compat/fsevents>":
+"fsevents@patch:fsevents@npm%3A~2.3.2#~builtin<compat/fsevents>":
   version: 2.3.3
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.3#optional!builtin<compat/fsevents>::version=2.3.3&hash=df0bf1"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.3#~builtin<compat/fsevents>::version=2.3.3&hash=df0bf1"
   dependencies:
     node-gyp: "npm:latest"
   conditions: os=darwin
@@ -9067,24 +9067,24 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "redcap-on-aws@workspace:."
   dependencies:
-    "@aws-cdk/aws-apprunner-alpha": "npm:^2.101.1-alpha.0"
-    "@tsconfig/node18": "npm:^18.2.2"
-    "@types/lodash": "npm:^4.14.194"
-    "@types/node": "npm:^20.5.1"
-    "@typescript-eslint/eslint-plugin": "npm:^5.10.0"
-    "@typescript-eslint/parser": "npm:^5.10.0"
-    aws-cdk-lib: "npm:2.101.1"
-    cdk-nag: "npm:^2.27.109"
-    constructs: "npm:10.2.69"
-    csv-parse: "npm:^5.4.0"
-    eslint: "npm:^8.10.0"
-    eslint-config-prettier: "npm:^9.0.0"
-    eslint-plugin-vue: "npm:^9.0.0"
-    hygen: "npm:^6.2.11"
-    node-gyp: "npm:^9.4.0"
-    prettier: "npm:^3.0.2"
-    sst: "npm:2.36.1"
-    typescript: "npm:^5.1.6"
+    "@aws-cdk/aws-apprunner-alpha": ^2.101.1-alpha.0
+    "@tsconfig/node18": ^18.2.2
+    "@types/lodash": ^4.14.194
+    "@types/node": ^20.5.1
+    "@typescript-eslint/eslint-plugin": ^5.10.0
+    "@typescript-eslint/parser": ^5.10.0
+    aws-cdk-lib: 2.101.1
+    cdk-nag: ^2.27.109
+    constructs: 10.2.69
+    csv-parse: ^5.4.0
+    eslint: ^8.10.0
+    eslint-config-prettier: ^9.0.0
+    eslint-plugin-vue: ^9.0.0
+    hygen: ^6.2.11
+    node-gyp: ^9.4.0
+    prettier: ^3.0.2
+    sst: 2.36.1
+    typescript: ^5.1.6
   languageName: unknown
   linkType: soft
 
@@ -9969,13 +9969,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.1.6#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@^5.1.6#~builtin<compat/typescript>":
   version: 5.2.2
-  resolution: "typescript@patch:typescript@npm%3A5.2.2#optional!builtin<compat/typescript>::version=5.2.2&hash=f3b441"
+  resolution: "typescript@patch:typescript@npm%3A5.2.2#~builtin<compat/typescript>::version=5.2.2&hash=f3b441"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 062c1cee1990e6b9419ce8a55162b8dc917eb87f807e4de0327dbc1c2fa4e5f61bc0dd4e034d38ff541d1ed0479b53bcee8e4de3a4075c51a1724eb6216cb6f5
+  checksum: 8/0f4da2f15e6f1245e49db15801dbee52f2bbfb267e1c39225afdab5afee1a72839cd86000e65ee9d7e4dfaff12239d28beaf5ee431357fcced15fb08583d72ca
   languageName: node
   linkType: hard
 
