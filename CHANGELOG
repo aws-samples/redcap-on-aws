@@ -1,0 +1,35 @@
+# CHANGELOG
+
+## v-0.9
+
+- Replace postfix with msmtp integrated with Amazon SES
+- Start apache2 in non-root, www-data.
+- Allow higher port configuration for apache2
+
+## v-0.8
+
+- Refactor how to start docker apache and email service
+- Allow configuration of php timezone in stage configuration file
+
+## v-0.7
+
+- Allowed to link AppRunner domain with A (for a single domain) and CNAME (for domains with subdomain) records
+- Set an initial value for REDCap config `project_contact_email`, configured from `gen redcap config`
+- Default stage settings to use domain without subdomain.
+- Package upgrades
+
+## v-0.6
+
+- Set `max_allowed_packet` as the default in the database parameter group
+- Add a WAF custom rule for protecting root path instead of the code
+
+## v-0.5
+
+- Set some parameter group as the default to improve REDCap performance
+- Set JST as timezone in REDCap
+- Add a WAF custom rule for protecting root path
+
+## v-0.4
+
+- Remove AWS AppRunner autoscaling name, will be auto-generated
+- Add option to link NS records with same or external AWS account based on NS records returned by the deploy.

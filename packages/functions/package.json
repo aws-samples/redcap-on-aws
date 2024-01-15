@@ -1,0 +1,20 @@
+{
+  "name": "@sst/functions",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "sst bind vitest",
+    "typecheck": "tsc -noEmit"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.115",
+    "@types/node": "^20.1.2",
+    "sst": "2.36.1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-codebuild": "^3.379.1",
+    "@aws-sdk/client-iam": "^3.382.0",
+    "@aws-sdk/client-secrets-manager": "^3.382.0",
+    "deasync": "^0.1.28"
+  }
+}

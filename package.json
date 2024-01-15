@@ -1,0 +1,44 @@
+{
+  "name": "redcap-on-aws",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sst dev",
+    "build": "sst build",
+    "deploy": "sst deploy",
+    "removeRoute53NS": "sst remove --stage route53NS",
+    "destroy": "npm run removeRoute53NS && sst remove",
+    "console": "sst console",
+    "diff": "sst diff",
+    "disableTelemetry": "sst telemetry disable",
+    "typecheck": "tsc --noEmit",
+    "test": "sst bind -- vitest run",
+    "gen": "hygen"
+  },
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "@types/lodash": "^4.14.194",
+    "@types/node": "^20.5.1",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0",
+    "aws-cdk-lib": "2.101.1",
+    "constructs": "10.2.69",
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "hygen": "^6.2.11",
+    "prettier": "^3.0.2",
+    "sst": "2.36.1",
+    "typescript": "^5.1.6"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@aws-cdk/aws-apprunner-alpha": "^2.101.1-alpha.0",
+    "cdk-nag": "^2.27.109",
+    "csv-parse": "^5.4.0",
+    "node-gyp": "^9.4.0"
+  }
+}

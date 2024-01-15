@@ -1,0 +1,29 @@
+# dependencies
+node_modules
+**/yarn-error.log
+.yarn
+
+# sst
+.sst
+.build
+.sst*.mjs
+stages.ts
+
+# misc
+.DS_Store
+__pycache__
+
+# local env files
+.env*.local
+
+# cdk
+cdk.context.json
+cdk-*-outputs.json
+deployLambdaResponse.json
+
+# REDCap config sql
+**/redcapConfig.sql
+
+# Docs
+*.bkp
+*.dtmp
