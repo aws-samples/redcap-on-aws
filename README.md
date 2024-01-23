@@ -14,8 +14,6 @@ The following, is a serverless architecture designed for high availability with 
 
 ![architecture_diagram](docs/images/architecture.png)
 
-The architecture in details is [here](docs/images/architecture-detail.png).
-
 ### Main features
 
 #### 1. Security
