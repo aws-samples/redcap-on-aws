@@ -14,8 +14,6 @@ JP | [EN](README.md)
 
 ![architecture_diagram](docs/images/architecture.png)
 
-詳細アーキテクチャ図は[こちら](docs/images/architecture-detail.png)です。
-
 ### 特徴
 
 #### 1. セキュリティ
