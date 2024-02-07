@@ -8,7 +8,7 @@ REDCapは`database.php` ファイルを設定することで、リードレプ�
 
 ## セットアップ
 
-[database stack](../../stacks/Database.ts)のデプロイ後、リードレプリカのエンドポイントを含む`readReplicaHostname`変数が表示されます。この変数は環境変数経由でAWS App Runnerで稼働しているコンテナに渡されます。これは、[start_services.sh](../../containers/redcap-docker-apache/scripts/start_services.sh)に実装されています。
+[database stack](../../stacks/Database.ts)のデプロイ後、リードレプリカのエンドポイントを含む`readReplicaHostname`変数が表示されます。この変数は環境変数経由でAWS App Runnerで稼働しているコンテナに渡されます。これは、[setup_app.sh](../../containers/redcap-docker-apache/scripts/setup_app.sh)に実装されています。
 
 ```sh
     sed "'$a \$read_replica_hostname[ tab]= '${READ_REPLICA_HOSTNAME}';" /var/www/html/database.php

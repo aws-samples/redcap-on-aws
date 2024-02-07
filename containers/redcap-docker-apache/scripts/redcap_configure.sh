@@ -6,6 +6,11 @@
 
 set -e
 
+DB_SECRET="$(aws secretsmanager get-secret-value --secret-id ${DB_SECRET_ID} --query 'SecretString' --output text --region ${AWS_REGION})"
+DB_SALT="$(aws secretsmanager get-secret-value --secret-id ${DB_SALT_SECRET_ID} --query 'SecretString' --output text --region ${AWS_REGION})"
+SES_CREDENTIALS="$(aws secretsmanager get-secret-value --secret-id ${SES_CREDENTIALS_SECRET_ID} --query 'SecretString' --output text --region ${AWS_REGION})"
+S3_SECRET="$(aws secretsmanager get-secret-value --secret-id ${S3_SECRET_ID} --query 'SecretString' --output text --region ${AWS_REGION})"
+
 export RDS_HOSTNAME="$(echo $DB_SECRET | jq -r .host)"
 export RDS_USERNAME="$(echo $DB_SECRET | jq -r .username)"
 export RDS_PASSWORD="$(echo $DB_SECRET | jq -r .password)"

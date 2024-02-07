@@ -1,12 +1,11 @@
 FROM public.ecr.aws/docker/library/php:8.1-apache
 
-ARG DEBIAN_FRONTEND=noninteractive
-ARG REDCAP_S3_URI
-ARG LANG_S3_URI
-ARG AWS_DEFAULT_REGION
-ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
 ARG PORT
-ARG PHP_TIMEZONE
+ARG LANG_S3_URI
+ARG REDCAP_S3_URI
+ARG AWS_DEFAULT_REGION
+ARG DEBIAN_FRONTEND=noninteractive
+ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
 
 # Required packages setup
 RUN apt-get update -qq && \
@@ -38,10 +37,16 @@ RUN curl "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" -o 
 RUN sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/{d;}'  /etc/ImageMagick-6/policy.xml
 
 # Apache config
-COPY apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
+COPY apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY apache2/cert/apache-selfsigned.key /etc/ssl/certs/apache-selfsigned.key
+COPY apache2/cert/apache-selfsigned.crt /etc/ssl/certs/apache-selfsigned.crt
+
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
-RUN sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
-RUN sed -i "s/\*:80/\*:${PORT}/" /etc/apache2/sites-enabled/000-default.conf
+RUN sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf && sed -i "s/Listen 443/Listen 8081/" /etc/apache2/ports.conf
+RUN sed -i "s/\*:80/\*:${PORT}/" /etc/apache2/sites-available/000-default.conf && sed -i "s/\*:443/\*:8081/" /etc/apache2/sites-available/default-ssl.conf
+RUN sed -i '/SSLCertificateFile.*snakeoil\.pem/c\SSLCertificateFile \/etc\/ssl\/certs\/apache-selfsigned.crt' /etc/apache2/sites-available/default-ssl.conf && sed -i '/SSLCertificateKeyFile.*snakeoil\.key/cSSLCertificateKeyFile /etc/ssl/certs/apache-selfsigned.key\' /etc/apache2/sites-available/default-ssl.conf
+RUN chown www-data:www-data /etc/ssl/certs/apache-selfsigned.key /etc/ssl/certs/apache-selfsigned.crt
+RUN a2enmod ssl && a2enmod socache_shmcb && a2ensite default-ssl && a2ensite 000-default
 
 # Container start scripts
 COPY scripts/ /etc/redcap-entry/

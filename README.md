@@ -94,6 +94,7 @@ Each property described below allows you to configure your deployment.
 | memory               | The amount of memory assigned to each instance                                                                                                                                                                                                        | Memory  | `Memory.FOUR_GB`                          |
 | phpTimezone          | Example: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                  | String  | `UTC`                                     |
 | port                 | Port number to be used in App Runner.                                                                                                                                                                                                                 | String  | `8080`                                    |
+| ec2ServerStack       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object  | `undefined`                               |
 
 - Service Notifications: If you specify an **email**, you will receive an email to subscribe to AWS App Runner service notifications, alerting you of services deployments and changes.
 
@@ -187,7 +188,7 @@ This projects allows you to add the NS records to Amazon Route53 in the same or 
 
 ### 6. Amazon Simple Email Service (SES) - production mode
 
-By default, SES is deployed in sandbox mode. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
+By default, SES is deployed in sandbox mode, meaning that any email you send that is not a valid identity will fail. REDCAp's configuration check, that sends an email to `<redcapemailtest@gmail.com>`, will fail due this. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
 
 The installation by default assumes your `MAIL FROM domain` to be in the form of `mail.<your_domain.com>`. If this is not the case, you can modify the [Backend.ts](./stacks/Backend.ts) file and the property `mailFromDomain` to the `SimpleEmailService` constructor to specify one.
 
@@ -246,6 +247,41 @@ There are few warnings that you might see after deployment. The expected ones ar
 4. MyCap `NOT making API Call - CRITICAL -`, this test is also blocked by AWS WAF as previous number (3).
 
 For more detail, please refer [Path to production](./docs/en/ptp.md).
+
+## EC2 Server stack: Handle long request in REDCap
+
+AWS AppRunner has a request timeout of 120 seconds. This might not enough for all REDCap's operations like importing/exporting project data. To overcome this limitation, we offer an alternative deploying a temporary EC2 instance that runs the same docker image in your AWS AppRunner and tunnel to the REDCap server from your computer. This way, your request are limited only by your PHP and Apache configurations.
+
+> You will require AWS credentials to login.
+
+1. Make sure you have installed in your computer the Session Manager plugin <https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html>.
+
+2. To deploy this new stack with the EC2 instance, you have to configure your stage file with the `ec2ServerStack` property:
+
+   ```ts
+   const dev: RedCapConfig = {
+   ...
+   ec2ServerStack: {
+      ec2StackDuration: Duration.hours(3),
+   },
+   };
+   ```
+
+   The `ec2StackDuration` parameter defines how long this instance should run, after this time it will be destroyed.
+
+3. Deploy your stage and wait for the output. It will show the command to start the tunnel `ssmPortForward`. It looks similar to this:
+
+   ```sh
+      ssmPortForward: aws ssm start-session --target i-00000000000 --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' --region ap-northeast-1 --profile redcap
+   ```
+
+   In your computer, open a terminal run this command. Open a browser and visit <https://localhost:8081>. You will need to accept the warning about the self signed certificate to access REDCap. This key and certificate can be updated to provide your own if you wish, the files are in the [certificates folder](./containers/redcap-docker-apache/apache2/cert/).
+
+### Considerations for the EC2 Server stack
+
+CORS: Depending on what REDCap feature you will use, you might encounter CORS issues for some modules. If this happens, you will need to configure the `REDCap base URL` in the Control Center to point your proxy e.g `https://localhost:8081`, this will cause issues for your current users that are running under the configured domain, so please use it with caution and do not forget to revert the changes after you have finished your workload.
+
+StateMachine: If you wish to delete the `ec2ServerStack` that is still inside the time duration, you will need to stop the state machine first so CloudFormation can delete the resources.
 
 ## Delete an environment
 

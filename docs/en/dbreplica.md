@@ -8,7 +8,7 @@ REDCap supports passing a read replica database by configuring the `database.php
 
 ## SETUP
 
-After deploying the [database stack](../../stacks/Database.ts), this will return a `readReplicaHostname` variable that contains the endpoint for the read replica. This variable is then passed via ENV VARIABLE to the container executed in AWS App Runner. This is implemented in [start_services.sh](../../containers/redcap-docker-apache/scripts/start_services.sh)
+After deploying the [database stack](../../stacks/Database.ts), this will return a `readReplicaHostname` variable that contains the endpoint for the read replica. This variable is then passed via ENV VARIABLE to the container executed in AWS App Runner. This is implemented in [setup_app.sh](../../containers/redcap-docker-apache/scripts/setup_app.sh)
 
 ```sh
     sed "'$a \$read_replica_hostname[ tab]= '${READ_REPLICA_HOSTNAME}';" /var/www/html/database.php

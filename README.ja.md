@@ -94,6 +94,7 @@ cp stages.sample.ts stages.ts
 | memory               | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory  | `Memory.FOUR_GB`                                      |
 | phpTimezone          | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String  | `UTC`                                                 |
 | port                 | App Runnerで使用されるポート番号です。                                                                                                                                                                                                                           | String  | `UTC`                                                 |
+| ec2ServerStack       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object  | `undefined`                                           |
 
 - サービス通知: **email**を指定すると、AWS App Runnerサービス通知をサブスクライブするためのメールを受信できます。(サービスのデプロイや変更が通知されます)
 
@@ -249,6 +250,41 @@ AWS CodeBuildにより新しいDockerイメージをビルドし、新しいイ�
 4. MyCap `NOT making API Call - CRITICAL -` のテストも `3.` と同様にAWS WAFによってブロックされています。
 
 詳細に関しては[本番環境への移行](./docs/ja/ptp.md)も合わせて参照してください。
+
+## EC2 Server stack: REDCap での長いリクエストの処理
+
+AWS AppRunner には 120 秒のリクエストタイムアウトがあります。これは、 REDCap のインポート/エクスポートなどの一部の操作に対しては十分でない場合があります。この制限を克服するために、一時的な EC2 インスタンスをデプロイして、App Runner と同じ Docker Image を実行し、ローカルマシンから REDCap サーバーにトンネルするという代替手段を提供しています。この方法では、リクエストタイムアウトなどの制限は、PHP と Apache の設定のみに制限されます。
+
+> ログインには AWS の認証情報が必要です。
+
+1. コンピュータに Session Manager plugin がインストールされていることを確認してください。 <https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html>
+
+2. この新しい EC2 インスタンスを含むスタックをデプロイするには、`stages.ts` ファイルに ec2ServerStack プロパティを含める必要があります。
+
+   ```ts
+   const dev: RedCapConfig = {
+   ...
+   ec2ServerStack: {
+      ec2StackDuration: Duration.hours(3),
+   },
+   };
+   ```
+
+`ec2StackDuration` パラメータは、このスタックを実行する期間を定義します。この時間後に破棄されます。
+
+3. ステージをデプロイして出力を待ちます。 `ssmPortForward` を開始する次のようなコマンドが表示されます。
+
+   ```sh
+      ssmPortForward: aws ssm start-session --target i-00000000000 --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' --region ap-northeast-1 --profile redcap
+   ```
+
+   手元のコンピューターで、ターミナルを開き、このコマンドを実行します。ブラウザを開き、 <https://localhost:8081>にアクセスします。自己署名証明書に関する警告が表示されますが、承諾してREDCapにアクセスします。このキーと証明書は、必要に応じて独自のものを利用できます。 変更したい場合は [cert フォルダ](./containers/redcap-docker-apache/apache2/cert/) に配置します。
+
+### EC2 Server stack の考慮事項
+
+CORS: REDCapのどの機能を使用するかによって、一部のモジュールでCORSの問題が発生する可能性があります。 この場合、コントロールセンターの `REDCap base URL` をプロキシを指すように設定する必要があります。(例: `https://localhost:8081`)。 これにより、構成されたドメインで実行している現在のユーザーに問題が発生しますので、作業が完了した後は変更を元に戻すようにしてください。
+
+StateMachine: まだ期間内にあるec2ServerStackを削除する場合は、CloudFormationがリソースを削除できるように、あらかじめステートマシンを停止する必要があります。
 
 ## 環境の削除
 

@@ -9,11 +9,6 @@ import { isEmpty } from 'lodash';
 import { Duration, RemovalPolicy, Stack, aws_ec2, aws_iam, aws_logs, aws_rds } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { Config } from 'sst/constructs';
 
@@ -35,7 +30,7 @@ type AuroraProps = {
   migrateOneDown?: boolean;
   parameterGroupParameters?: aws_rds.ParameterGroupProps['parameters'];
   disableKeyRotation?: boolean;
-  afterDaysDuration?: Duration;
+  rotateSecretAfterDays?: Duration;
 };
 
 type RdsV2Engines = {
@@ -49,11 +44,10 @@ type RdsV2Engines = {
  * @param {AuroraProps} props - user provided props for the construct
  */
 export class AuroraServerlessV2 extends Construct {
-  public readonly aurora: aws_rds.DatabaseCluster | aws_rds.ServerlessCluster;
+  public readonly aurora: aws_rds.DatabaseCluster;
   public readonly proxyRole: aws_iam.Role | undefined;
   public readonly proxy: aws_rds.DatabaseProxy | undefined;
   public readonly databaseCredentials: aws_rds.Credentials;
-  public readonly resourceId: string | undefined;
   private props: AuroraProps | undefined;
   private parameterGroup: aws_rds.ParameterGroup | undefined;
 
@@ -99,13 +93,15 @@ export class AuroraServerlessV2 extends Construct {
       cloudwatchLogsRetention: aws_logs.RetentionDays.ONE_YEAR,
       iamAuthentication: true,
       writer: aws_rds.ClusterInstance.serverlessV2('WriterClusterInstance', {
-        publiclyAccessible: false,
         autoMinorVersionUpgrade: true,
+        publiclyAccessible: false,
+        caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
       }),
       readers: [
         aws_rds.ClusterInstance.serverlessV2('ReaderClusterInstance1', {
           autoMinorVersionUpgrade: true,
           publiclyAccessible: false,
+          caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
         }),
       ],
       serverlessV2MinCapacity: props.scaling.minCapacityAcu || 0.5,
@@ -126,7 +122,7 @@ export class AuroraServerlessV2 extends Construct {
     // Secret Rotation
     if (!props.disableKeyRotation)
       this.aurora.addRotationSingleUser({
-        automaticallyAfter: props.afterDaysDuration,
+        automaticallyAfter: props.rotateSecretAfterDays,
       });
 
     // Setup IAM authentication
@@ -150,33 +146,6 @@ export class AuroraServerlessV2 extends Construct {
         this.RDS_PROXY_ENDPOINT = new Config.Parameter(this, 'RDS_PROXY_ENDPOINT', {
           value: this.proxy.endpoint,
         });
-      } else {
-        // https://github.com/aws/aws-cdk/issues/11851 - only resolved for proxy usage
-        // https://github.com/aws/aws-cdk/issues/26489 - required
-        const dbResourceId = new AwsCustomResource(this, 'MembershipDBResourceID', {
-          onCreate: {
-            service: 'RDS',
-            action: 'describeDBClusters',
-            parameters: {
-              DBClusterIdentifier: this.aurora.clusterIdentifier,
-            },
-            physicalResourceId: PhysicalResourceId.fromResponse('DBClusters.0.DbClusterResourceId'),
-            outputPaths: ['DBClusters.0.DbClusterResourceId'],
-          },
-          onUpdate: {
-            service: 'RDS',
-            action: 'describeDBClusters',
-            parameters: {
-              DBInstanceIdentifier: this.aurora.clusterIdentifier,
-            },
-            physicalResourceId: PhysicalResourceId.fromResponse('DBClusters.0.DbClusterResourceId'),
-            outputPaths: ['DBClusters.0.DbClusterResourceId'],
-          },
-          policy: AwsCustomResourcePolicy.fromSdkCalls({
-            resources: AwsCustomResourcePolicy.ANY_RESOURCE,
-          }),
-        });
-        this.resourceId = dbResourceId.getResponseField('DBClusters.0.DbClusterResourceId');
       }
     }
   }

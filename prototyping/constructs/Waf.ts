@@ -116,6 +116,7 @@ let wafRules: WafRule[] = [
             { name: 'GenericRFI_BODY' },
             { name: 'SizeRestrictions_BODY' },
             { name: 'CrossSiteScripting_BODY' },
+            { name: 'NoUserAgent_HEADER' },
           ],
         },
       },

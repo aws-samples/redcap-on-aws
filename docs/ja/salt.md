@@ -12,7 +12,7 @@ AWS CDKはランダムな文字列のシークレットを自動生成し、AWS 
 
 ## シークレットの受け渡し
 
-シークレットは環境変数によりAWS App Runnerで実行中のコンテナに渡されます。REDCapの起動前に、この値は[start_services.sh](../../containers/redcap-docker-apache/scripts/start_services.sh)のハッシュ関数を使用して、文字と数字(REDCap推奨に従い)に正規化されます。
+シークレットは環境変数によりAWS App Runnerで実行中のコンテナに渡されます。REDCapの起動前に、この値は[setup_app.sh](../../containers/redcap-docker-apache/scripts/setup_app.sh)のハッシュ関数を使用して、文字と数字(REDCap推奨に従い)に正規化されます。
 
 ```sh
 DB_SALT_ALPHA=$(echo -n "$DB_SALT" | sha256sum | cut -d' ' -f1)
