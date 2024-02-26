@@ -74,17 +74,25 @@ if [ -f "/var/www/html/install.php" ]; then
     php -r '$_GET["auto"]=1; $_GET["sql"]=1 ; $_SERVER["REQUEST_METHOD"] = "POST"; $_SERVER["PHP_SELF"]= "install.php"; require_once("install.php");'
 fi
 
-# REDCap SQL Initialization Configuration
-REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.sql
-if [ -f "$REDCAP_CONFIG_SQL" ]; then
-    echo " - Configuring REDCap DB with user settings"
+HAS_AMAZON_S3_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
+
+if [ "${#HAS_AMAZON_S3_KEY}" -gt 2 ]; then
+    echo '- REDCap initial settings already configured, skipping'
 else
-    echo " - Using default REDCap DB settings"
-    REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.default.sql
+    # REDCap SQL Initialization Configuration
+    REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.sql
+    
+    if [ -f "$REDCAP_CONFIG_SQL" ]; then
+        echo " - Using provided redcapConfig.sql for REDCap settings"
+    else
+        echo " - Using default REDCap DB settings"
+        REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.default.sql
+    fi
+
+    echo ' - Configuring REDCap DB settings...'
+    sed -i "s|\\APPLICATION_BUCKET_NAME|$S3_BUCKET|g; s|\\REDCAP_IAM_USER_ACCESS_KEY|${S3_ACCESS_KEY//\//\\/}|g; s|\\REDCAP_IAM_USER_SECRET|${S3_SECRET_ACCESS_KEY//\//\\/}|g; s|\\REGION|$AWS_REGION|g;" $REDCAP_CONFIG_SQL
+    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D redcap --password=${RDS_PASSWORD} <$REDCAP_CONFIG_SQL
+    echo ' - Done'
 fi
-
-sed -i "s|\\APPLICATION_BUCKET_NAME|$S3_BUCKET|g; s|\\REDCAP_IAM_USER_ACCESS_KEY|${S3_ACCESS_KEY//\//\\/}|g; s|\\REDCAP_IAM_USER_SECRET|${S3_SECRET_ACCESS_KEY//\//\\/}|g; s|\\REGION|$AWS_REGION|g;" $REDCAP_CONFIG_SQL
-
-mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D redcap --password=${RDS_PASSWORD} <$REDCAP_CONFIG_SQL
 
 exec "$@"

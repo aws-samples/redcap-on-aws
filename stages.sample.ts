@@ -46,6 +46,7 @@ const stag: RedCapConfig = {
   appRunnerConcurrency: 10,
   appRunnerMaxSize: 5,
   appRunnerMinSize: 1,
+  rebuildImage: false,
   cronSecret: 'stagsecret',
   cpu: Cpu.FOUR_VCPU,
   memory: Memory.EIGHT_GB,
@@ -79,4 +80,4 @@ const route53NS: DomainAppsConfig = {
   domain: '',
 };
 
-export { prod, stag, dev, route53NS };
+export { dev, prod, route53NS, stag };

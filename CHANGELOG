@@ -7,6 +7,7 @@
 - Database authentication uses IAM as default.
 - Docker image now will pull all the secrets for the application at container start.
 - Add WAF rule allow for `NoUserAgent_HEADER` for `/survey` check.
+- `redcapConfig.sql` will not be re-executed on new instances spawn or re-deployments. This is to avoid post deployment configurations reset.
 
 ### Breaking changes
 

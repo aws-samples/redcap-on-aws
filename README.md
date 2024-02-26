@@ -2,6 +2,16 @@
 
 # REDCap deployment on AWS with serverless services
 
+> **UPDATE to v-0.10** (Feb 2024 release)
+> If you have deployed this project before, please follow this procedure to update:
+>
+> 1. Create a database backup to prevent data loss if needed.
+> 2. Run `yarn install` to install package updates.
+> 3. In your AWS console, go to AWS App Runner and select your application. Navigate to the Configuration tab and change Deployment settings to `Manual`. Wait until the change takes effect. This change will be automatically reverted after this update is completed.
+> 4. For your stage configuration in `stages.ts`, add the following parameter `deployTag: 'upgrade-v010'`. You can use other tag value if you wish.
+> 5. Run `yarn deploy --stage <your_stage>`
+> 6. Remove the added configuration paramter `deployTag` from stages.ts.
+
 [REDCap](https://projectredcap.org/) is a secure web application for building and managing online surveys and databases. It's specifically geared to support online and offline data capture for research studies and operations.
 
 This project provides an automated way to deploy and manage a REDCap installation with autoscaling enabled services like AWS App Runner and Amazon Aurora Serverless. It's constructed using [SST](https://sst.dev), a AWS CDK based framework with many out of the box constructors and many other features that can speed up the development of [IaC](https://docs.aws.amazon.com/whitepapers/latest/introduction-devops-aws/infrastructure-as-code.html).
@@ -94,6 +104,7 @@ Each property described below allows you to configure your deployment.
 | memory               | The amount of memory assigned to each instance                                                                                                                                                                                                        | Memory  | `Memory.FOUR_GB`                          |
 | phpTimezone          | Example: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                  | String  | `UTC`                                     |
 | port                 | Port number to be used in App Runner.                                                                                                                                                                                                                 | String  | `8080`                                    |
+| rebuildImage         | Whether to rebuild the REDCap Docker Image each time it is deployed(\*\*\*)                                                                                                                                                                           | Boolean | `false`                                   |
 | ec2ServerStack       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object  | `undefined`                               |
 
 - Service Notifications: If you specify an **email**, you will receive an email to subscribe to AWS App Runner service notifications, alerting you of services deployments and changes.
@@ -103,6 +114,8 @@ Each property described below allows you to configure your deployment.
 - (\*) Required value
 
 - (\*\*) Concurrency default value is 10 is calculated after a minimum load testing over one instance with 2vCPU and 4GB. It is recommended you perform some load monitoring for tunning this value according to your load usage.
+
+- (\*\*\*) The first time the project is deployed, an automatic build is triggered. If no more changes are detected for the build, new images are not build for every deploy. Setting this to true will force a new image build for each deploy using a timestamp value. Reverting back to false, you'll need to deploy once to remove this timestamp.
 
 ### 3. Configure basic REDCap settings
 
@@ -188,7 +201,7 @@ This projects allows you to add the NS records to Amazon Route53 in the same or 
 
 ### 6. Amazon Simple Email Service (SES) - production mode
 
-By default, SES is deployed in sandbox mode, meaning that any email you send that is not a valid identity will fail. REDCAp's configuration check, that sends an email to `<redcapemailtest@gmail.com>`, will fail due this. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
+By default, SES is deployed in sandbox mode, meaning that any email you send that is not a valid identity will fail. REDCap's configuration check, that sends an email to `<redcapemailtest@gmail.com>`, will fail due this. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
 
 The installation by default assumes your `MAIL FROM domain` to be in the form of `mail.<your_domain.com>`. If this is not the case, you can modify the [Backend.ts](./stacks/Backend.ts) file and the property `mailFromDomain` to the `SimpleEmailService` constructor to specify one.
 

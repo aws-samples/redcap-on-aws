@@ -43,6 +43,8 @@ export function BuildImage({ stack, app }: StackContext) {
   let redCapS3Path = get(stage, [stack.stage, 'redCapS3Path']);
   let redcapTag = get(stage, [stack.stage, 'deployTag'], Helpers.extractRedCapTag(redCapS3Path));
 
+  const rebuild = get(stage, [stack.stage, 'rebuildImage'], false);
+
   // Validation check
   if (redCapS3Path && redCapLocalVersion) {
     throw new Error(
@@ -160,7 +162,7 @@ export function BuildImage({ stack, app }: StackContext) {
   const lambdaBuild = codeBuild.addLambdaTrigger({
     handler: 'packages/functions/src/startProjectBuild.handler',
     name: 'redcap-build',
-    rebuild: false,
+    rebuild: rebuild,
     executeAfter: [codeBuild],
     executeBefore: [],
   });

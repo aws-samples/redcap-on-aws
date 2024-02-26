@@ -39,31 +39,11 @@ export class Suppressions {
     } catch (e) {}
   }
 
-  static StateMachineSuppressions(
+  static EC2ServerSuppressions(
+    ec2ServerInstance: Instance,
     terminateStateMachine: StateMachine,
     stateMachineExecHandler: Function,
   ) {
-    try {
-      const stack = Stack.of(terminateStateMachine);
-      NagSuppressions.addResourceSuppressions(
-        [terminateStateMachine, stateMachineExecHandler],
-        [
-          {
-            id: 'AwsSolutions-IAM5',
-            reason: 'Default policies for Lambda and state machine',
-          },
-        ],
-        true,
-      );
-      NagSuppressions.addStackSuppressions(stack, [
-        {
-          id: 'AwsSolutions-IAM5',
-          reason: 'Need to use * because cannot get full stack ARN while deployment',
-        },
-      ]);
-    } catch (e) {}
-  }
-  static EC2ServerSuppressions(ec2ServerInstance: Instance) {
     const stack = Stack.of(ec2ServerInstance);
     try {
       NagSuppressions.addStackSuppressions(stack, [
@@ -93,6 +73,26 @@ export class Suppressions {
         ],
         true,
       );
+    } catch (e) {}
+    try {
+      const stack = Stack.of(terminateStateMachine);
+      NagSuppressions.addResourceSuppressions(
+        [terminateStateMachine, stateMachineExecHandler],
+        [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'Default policies for Lambda and state machine',
+          },
+        ],
+        true,
+      );
+      //suppress SourcemapUploaderPolicy/Resource
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Need to use * because cannot get full stack ARN while deployment',
+        },
+      ]);
     } catch (e) {}
   }
 

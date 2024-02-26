@@ -179,6 +179,9 @@ export function EC2Server({ stack, app }: StackContext) {
     --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' --region ${app.region} --profile ${profile}`,
   });
 
-  Suppressions.EC2ServerSuppressions(ec2ServerInstance);
-  Suppressions.StateMachineSuppressions(terminateStateMachine, stateMachineExecHandler);
+  Suppressions.EC2ServerSuppressions(
+    ec2ServerInstance,
+    terminateStateMachine,
+    stateMachineExecHandler,
+  );
 }
