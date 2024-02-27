@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## v-0.10
+
+- Add new stack that deploys a temporary EC2 instance for large REDCap requests / workloads.
+- Refactor IAM auth for RDS on CDK.
+- Database authentication uses IAM as default.
+- Docker image now will pull all the secrets for the application at container start.
+- Add WAF rule allow for `NoUserAgent_HEADER` for `/survey` check.
+- `redcapConfig.sql` will not be re-executed on new instances spawn or re-deployments. This is to avoid post deployment configurations reset.
+
+### Breaking changes
+
+- Aurora Serverless deployment V1 for `dev` stages is now replaced with Aurora Serverless V2. This is ONLY for `dev` stages, e.g `yarn dev --stage your_stage`. Do a full database backup and restore the data in the new instance if required.
+
+### Upgrade procedure
+
+1. Do a full database backup.
+2. Run: `yarn install` to upgrade packages.
+3. Go to you AWS console, App Runner <https://console.aws.amazon.com/apprunner/>, select your deployment, click Configuration, click Edit and set `Deployment settings` to `Manual` and Save. Wait until the changes are done. This change is only temporary, will be automatically reverted after the upgrade.
+4. You will need to add a `new` deployment tag to update the service. In your stage configuration add: `deployTag: '<tag_value>',` where <tag_value> is a value defined by you. For example `deployTag: 'upgrade-v010'`. Make sure this tag is not in use.
+5. If you want to deploy the new EC2 stack for long request on REDCap add the following to the stage file. Configure the duration as you like:
+
+    ```ts
+        ec2ServerStack: {
+            ec2StackDuration: Duration.hours(3),
+        },
+    ```
+
+6. Run `yarn deploy --stage <your_stage>`
+7. Delete the `deployTag` property to keep using `latest` tag to automatically upgrade your service.
+
+Example:
+
+```ts
+    const prod: RedCapConfig = {
+        ...baseOptions,
+        phpTimezone: 'Asia/Tokyo',
+        redCapLocalVersion: 'redcap13.7.2',
+        deployTag: '13.7.2.0', // this new tag will force a new service deployment
+        domain: 'redcap.mydomain.com',
+        hostInRoute53: true,
+        email: 'email@mydomain.com',
+        cronSecret: 'prodsecret',
+        ec2ServerStack: {
+            ec2StackDuration: Duration.hours(3),
+        },
+    };
+```
+
 ## v-0.9
 
 - Replace postfix with msmtp integrated with Amazon SES
@@ -13,7 +61,7 @@
 
 ## v-0.7
 
-- Allowed to link AppRunner domain with A (for a single domain) and CNAME (for domains with subdomain) records
+- Allowed to link App Runner domain with A (for a single domain) and CNAME (for domains with subdomain) records
 - Set an initial value for REDCap config `project_contact_email`, configured from `gen redcap config`
 - Default stage settings to use domain without subdomain.
 - Package upgrades
@@ -31,5 +79,5 @@
 
 ## v-0.4
 
-- Remove AWS AppRunner autoscaling name, will be auto-generated
+- Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.

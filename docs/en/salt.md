@@ -12,7 +12,7 @@ CDK will automatically create a random string secret and store this in AWS Secre
 
 ## Secret sharing
 
-The secret is passed via ENV VARIABLE to the executing container in AWS App Runner. Before starting the services, this value is normalized to be letters and number (as REDCap recommendation) by using a hash function in [start_services.sh](../../containers/redcap-docker-apache/scripts/start_services.sh)
+The secret is passed via ENV VARIABLE to the executing container in AWS App Runner. Before starting the services, this value is normalized to be letters and number (as REDCap recommendation) by using a hash function in [setup_app.sh](../../containers/redcap-docker-apache/scripts/setup_app.sh)
 
 ```sh
 DB_SALT_ALPHA=$(echo -n "$DB_SALT" | sha256sum | cut -d' ' -f1)

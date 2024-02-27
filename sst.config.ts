@@ -14,8 +14,10 @@ import { NagConsoleLogger } from './prototyping/cdkNag/NagConsoleLogger';
 import { Backend } from './stacks/Backend';
 import { BuildImage } from './stacks/BuildImage';
 import { Database } from './stacks/Database';
+import { EC2Server } from './stacks/EC2Server';
 import { Network } from './stacks/Network';
 import { Route53NSRecords } from './stacks/Route53NSRecords';
+import { get } from 'lodash';
 
 export default {
   config(_input) {
@@ -23,6 +25,7 @@ export default {
   },
   stacks(app) {
     const logger = new NagConsoleLogger();
+    const ec2ServerStack = get(stage, [app.stage, 'ec2ServerStack']);
 
     if (app.mode === 'deploy') logger.showSuppressed();
 
@@ -50,8 +53,7 @@ export default {
       app.stack(BuildImage);
       app.stack(Database);
       app.stack(Backend);
-      // Optional - enables AWS Guard-duty
-      // app.stack(Security);
+      if (ec2ServerStack) app.stack(EC2Server);
     }
   },
 } satisfies SSTConfig;

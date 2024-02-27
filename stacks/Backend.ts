@@ -6,7 +6,7 @@
 
 import * as stage from '../stages';
 
-import { Cpu, Memory, Secret } from '@aws-cdk/aws-apprunner-alpha';
+import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import {
   Duration,
   Fn,
@@ -14,7 +14,6 @@ import {
   SecretValue,
   aws_ec2,
   aws_events,
-  aws_iam,
   aws_secretsmanager,
   cloudformation_include,
 } from 'aws-cdk-lib';
@@ -50,7 +49,7 @@ const { createHmac } = await import('node:crypto');
 
 export function Backend({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
-  const { dbSecret, dbAllowedSg, readReplicaHostname, resourceIdV2 } = use(Database);
+  const { dbSecret, dbAllowedSg, readReplicaHostname, auroraClusterV2 } = use(Database);
   const repository = use(BuildImage);
 
   if (!dbSecret) {
@@ -61,6 +60,8 @@ export function Backend({ stack, app }: StackContext) {
   const domain = get(stage, [stack.stage, 'domain']);
   const subdomain = get(stage, [stack.stage, 'subdomain']);
   const hostInRoute53 = get(stage, [stack.stage, 'hostInRoute53'], true);
+  const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
+  const autoDeploymentsEnabled = get(stage, [stack.stage, 'autoDeploymentsEnabled'], true);
 
   const cronSecret = get(stage, [stack.stage, 'cronSecret'], 'mysecret');
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
@@ -71,6 +72,7 @@ export function Backend({ stack, app }: StackContext) {
   const minSize = get(stage, [stack.stage, 'appRunnerMinSize'], 1);
   const email = get(stage, [stack.stage, 'email']);
   const port = get(stage, [stack.stage, 'port']);
+  const tag = get(stage, [stack.stage, 'deployTag'], 'latest');
 
   // IAM user and group to access AWS S3 service (file system)
   const redCapS3AccessUser = new RedCapAwsAccessUser(stack, `${app.stage}-${app.name}-s3-access`, {
@@ -133,6 +135,20 @@ export function Backend({ stack, app }: StackContext) {
 
   redcapApplicationBucket.cdk.bucket.grantReadWrite(redCapS3AccessUser.userGroup);
 
+  const runnerEnvVars = {
+    AWS_REGION: stack.region,
+    S3_BUCKET: redcapApplicationBucket.bucketName,
+    READ_REPLICA_HOSTNAME: readReplicaHostname || '',
+    USE_IAM_DB_AUTH: 'true',
+    DB_SECRET_NAME: dbSecret.secretName,
+    SMTP_EMAIL: email,
+    DB_SECRET_ID: dbSecret.secretArn,
+    DB_SALT_SECRET_ID: dbSalt.secretArn,
+    SES_CREDENTIALS_SECRET_ID: ses.sesUserCredentials.secretArn,
+    S3_SECRET_ID: redCapS3AccessUser.secret.secretArn,
+    PHP_TIMEZONE: phpTimezone || 'UTC',
+  };
+
   // AppRunner service
   const redCapRunner = new AppRunner(stack, `${app.stage}-${app.name}-service`, {
     appName: `${app.stage}-${app.name}`,
@@ -142,30 +158,17 @@ export function Backend({ stack, app }: StackContext) {
       subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
       securityGroups: [dbAllowedSg],
     },
-    autoDeploymentsEnabled: true,
+    autoDeploymentsEnabled,
     service: {
       config: {
         port: port || 8080,
         cpu,
         memory,
-        environmentSecrets: {
-          DB_SECRET: Secret.fromSecretsManager(dbSecret),
-          DB_SALT: Secret.fromSecretsManager(dbSalt),
-          SES_CREDENTIALS: Secret.fromSecretsManager(ses.sesUserCredentials),
-          S3_SECRET: Secret.fromSecretsManager(redCapS3AccessUser.secret),
-        },
-        environmentVariables: {
-          AWS_REGION: stack.region,
-          S3_BUCKET: redcapApplicationBucket.bucketName,
-          READ_REPLICA_HOSTNAME: readReplicaHostname || '',
-          USE_IAM_DB_AUTH: app.mode != 'dev' && resourceIdV2 ? 'true' : 'false',
-          DB_SECRET_NAME: dbSecret.secretName,
-          SMTP_EMAIL: email,
-        },
+        environmentVariables: runnerEnvVars,
       },
       image: {
         repositoryName: repository.repositoryName,
-        tag: 'latest',
+        tag,
       },
     },
     scalingConfiguration: {
@@ -175,15 +178,14 @@ export function Backend({ stack, app }: StackContext) {
     },
   });
 
-  if (resourceIdV2)
-    redCapRunner.service.addToRolePolicy(
-      new aws_iam.PolicyStatement({
-        actions: ['rds-db:connect'],
-        resources: [
-          `arn:aws:rds-db:${stack.region}:${stack.account}:dbuser:${resourceIdV2}/redcap_user`,
-        ],
-      }),
-    );
+  // Secrets access permission
+  dbSecret.grantRead(redCapRunner.service);
+  dbSalt.grantRead(redCapRunner.service);
+  ses.sesUserCredentials.grantRead(redCapRunner.service);
+  redCapS3AccessUser.secret.grantRead(redCapRunner.service);
+
+  // Aurora IAM
+  auroraClusterV2.aurora.grantConnect(redCapRunner.service, 'redcap_user');
 
   // WAF and rules for /cron.php
   const searchString = createHmac('sha256', cronSecret)
@@ -248,7 +250,7 @@ export function Backend({ stack, app }: StackContext) {
     description: 'Call cron on REDCap deployment',
   });
 
-  const rule = new aws_events.Rule(stack, 'redcap-cron', {
+  new aws_events.Rule(stack, 'redcap-cron', {
     schedule: aws_events.Schedule.rate(Duration.minutes(1)),
     targets: [new ApiDestination(destination)],
   });
@@ -270,5 +272,11 @@ export function Backend({ stack, app }: StackContext) {
   Suppressions.DBSecretSalt(dbSalt);
   Suppressions.AppRunnerSuppressions(redCapRunner, app);
 
-  return repository;
+  return {
+    repository,
+    dbSalt,
+    sesUserCredentials: ses.sesUserCredentials,
+    s3UserCredentials: redCapS3AccessUser.secret,
+    runnerEnvVars,
+  };
 }

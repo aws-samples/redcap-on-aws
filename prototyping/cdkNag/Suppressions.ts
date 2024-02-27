@@ -7,13 +7,15 @@
 import { Stack } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
-import { App, RDS } from 'sst/constructs';
+import { App, Function } from 'sst/constructs';
 
 import { CfnDetector } from 'aws-cdk-lib/aws-guardduty';
 import { BucketDeployment } from 'aws-cdk-lib/aws-s3-deployment';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
+import { Instance } from 'aws-cdk-lib/aws-ec2';
 import { IHostedZone } from 'aws-cdk-lib/aws-route53';
+import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { AppRunner } from '../constructs/AppRunner';
 import { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
 import { CodeBuildProject } from '../constructs/CodeBuildProject';
@@ -22,6 +24,78 @@ import { SimpleEmailService } from '../constructs/SimpleEmailService';
 import { Waf } from '../constructs/Waf';
 
 export class Suppressions {
+  static SSTEmptyStackSuppressions(stack: Stack) {
+    try {
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'IAM role managed policy for deploying',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'IAM role managed policy for deploying',
+        },
+      ]);
+    } catch (e) {}
+  }
+
+  static EC2ServerSuppressions(
+    ec2ServerInstance: Instance,
+    terminateStateMachine: StateMachine,
+    stateMachineExecHandler: Function,
+  ) {
+    const stack = Stack.of(ec2ServerInstance);
+    try {
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'Managed policy for SSM',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'SST lambda version',
+        },
+      ]);
+    } catch (e) {}
+    try {
+      NagSuppressions.addResourceSuppressions(
+        [ec2ServerInstance.role, ec2ServerInstance],
+        [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'Default policy ec2',
+          },
+          {
+            id: 'AwsSolutions-EC29',
+            reason:
+              'This is a temporary EC2 instance, terminated after a defined user duration time',
+          },
+        ],
+        true,
+      );
+    } catch (e) {}
+    try {
+      const stack = Stack.of(terminateStateMachine);
+      NagSuppressions.addResourceSuppressions(
+        [terminateStateMachine, stateMachineExecHandler],
+        [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'Default policies for Lambda and state machine',
+          },
+        ],
+        true,
+      );
+      //suppress SourcemapUploaderPolicy/Resource
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Need to use * because cannot get full stack ARN while deployment',
+        },
+      ]);
+    } catch (e) {}
+  }
+
   static Route53NS(zone: IHostedZone) {
     const stack = Stack.of(zone);
     try {
@@ -196,80 +270,23 @@ export class Suppressions {
     } catch (e) {}
   }
 
-  static SSTRDSSuppressions(cluster: RDS) {
-    const stack = Stack.of(cluster);
-    try {
-      NagSuppressions.addResourceSuppressionsByPath(
-        stack,
-        [
-          `/${stack.stackName}/CustomResourceHandler/ServiceRole/Resource`,
-          `/${stack.stackName}/CustomResourceHandler/Resource`,
-        ],
-        [
-          {
-            id: 'AwsSolutions-IAM4',
-            reason: 'Custom resource handler service Role',
-          },
-          {
-            id: 'AwsSolutions-L1',
-            reason: 'Lambda sst version',
-          },
-        ],
-      );
-      NagSuppressions.addResourceSuppressions(
-        cluster,
-        [
-          {
-            id: 'AwsSolutions-RDS14',
-            reason: 'No backtrack for v1 dev mode',
-          },
-          {
-            // TODO: review this
-            id: 'AwsSolutions-RDS16',
-            reason: 'Disable logs for dev mode',
-          },
-          {
-            id: 'AwsSolutions-IAM4',
-            reason: 'Custom resource handler service Role',
-          },
-          {
-            id: 'AwsSolutions-L1',
-            reason: 'Lambda sst version',
-          },
-          {
-            id: 'AwsSolutions-RDS6',
-            reason:
-              "SST's RDS construct based on AuroraServless V1 doesn't support IAM auth. This can be enabled by using AuroraServerlessV2 construct",
-          },
-          {
-            id: 'AwsSolutions-RDS11',
-            reason:
-              "SST's RDS construct based on AuroraServless V1 construct must use the default port",
-          },
-          {
-            id: 'AwsSolutions-RDS10',
-            reason: 'Convinience for development by setting deletionProtection as false',
-          },
-          {
-            id: 'AwsSolutions-IAM5',
-            reason: 'Lambda migration function default policy',
-          },
-        ],
-        true,
-      );
-    } catch (e) {}
-  }
-
   static RDSV2Suppressions(cluster: AuroraServerlessV2) {
     const stack = Stack.of(cluster);
     try {
       NagSuppressions.addResourceSuppressionsByPath(
         stack,
-        [`${stack.stackName}/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource`],
+        [
+          `${stack.stackName}/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource`,
+          `${stack.stackName}/AWS679f53fac002430cb0da5b7982bd2287/Resource`,
+        ],
         [
           {
             id: 'AwsSolutions-IAM4',
             reason: 'Custom resource for RDS cluster resource ID',
+          },
+          {
+            id: 'AwsSolutions-L1',
+            reason: 'Related to lambda container to manage a custom handler deployed by cdk',
           },
         ],
       );
@@ -288,8 +305,7 @@ export class Suppressions {
           },
           {
             id: 'AwsSolutions-L1',
-            reason:
-              'Related to lambda container to manage a custom handler deployed by cdk (auroraServerlessV2)',
+            reason: 'Related to lambda container to manage a custom handler deployed by cdk',
           },
           {
             id: 'AwsSolutions-IAM5',

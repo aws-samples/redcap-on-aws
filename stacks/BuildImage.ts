@@ -33,15 +33,17 @@ export function BuildImage({ stack, app }: StackContext) {
 
   const profile = get(stage, [stack.stage, 'profile'], 'default');
 
-  // Get PHP timezone config
-  const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
+  // Main REDCap docker port
   const port = get(stage, [stack.stage, 'port']);
 
   // Use local redcap file as deployment
   const redCapLocalVersion = get(stage, [stack.stage, 'redCapLocalVersion']);
+
   // Use a remote S3 location to deploy redcap
   let redCapS3Path = get(stage, [stack.stage, 'redCapS3Path']);
-  let redcapTag = Helpers.extractRedCapTag(redCapS3Path);
+  let redcapTag = get(stage, [stack.stage, 'deployTag'], Helpers.extractRedCapTag(redCapS3Path));
+
+  const rebuild = get(stage, [stack.stage, 'rebuildImage'], false);
 
   // Validation check
   if (redCapS3Path && redCapLocalVersion) {
@@ -59,7 +61,13 @@ export function BuildImage({ stack, app }: StackContext) {
       path: `packages/REDCap/releases/${redCapLocalVersion}.zip`,
       exclude: ['.DS_Store'],
     });
-    redcapTag = Helpers.extractRedCapTag(`${redCapLocalVersion}.zip`);
+
+    redcapTag = get(
+      stage,
+      [stack.stage, 'deployTag'],
+      Helpers.extractRedCapTag(`${redCapLocalVersion}.zip`),
+    );
+
     redCapS3Path = redcapPackage.s3ObjectUrl;
   } else {
     redCapS3Path = `s3://${redCapS3Path}`;
@@ -71,7 +79,7 @@ export function BuildImage({ stack, app }: StackContext) {
   const repository = new Repository(stack, `${app.stage}-${app.name}-ecr`, {
     imageScanOnPush: true,
     autoDeleteImages: true,
-    encryptionKey: new Key(stack, 'redcap-kms-key', {
+    encryptionKey: new Key(stack, `redcap-kms-key`, {
       enableKeyRotation: true,
       removalPolicy: RemovalPolicy.DESTROY,
     }),
@@ -117,9 +125,6 @@ export function BuildImage({ stack, app }: StackContext) {
       LANG_S3_URI: {
         value: redcapLanguages.s3ObjectUrl,
       },
-      PHP_TIMEZONE: {
-        value: phpTimezone || 'UTC',
-      },
       AWS_ACCOUNT_ID: {
         value: stack.account,
       },
@@ -154,12 +159,13 @@ export function BuildImage({ stack, app }: StackContext) {
       }),
     );
 
-  const lambdaBuild = codeBuild.addLambdaTrigger(
-    'packages/functions/src/startProjectBuild.handler',
-    'redcap-build',
-    [],
-    [codeBuild],
-  );
+  const lambdaBuild = codeBuild.addLambdaTrigger({
+    handler: 'packages/functions/src/startProjectBuild.handler',
+    name: 'redcap-build',
+    rebuild: rebuild,
+    executeAfter: [codeBuild],
+    executeBefore: [],
+  });
 
   stack.addOutputs({
     UpdateDeploymentCommand: `aws lambda invoke --function-name ${lambdaBuild} --region ${stack.region} --profile ${profile} deployLambdaResponse.json`,

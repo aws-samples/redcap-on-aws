@@ -17,14 +17,14 @@ cp /tmp/languages/*.ini /var/www/html/languages/. 2>/dev/null
 
 ## Setup PHP variables
 echo "max_input_vars = 100000" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "upload_max_filesize = 32M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "post_max_size = 32M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
+echo "upload_max_filesize = 1000M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
+echo "post_max_size = 1000M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 echo "session.cookie_secure = On" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 echo "error_reporting  = E_ALL & ~E_DEPRECATED & ~E_STRICT" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 echo "error_log = /dev/stdout" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 
-### Set JST Timezone as default
-echo "date.timezone = $PHP_TIMEZONE" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
+### Set Timezone for REDCap
+echo "date.timezone = \${PHP_TIMEZONE}" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 
 # PHP database configuration: iam auth base
 cat <<EOF | tee /usr/local/share/redcap/redcap_connect_iam.php >/dev/null
@@ -39,6 +39,7 @@ use Aws\Credentials\CredentialProvider;
 \$db         = getenv('RDS_DBNAME');
 \$port       = getenv('RDS_PORT');
 \$username   = "redcap_user";
+\$password   = getenv('RDS_PASSWORD'); 
 \$region     = getenv('AWS_REGION');
 \$salt       = getenv('DB_SALT_ALPHA');
 \$db_ssl_key     = NULL;
@@ -47,16 +48,12 @@ use Aws\Credentials\CredentialProvider;
 \$db_ssl_capath  = NULL;
 \$db_ssl_cipher  = NULL;
 \$db_ssl_verify_server_cert = true;
-\$cached_password = apcu_fetch('password_iam');
 
-if (\$cached_password) {
-    \$password = \$cached_password;
-} else {
+try {
     \$provider = CredentialProvider::defaultProvider();
     \$RdsAuthGenerator = new Aws\Rds\AuthTokenGenerator(\$provider);
     \$password = \$RdsAuthGenerator->createToken(\$hostname . ":{\$port}", \$region, \$username);
-    apcu_store('password_iam', \$password, 300);
-}
+} catch (AwsException \$e) {}
 
 EOF
 
@@ -70,23 +67,21 @@ use Aws\Exception\AwsException;
 
 \$log_all_errors = FALSE;
 
-\$cached_password = apcu_fetch('password');
+\$hostname   = getenv('RDS_HOSTNAME');
+\$db         = getenv('RDS_DBNAME');
+\$username   = getenv('RDS_USERNAME');
+\$password   = getenv('RDS_PASSWORD'); 
+\$salt       = getenv('DB_SALT_ALPHA');
 
-if (\$cached_password) {
-    \$password = \$cached_password;
-} else {
-    
+try {
     \$client = new SecretsManagerClient([
         'region' => getenv('AWS_REGION'),
     ]);
 
-    try {
-        \$result = \$client->getSecretValue([
-            'SecretId' => getenv('DB_SECRET_NAME'),
-        ]);
-    } catch (AwsException \$e) {
-        \$password = getenv('RDS_PASSWORD'); 
-    }
+    \$result = \$client->getSecretValue([
+        'SecretId' => getenv('DB_SECRET_NAME'),
+    ]);
+
     if (isset(\$result['SecretString'])) {
         \$secret = \$result['SecretString'];
     } else {
@@ -94,13 +89,9 @@ if (\$cached_password) {
     }
     \$secretArray = json_decode(\$secret, true);
     \$password   = \$secretArray['password'];
-    apcu_store('password', \$password, 120);
-}
+    
+} catch (AwsException \$e) {}        
 
-\$hostname   = getenv('RDS_HOSTNAME');
-\$db         = getenv('RDS_DBNAME');
-\$username   = getenv('RDS_USERNAME');
-\$salt       = getenv('DB_SALT_ALPHA');
 EOF
 
 # PHP database configuration: replica config

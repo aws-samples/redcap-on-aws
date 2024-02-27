@@ -4,7 +4,7 @@ JP | [EN](../en/iamdb.md)
 
 `deploy` モードまたは本番環境では、データベースは AWS AppRunner と Amazon RDS を IAM 認証を用いて接続します。つまり、アプリケーション用に作成された `redcap_user` にはパスワードが設定されておらず、代わりにアプリケーションは新しいデータベース接続ごとにトークンを取得します。これにより、SSL/TLS 通信、セキュリティの強化、IAM による一元的なアクセス制御が可能になります。 データベースに接続するためのトークンを取得できるのは、AWS App Runner 用のロールだけです。
 
-この設定は [Backend](../../stacks/Backend.ts) で、AppRunner コンストラクトに `USE_IAM_DB_AUTH: 'true' を指定することで有効化されます。これにより、[start_services.sh](../../containers/redcap-docker-apache/scripts/start_services.sh) で一連の処理が有効になります。
+この設定は [Backend](../../stacks/Backend.ts) で、AppRunner コンストラクトに `USE_IAM_DB_AUTH: 'true' を指定することで有効化されます。これにより、[setup_app.sh](../../containers/redcap-docker-apache/scripts/setup_app.sh) で一連の処理が有効になります。
 
 1. IAM 認証を有効化した `redcap_user` を作成します。
 

@@ -2,6 +2,18 @@ JP | [EN](README.md)
 
 # REDCap deployment on AWS with serverless services
 
+> **UPDATE to v-0.10** (Feb 2024 release)
+> 直近のアップデートを適用する際、以下の手順に従う必要があります。
+>
+> 1. データの損失を防ぎたい場合、データベースのバックアップを作成します。
+> 2. `yarn install`を実行し、パッケージをインストールします。
+> 3. [AWS App Runner](https://console.aws.amazon.com/apprunner/)にアクセスし、対象のアプリケーションを選択します。Configurationタブに移動し、`Deployment settings` を `Manual` に変更します。変更が適用されるまで待機します。この変更は次のプロセスで自動的にもとに戻ります。
+> 4. デプロイメントタグを指定します。`stages.ts`で、 `deployTag: <tag_value>` のように指定します。これは、既存のApp Runnerにデプロイされているコンテナのタグと異なる必要があります。
+>    （例）deployTag: ‘upgrade-v010’. （多くの場合、`latest`は避けてください。）
+> 5. `yarn deploy --stage <your_stage>` を実行します。
+> 6. `stages.ts`から`deployTag` を削除します。これは、次回以降のautodeploymentを動作させるためです。
+
+
 [REDCap](https://projectredcap.org/) は、オンラインアンケートやデータベースを構築および管理するための安全なウェブアプリケーションです。特に、調査研究や業務におけるオンラインおよびオフラインのデータキャプチャをサポートすることを目的としています。
 
 このプロジェクトは、AWS App Runner や Amazon Aurora Serverless などのオートスケーリング対応サービスを使用して、REDCap をデプロイおよび管理する方法を提供します。 このプロジェクトは[SST](https://sst.dev) を使用して構築されています。これは、すぐに使用できる多数のコンストラクタと、[IaC](https://docs.aws.amazon.com/whitepapers/latest/introduction-devops-aws/infrastructure-as-code.html) の開発をスピードアップできる多くの機能を備えた CDK ベースのフレームワークです。
@@ -94,6 +106,8 @@ cp stages.sample.ts stages.ts
 | memory               | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory  | `Memory.FOUR_GB`                                      |
 | phpTimezone          | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String  | `UTC`                                                 |
 | port                 | App Runnerで使用されるポート番号です。                                                                                                                                                                                                                           | String  | `UTC`                                                 |
+| rebuildImage         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean | `false`                                               |
+| ec2ServerStack       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object  | `undefined`                                           |
 
 - サービス通知: **email**を指定すると、AWS App Runnerサービス通知をサブスクライブするためのメールを受信できます。(サービスのデプロイや変更が通知されます)
 
@@ -101,6 +115,7 @@ cp stages.sample.ts stages.ts
 
 - (\*) 必須
 - (\*\*) 同時実行のデフォルト値は 10 です。これは、2vCPU と 4GB の 1 つのインスタンスで最小負荷テストを行った結果によるものです。 負荷の監視を行い、使用状況に応じてこの値を調整することをお勧めします。
+- (\*\*\*) この設定をtrueからfalseに切り替えてから初めてのデプロイでは、trueの場合と同様にデプロイ時にビルドが行われますが正常です。trueからfalseに切り替えた場合、falseを維持した二回目のデプロイ以降、自動ビルドが行われなくなります。
 
 ### 3. REDCap の基本的設定
 
@@ -187,7 +202,7 @@ Route53 を使用せずに所有しているドメインをリンクしたい場
 
 ### 6. Amazon Simple Email Service (SES) のproduction設定
 
-デフォルトでは、Amazon SES は sandbox モードでデプロイされます。 AWS コンソールから production アクセスをリクエストできます。 詳細は [こちら](./docs/ja/ses.md)をご確認ください。
+デフォルトでは、Amazon SES は sandbox モードでデプロイされます。 REDCapの設定チェックでは、`<redcapemailtest@gmail.com>`にメールを送信しますが、これが原因で失敗します。AWS コンソールから production アクセスをリクエストできます。 詳細は [こちら](./docs/ja/ses.md)をご確認ください。
 
 デフォルトでは、`MAIL FROM domain` が `mail.<your_domain.com>` の形式であることを前提としています。 そうでない場合は、[Backend.ts](./stacks/Backend.ts) の `mailFromDomain` を `SimpleEmailService` コンストラクタに渡し、独自の形式を指定できます。
 
@@ -249,6 +264,41 @@ AWS CodeBuildにより新しいDockerイメージをビルドし、新しいイ�
 4. MyCap `NOT making API Call - CRITICAL -` のテストも `3.` と同様にAWS WAFによってブロックされています。
 
 詳細に関しては[本番環境への移行](./docs/ja/ptp.md)も合わせて参照してください。
+
+## EC2 Server stack: REDCap での長いリクエストの処理
+
+AWS AppRunner には 120 秒のリクエストタイムアウトがあります。これは、 REDCap のインポート/エクスポートなどの一部の操作に対しては十分でない場合があります。この制限を克服するために、一時的な EC2 インスタンスをデプロイして、App Runner と同じ Docker Image を実行し、ローカルマシンから REDCap サーバーにトンネルするという代替手段を提供しています。この方法では、リクエストタイムアウトなどの制限は、PHP と Apache の設定のみに制限されます。
+
+> ログインには AWS の認証情報が必要です。
+
+1. コンピュータに Session Manager plugin がインストールされていることを確認してください。 <https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html>
+
+2. この新しい EC2 インスタンスを含むスタックをデプロイするには、`stages.ts` ファイルに ec2ServerStack プロパティを含める必要があります。
+
+   ```ts
+   const dev: RedCapConfig = {
+   ...
+   ec2ServerStack: {
+      ec2StackDuration: Duration.hours(3),
+   },
+   };
+   ```
+
+`ec2StackDuration` パラメータは、このスタックを実行する期間を定義します。この時間後に破棄されます。
+
+3. ステージをデプロイして出力を待ちます。 `ssmPortForward` を開始する次のようなコマンドが表示されます。
+
+   ```sh
+      ssmPortForward: aws ssm start-session --target i-00000000000 --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' --region ap-northeast-1 --profile redcap
+   ```
+
+   手元のコンピューターで、ターミナルを開き、このコマンドを実行します。ブラウザを開き、 <https://localhost:8081>にアクセスします。自己署名証明書に関する警告が表示されますが、承諾してREDCapにアクセスします。このキーと証明書は、必要に応じて独自のものを利用できます。 変更したい場合は [cert フォルダ](./containers/redcap-docker-apache/apache2/cert/) に配置します。
+
+### EC2 Server stack の考慮事項
+
+CORS: REDCapのどの機能を使用するかによって、一部のモジュールでCORSの問題が発生する可能性があります。 この場合、コントロールセンターの `REDCap base URL` をプロキシを指すように設定する必要があります。(例: `https://localhost:8081`)。 これにより、構成されたドメインで実行している現在のユーザーに問題が発生しますので、作業が完了した後は変更を元に戻すようにしてください。
+
+StateMachine: まだ期間内にあるec2ServerStackを削除する場合は、CloudFormationがリソースを削除できるように、あらかじめステートマシンを停止する必要があります。
 
 ## 環境の削除
 

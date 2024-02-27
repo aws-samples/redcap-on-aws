@@ -12,6 +12,13 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 
+interface LambdaTriggerProps {
+  handler: string;
+  name: string;
+  rebuild: boolean;
+  executeBefore?: Construct[];
+  executeAfter?: Construct[];
+}
 export class CodeBuildProject extends Construct {
   public readonly project;
   public readonly props;
@@ -33,18 +40,16 @@ export class CodeBuildProject extends Construct {
   }
 
   // create Trigger construct to run CodeBuild Project
-  public addLambdaTrigger(
-    handler: string,
-    name: string,
-    executeBefore?: Construct[],
-    executeAfter?: Construct[],
-  ): string {
-    const buildJobFunc = new Function(this, `${name}-lambda-trigger`, {
-      handler: handler || 'packages/functions/src/startProjectBuild.handler',
-      timeout: '10 minutes',
-      environment: {
-        CODEBUILD_PROJECT_NAME: this.project.projectName || '',
-      },
+  public addLambdaTrigger(props: LambdaTriggerProps): string {
+    const environment = {
+      CODEBUILD_PROJECT_NAME: this.project.projectName || '',
+      TIMESTAMP: props.rebuild ? Date.now().toString() : 'NA',
+    };
+
+    const buildJobFunc = new Function(this, `${props.name}-lambda-trigger`, {
+      handler: props.handler,
+      timeout: '15 minutes',
+      environment,
     });
 
     buildJobFunc.addToRolePolicy(
@@ -58,14 +63,15 @@ export class CodeBuildProject extends Construct {
       }),
     );
 
-    const after = executeAfter;
+    const after = props.executeAfter;
     after?.push(buildJobFunc);
 
-    const buildTrigger = new triggers.Trigger(this, `${name}-trigger`, {
+    new triggers.Trigger(this, `${props.name}-trigger`, {
       handler: buildJobFunc,
       timeout: Duration.minutes(10),
+      executeOnHandlerChange: true,
       executeAfter: after,
-      executeBefore,
+      executeBefore: props.executeBefore,
     });
 
     return buildJobFunc.functionName;

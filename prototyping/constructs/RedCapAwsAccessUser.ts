@@ -28,7 +28,7 @@ export class RedCapAwsAccessUser extends Construct {
     // create IAM user
     this.user =
       props.user ??
-      new aws_iam.User(this, 'redcap-user', {
+      new aws_iam.User(this, 'redcap_user', {
         userName: props.userName,
       });
 
@@ -43,6 +43,7 @@ export class RedCapAwsAccessUser extends Construct {
 
     // create access key and store in Secrets Manager
     const accessKey = new AccessKey(this, 'AccessKey', { user: this.user });
+
     this.secret = new Secret(this, 'Secret', {
       secretObjectValue: {
         AccessKeyId: SecretValue.unsafePlainText(accessKey.accessKeyId),

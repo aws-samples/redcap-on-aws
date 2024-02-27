@@ -1,5 +1,6 @@
-import { RedCapConfig, DomainAppsConfig } from './prototyping';
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
+import { Duration } from 'aws-cdk-lib';
+import { DomainAppsConfig, RedCapConfig } from './prototyping';
 
 const baseOptions = {
   name: 'REDCap',
@@ -31,6 +32,9 @@ const prod: RedCapConfig = {
   cronSecret: 'prodsecret',
   cpu: Cpu.FOUR_VCPU,
   memory: Memory.EIGHT_GB,
+  ec2ServerStack: {
+    ec2StackDuration: Duration.hours(3),
+  },
 };
 
 const stag: RedCapConfig = {
@@ -42,6 +46,7 @@ const stag: RedCapConfig = {
   appRunnerConcurrency: 10,
   appRunnerMaxSize: 5,
   appRunnerMinSize: 1,
+  rebuildImage: false,
   cronSecret: 'stagsecret',
   cpu: Cpu.FOUR_VCPU,
   memory: Memory.EIGHT_GB,
@@ -66,7 +71,7 @@ const stag: RedCapConfig = {
 //  domain: 'redcap.mydomain.com',
 // };
 
-// Default route53NS config, no records are created. 
+// Default route53NS config, no records are created.
 const route53NS: DomainAppsConfig = {
   ...baseOptions,
   profile: 'your_aws_profile',
@@ -75,4 +80,4 @@ const route53NS: DomainAppsConfig = {
   domain: '',
 };
 
-export { prod, stag, dev, route53NS };
+export { dev, prod, route53NS, stag };
