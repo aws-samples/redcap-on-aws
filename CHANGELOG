@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v-0.1.0
+## v-1.0.0
 
 - Add new stack that deploys a temporary EC2 instance for large REDCap requests / workloads.
 - Refactor IAM auth for RDS on CDK.
@@ -48,36 +48,36 @@ Example:
     };
 ```
 
-## v-0.9
+## v-0.9.0
 
 - Replace postfix with msmtp integrated with Amazon SES
 - Start apache2 in non-root, www-data.
 - Allow higher port configuration for apache2
 
-## v-0.8
+## v-0.8.0
 
 - Refactor how to start docker apache and email service
 - Allow configuration of php timezone in stage configuration file
 
-## v-0.7
+## v-0.7.0
 
 - Allowed to link App Runner domain with A (for a single domain) and CNAME (for domains with subdomain) records
 - Set an initial value for REDCap config `project_contact_email`, configured from `gen redcap config`
 - Default stage settings to use domain without subdomain.
 - Package upgrades
 
-## v-0.6
+## v-0.6.0
 
 - Set `max_allowed_packet` as the default in the database parameter group
 - Add a WAF custom rule for protecting root path instead of the code
 
-## v-0.5
+## v-0.5.0
 
 - Set some parameter group as the default to improve REDCap performance
 - Set JST as timezone in REDCap
 - Add a WAF custom rule for protecting root path
 
-## v-0.4
+## v-0.4.0
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.
