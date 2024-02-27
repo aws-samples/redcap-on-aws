@@ -2,7 +2,7 @@ JP | [EN](README.md)
 
 # REDCap deployment on AWS with serverless services
 
-> **UPDATE to v-0.1.0** (Feb 2024 release)
+> **UPDATE to v-1.0.0** (Feb 2024 release)
 > 直近のアップデートを適用する際、以下の手順に従う必要があります。
 >
 > 1. データの損失を防ぎたい場合、データベースのバックアップを作成します。
