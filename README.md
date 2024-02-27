@@ -2,7 +2,7 @@
 
 # REDCap deployment on AWS with serverless services
 
-> **UPDATE to v-0.10** (Feb 2024 release)
+> **UPDATE to v-0.1.0** (Feb 2024 release)
 > If you have deployed this project before, please follow this procedure to update:
 >
 > 1. Create a database backup to prevent data loss if needed.

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v-0.10
+## v-0.1.0
 
 - Add new stack that deploys a temporary EC2 instance for large REDCap requests / workloads.
 - Refactor IAM auth for RDS on CDK.

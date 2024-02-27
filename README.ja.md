@@ -2,7 +2,7 @@ JP | [EN](README.md)
 
 # REDCap deployment on AWS with serverless services
 
-> **UPDATE to v-0.10** (Feb 2024 release)
+> **UPDATE to v-0.1.0** (Feb 2024 release)
 > 直近のアップデートを適用する際、以下の手順に従う必要があります。
 >
 > 1. データの損失を防ぎたい場合、データベースのバックアップを作成します。
@@ -12,7 +12,6 @@ JP | [EN](README.md)
 >    （例）deployTag: ‘upgrade-v010’. （多くの場合、`latest`は避けてください。）
 > 5. `yarn deploy --stage <your_stage>` を実行します。
 > 6. `stages.ts`から`deployTag` を削除します。これは、次回以降のautodeploymentを動作させるためです。
-
 
 [REDCap](https://projectredcap.org/) は、オンラインアンケートやデータベースを構築および管理するための安全なウェブアプリケーションです。特に、調査研究や業務におけるオンラインおよびオフラインのデータキャプチャをサポートすることを目的としています。
 
