@@ -22,8 +22,50 @@ import { CodeBuildProject } from '../constructs/CodeBuildProject';
 import { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
 import { SimpleEmailService } from '../constructs/SimpleEmailService';
 import { Waf } from '../constructs/Waf';
+import { EcsFargate } from '../constructs/EcsFargate';
 
 export class Suppressions {
+  static ECSSuppressions(service: EcsFargate) {
+    const stack = Stack.of(service);
+    try {
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'Log retention default service role',
+        },
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Default exec role for aws fargate',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'SST lambda version',
+        },
+      ]),
+        true;
+    } catch (e) {}
+    try {
+      NagSuppressions.addResourceSuppressions(
+        service,
+        [
+          {
+            id: 'AwsSolutions-ECS4',
+            reason: 'container insight due to sst/Service construct, but enabled by escape hatch',
+          },
+          {
+            id: 'AwsSolutions-ECS2',
+            reason: 'use env vars for secrets arn',
+          },
+          {
+            id: 'AwsSolutions-EC23',
+            reason: 'alb needs to be internet facing',
+          },
+        ],
+        true,
+      );
+    } catch (e) {}
+  }
+
   static SSTEmptyStackSuppressions(stack: Stack) {
     try {
       NagSuppressions.addStackSuppressions(stack, [

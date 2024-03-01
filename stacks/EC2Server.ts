@@ -57,13 +57,13 @@ export function EC2Server({ stack, app }: StackContext) {
 
   const repository = use(BuildImage);
   const { networkVpc } = use(Network);
-  const { dbSalt, s3UserCredentials, sesUserCredentials, runnerEnvVars } = use(Backend);
+  const { dbSalt, s3UserCredentials, sesUserCredentials, environmentVariables } = use(Backend);
   const { dbSecret, dbAllowedSg, auroraClusterV2 } = use(Database);
 
   const userData = UserData.forLinux({ shebang: '#!/bin/bash' });
 
   const profiledPath = '/etc/profile.d/cdk_variables.sh';
-  const dockerEnv = `-e AWS_REGION=\$AWS_REGION \
+  const dockerEnv = `-e AWS_REGION='${app.region}'\
   -e USE_CERT='1' \
   -e USE_IAM_DB_AUTH='true' \
   -e DB_SECRET_ID=\$DB_SECRET_ID \
@@ -82,7 +82,7 @@ export function EC2Server({ stack, app }: StackContext) {
     'sudo usermod -a -G docker ec2-user',
     `aws ecr get-login-password --region ${app.region} | docker login --username AWS --password-stdin ${app.account}.dkr.ecr.${app.region}.amazonaws.com`,
     `docker pull ${repository.repositoryUri}`,
-    generateEnvUserData(runnerEnvVars, profiledPath),
+    generateEnvUserData(environmentVariables, profiledPath),
     `sudo su && runuser -l ec2-user -c 'docker run --rm -d --sig-proxy=false -p 8081:8081 ${dockerEnv} ${repository.repositoryUri}'`,
   );
 
@@ -145,7 +145,9 @@ export function EC2Server({ stack, app }: StackContext) {
   const terminateStateMachine = new StateMachine(stack, `deleteStackStateMachine`, {
     definitionBody: def,
     logs: {
-      destination: new LogGroup(stack, `deleteStackSfnLogGroup`),
+      destination: new LogGroup(stack, `deleteStackSfnLogGroup`, {
+        logGroupName: '/aws/vendedlogs/states/deleteStackSfnLogGroup',
+      }),
       level: LogLevel.ALL,
     },
     tracingEnabled: true,

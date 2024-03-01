@@ -74,9 +74,9 @@ if [ -f "/var/www/html/install.php" ]; then
     php -r '$_GET["auto"]=1; $_GET["sql"]=1 ; $_SERVER["REQUEST_METHOD"] = "POST"; $_SERVER["PHP_SELF"]= "install.php"; require_once("install.php");'
 fi
 
-HAS_AMAZON_S3_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
+DB_S3_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
 
-if [ "${#HAS_AMAZON_S3_KEY}" -gt 2 ]; then
+if [ "$DB_S3_ACCESS_KEY" = "$S3_ACCESS_KEY" ]; then
     echo '- REDCap initial settings already configured, skipping'
 else
     # REDCap SQL Initialization Configuration

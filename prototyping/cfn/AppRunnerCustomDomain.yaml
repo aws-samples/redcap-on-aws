@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Backend
 Parameters:
   DomainName:
     Type: String
@@ -18,43 +17,8 @@ Parameters:
   DNSDomainId:
     Type: String
     Description: The ID of the created HostedZone
-  RecordSetType:
-    Type: String
-    Description: Type of DNS record
-    Default: CNAME
 
-Conditions:
-  CreateCNAME: !Equals
-    - !Ref RecordSetType
-    - CNAME
-  CreateA: !Equals
-    - !Ref RecordSetType
-    - A
 Resources:
-  AppAliasCname:
-    Type: AWS::Route53::RecordSetGroup
-    Condition: CreateCNAME
-    Properties:
-      Comment: provided by CDK
-      HostedZoneId: !Ref DNSDomainId
-      RecordSets:
-        - Name: !Ref DomainName
-          Type: CNAME
-          TTL: '900'
-          ResourceRecords:
-            - !Ref ServiceUrl
-  AppAliasA:
-    Type: AWS::Route53::RecordSetGroup
-    Condition: CreateA
-    Properties:
-      Comment: provided by CDK
-      HostedZoneId: !Ref DNSDomainId
-      RecordSets:
-        - Name: !Ref DomainName
-          Type: A
-          AliasTarget:
-            DNSName: !Ref ServiceUrl
-            HostedZoneId: !Ref AppRunnerHostedZones
   CertificateValidationRecords:
     Type: AWS::Route53::RecordSetGroup
     Properties:
