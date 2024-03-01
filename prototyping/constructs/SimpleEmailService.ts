@@ -4,15 +4,11 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { Duration, RemovalPolicy, Stack, aws_iam, aws_secretsmanager, triggers } from 'aws-cdk-lib';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import { Duration, RemovalPolicy, aws_iam, aws_secretsmanager, triggers } from 'aws-cdk-lib';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import { EmailIdentity, Identity } from 'aws-cdk-lib/aws-ses';
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from 'aws-cdk-lib/custom-resources';
+
 import { Construct } from 'constructs';
 import { Function } from 'sst/constructs';
 
@@ -27,8 +23,9 @@ export interface SimpleEmailServiceProps {
    * Default: new IAM credentials will be created.
    */
   transformCredentials?: aws_secretsmanager.Secret;
-  publicHostedZone?: PublicHostedZone;
+  publicHostedZone?: IPublicHostedZone;
   domain?: string;
+  subdomain?: string;
   email?: string;
 }
 
@@ -54,10 +51,13 @@ export class SimpleEmailService extends Construct {
       identity = Identity.publicHostedZone(props.publicHostedZone);
       mailFromDomain = `mail.${props.publicHostedZone.zoneName}`;
     } else if (props.domain) {
-      identity = Identity.domain(props.domain);
-      mailFromDomain = `mail.${props.domain}`;
+      const domain = props.subdomain ? `${props.subdomain}.${props.domain}` : props.domain;
+      identity = Identity.domain(domain);
+      mailFromDomain = `mail.${domain}`;
     } else if (props.email) {
-      this.VerifyEmailIdentity(props.email, Stack.of(this).region);
+      new EmailIdentity(this, `${id}-identity`, {
+        identity: Identity.email(props.email),
+      });
     }
 
     if (identity)
@@ -132,38 +132,5 @@ export class SimpleEmailService extends Construct {
       timeout: Duration.minutes(1),
       invocationType: triggers.InvocationType.REQUEST_RESPONSE,
     });
-  }
-
-  // verify email identity using custom resource
-  VerifyEmailIdentity(emailAddress: string, region: string) {
-    return new AwsCustomResource(this, `verifyEmailIdentity-${emailAddress}`, {
-      onCreate: {
-        service: 'SES',
-        action: 'verifyEmailIdentity',
-        parameters: {
-          EmailAddress: emailAddress,
-        },
-        physicalResourceId: PhysicalResourceId.of(`verify-${emailAddress}`),
-        region,
-      },
-      onDelete: {
-        service: 'SES',
-        action: 'deleteIdentity',
-        parameters: {
-          Identity: emailAddress,
-        },
-        region,
-      },
-      policy: this.generateSesPolicyForCustomResource('VerifyEmailIdentity', 'DeleteIdentity'),
-    });
-  }
-  generateSesPolicyForCustomResource(...methods: string[]): AwsCustomResourcePolicy {
-    return AwsCustomResourcePolicy.fromStatements([
-      new PolicyStatement({
-        actions: methods.map((method) => 'ses:' + method),
-        effect: Effect.ALLOW,
-        resources: ['*'],
-      }),
-    ]);
   }
 }

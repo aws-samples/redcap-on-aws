@@ -17,6 +17,17 @@ const dev: RedCapConfig = {
   cronSecret: 'mysecret',
   email: 'email@mydomain.com',
   port: 8080,
+  // Uncomment to use ECS as backend instead of appRunner
+  // ecs: {
+  //   memory: '4 GB',
+  //   cpu: '4 vCPU',
+  //   scaling: {
+  //     maxContainers: 3,
+  //     minContainers: 1,
+  //     requestsPerContainer: 100,
+  //     cpuUtilization: 90,
+  //   },
+  // },
 };
 
 const prod: RedCapConfig = {
@@ -57,6 +68,7 @@ const stag: RedCapConfig = {
 //  ...baseOptions,
 //  profile: 'your_aws_profile',
 //  region: 'your_aws_region',
+//  domain: 'redcap.mydomain.com',
 //  apps: [
 //    {
 //      name: 'redcap',
@@ -68,7 +80,6 @@ const stag: RedCapConfig = {
 //      ],
 //    },
 //  ],
-//  domain: 'redcap.mydomain.com',
 // };
 
 // Default route53NS config, no records are created.
@@ -76,8 +87,8 @@ const route53NS: DomainAppsConfig = {
   ...baseOptions,
   profile: 'your_aws_profile',
   region: 'ap-northeast-1',
-  apps: [],
   domain: '',
+  apps: [],
 };
 
 export { dev, prod, route53NS, stag };

@@ -39,6 +39,7 @@ export function Database({ stack, app }: StackContext) {
   });
 
   stack.exportValue(auroraClusterV2.aurora.clusterResourceIdentifier);
+  stack.exportValue(auroraClusterV2.aurora.connections.securityGroups[0].securityGroupId);
 
   dbSecret = auroraClusterV2.aurora.secret;
 

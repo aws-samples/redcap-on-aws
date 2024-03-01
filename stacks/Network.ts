@@ -23,6 +23,7 @@ export function Network({ stack, app }: StackContext) {
     maxAzs: 2,
   });
 
+  networkVpc.vpc.publicSubnets.forEach((publicSubnet) => stack.exportValue(publicSubnet.subnetId));
   Suppressions.NetworkVpcSuppressions(networkVpc);
 
   return { networkVpc };

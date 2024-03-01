@@ -6,9 +6,20 @@
 
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { BlockPublicAccess, BucketEncryption, BucketProps, StorageClass } from 'aws-cdk-lib/aws-s3';
-import { App } from 'sst/constructs';
-export function bucketProps(app?: App): BucketProps {
+import { App, Bucket } from 'sst/constructs';
+import { NagSuppressions } from 'cdk-nag';
+
+export function bucketProps(app?: App, logBucket?: Bucket): BucketProps {
   const isProd = app?.stage === 'prod';
+
+  if (logBucket)
+    NagSuppressions.addResourceSuppressions(logBucket?.cdk.bucket, [
+      {
+        id: 'AwsSolutions-S1',
+        reason: 'Is the log bucket',
+      },
+    ]);
+
   return {
     removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     encryption: BucketEncryption.S3_MANAGED,
@@ -16,7 +27,7 @@ export function bucketProps(app?: App): BucketProps {
     autoDeleteObjects: !isProd,
     enforceSSL: true,
     versioned: isProd,
-    serverAccessLogsPrefix: '/logs/bucket-access/',
+    serverAccessLogsBucket: logBucket?.cdk.bucket ?? undefined,
     lifecycleRules: [
       {
         transitions: [

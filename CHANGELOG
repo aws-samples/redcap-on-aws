@@ -1,6 +1,26 @@
+[JA](./CHANGELOG.ja) | EN
+
 # CHANGELOG
 
-## v-1.0.0
+## v1.0.1
+
+- Add support to deploy REDCap instances in `Amazon ECS on AWS Fargate` as an alternative to AWS App Runner. This is for users that require REDCap to execute user request that are longer than 120 seconds.
+
+### Upgrade procedure to v1.0.1
+
+This **ONLY** applies if you have deployed any previous version and you are using the automatically created AWS App Runner Custom Link Domain. e.g you have deployed with the stage settings `hostInRoute53: true,` and  `domain: '<your_redcap_domain>'` and you access your REDCap installation with your own domain name.
+
+In this case, this project will have deployed an `A Record` in your Route 53 Hosted Zone that needs to be replaced and managed by CDK. The procedure is the following:
+
+1. Run `yarn install` to install package updates.
+2. In you `stages.ts` file, comment or delete your `domain: <your_redcap_domain>` and enter a different email/value for `email: <your_email>`
+3. Deploy the v1.0.1 release
+4. Revert the `stages.ts` changes (add your domain and previous email)
+5. Deploy again to complete the changes
+
+**Important:** These steps will cause disruption in your linked custom domain and new email notifications.
+
+## v1.0.0
 
 - Add new stack that deploys a temporary EC2 instance for large REDCap requests / workloads.
 - Refactor IAM auth for RDS on CDK.
@@ -13,71 +33,50 @@
 
 - Aurora Serverless deployment V1 for `dev` stages is now replaced with Aurora Serverless V2. This is ONLY for `dev` stages, e.g `yarn dev --stage your_stage`. Do a full database backup and restore the data in the new instance if required.
 
-### Upgrade procedure
+### Upgrade procedure to v1.0.0
 
-1. Do a full database backup.
-2. Run: `yarn install` to upgrade packages.
-3. Go to you AWS console, App Runner <https://console.aws.amazon.com/apprunner/>, select your deployment, click Configuration, click Edit and set `Deployment settings` to `Manual` and Save. Wait until the changes are done. This change is only temporary, will be automatically reverted after the upgrade.
-4. You will need to add a `new` deployment tag to update the service. In your stage configuration add: `deployTag: '<tag_value>',` where <tag_value> is a value defined by you. For example `deployTag: 'upgrade-v010'`. Make sure this tag is not in use.
-5. If you want to deploy the new EC2 stack for long request on REDCap add the following to the stage file. Configure the duration as you like:
+1. Create a database backup to prevent data loss if needed.
 
-    ```ts
-        ec2ServerStack: {
-            ec2StackDuration: Duration.hours(3),
-        },
-    ```
+2. Run `yarn install` to install package updates.
 
-6. Run `yarn deploy --stage <your_stage>`
-7. Delete the `deployTag` property to keep using `latest` tag to automatically upgrade your service.
+3. In your AWS console, go to AWS App Runner and select your application. Navigate to the Configuration tab and change Deployment settings to `Manual`. Wait until the change takes effect. This change will be automatically reverted after this update is completed.
 
-Example:
+4. For your stage configuration in `stages.ts`, add the following parameter `deployTag: 'upgrade-v010'`. You can use other tag value if you wish.
 
-```ts
-    const prod: RedCapConfig = {
-        ...baseOptions,
-        phpTimezone: 'Asia/Tokyo',
-        redCapLocalVersion: 'redcap13.7.2',
-        deployTag: '13.7.2.0', // this new tag will force a new service deployment
-        domain: 'redcap.mydomain.com',
-        hostInRoute53: true,
-        email: 'email@mydomain.com',
-        cronSecret: 'prodsecret',
-        ec2ServerStack: {
-            ec2StackDuration: Duration.hours(3),
-        },
-    };
-```
+5. Run `yarn deploy --stage <your_stage>`
 
-## v-0.9.0
+6. Remove the added configuration paramter `deployTag` from stages.ts.
+
+## v0.9.0
 
 - Replace postfix with msmtp integrated with Amazon SES
 - Start apache2 in non-root, www-data.
 - Allow higher port configuration for apache2
 
-## v-0.8.0
+## v0.8.0
 
 - Refactor how to start docker apache and email service
 - Allow configuration of php timezone in stage configuration file
 
-## v-0.7.0
+## v0.7.0
 
 - Allowed to link App Runner domain with A (for a single domain) and CNAME (for domains with subdomain) records
 - Set an initial value for REDCap config `project_contact_email`, configured from `gen redcap config`
 - Default stage settings to use domain without subdomain.
 - Package upgrades
 
-## v-0.6.0
+## v0.6.0
 
 - Set `max_allowed_packet` as the default in the database parameter group
 - Add a WAF custom rule for protecting root path instead of the code
 
-## v-0.5.0
+## v0.5.0
 
 - Set some parameter group as the default to improve REDCap performance
 - Set JST as timezone in REDCap
 - Add a WAF custom rule for protecting root path
 
-## v-0.4.0
+## v0.4.0
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.

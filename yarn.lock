@@ -53,7 +53,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-cdk/aws-apprunner-alpha@npm:^2.124.0-alpha.0":
+"@aws-cdk/aws-apprunner-alpha@npm:2.124.0-alpha.0":
   version: 2.124.0-alpha.0
   resolution: "@aws-cdk/aws-apprunner-alpha@npm:2.124.0-alpha.0"
   peerDependencies:
@@ -4173,7 +4173,7 @@ __metadata:
     "@types/aws-lambda": "npm:^8.10.115"
     "@types/node": "npm:^20.1.2"
     deasync: "npm:^0.1.28"
-    sst: "npm:2.40.1"
+    sst: "npm:2.40.5"
   languageName: unknown
   linkType: soft
 
@@ -8828,7 +8828,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "redcap-on-aws@workspace:."
   dependencies:
-    "@aws-cdk/aws-apprunner-alpha": "npm:^2.124.0-alpha.0"
+    "@aws-cdk/aws-apprunner-alpha": "npm:2.124.0-alpha.0"
     "@tsconfig/node18": "npm:^18.2.2"
     "@types/lodash": "npm:^4.14.194"
     "@types/node": "npm:^20.5.1"
@@ -8844,7 +8844,7 @@ __metadata:
     hygen: "npm:^6.2.11"
     node-gyp: "npm:^9.4.0"
     prettier: "npm:^3.0.2"
-    sst: "npm:2.40.1"
+    sst: "npm:2.40.5"
     typescript: "npm:^5.1.6"
   languageName: unknown
   linkType: soft
@@ -9237,9 +9237,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sst@npm:2.40.1":
-  version: 2.40.1
-  resolution: "sst@npm:2.40.1"
+"sst@npm:2.40.5":
+  version: 2.40.5
+  resolution: "sst@npm:2.40.5"
   dependencies:
     "@aws-cdk/aws-lambda-python-alpha": "npm:2.124.0-alpha.0"
     "@aws-cdk/cloud-assembly-schema": "npm:2.124.0"
@@ -9315,7 +9315,7 @@ __metadata:
       optional: true
   bin:
     sst: cli/sst.js
-  checksum: c51b7c9c48324ca26f37f62a19f10c24c38a7a0f1a2f9acfe200f202e876d67a389b0eca4f726237bbaf337bf5822c093d17961fd7aa9185bc53f15207ab19be
+  checksum: 8a02ed7945886102cc01c91e7d49c3c24741915973c3927d1381be780683468a3bf95c9e628be651138602f104eff8a8f117cdd45c86d734756bc629ebd96248
   languageName: node
   linkType: hard
 

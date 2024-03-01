@@ -1,6 +1,7 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Duration } from 'aws-cdk-lib';
 import { ConfigOptions } from 'sst/project';
+import { ServiceProps } from 'sst/constructs';
 
 export interface ProtoConfigOptions extends ConfigOptions {
   allowedIps?: string[];
@@ -12,7 +13,7 @@ export interface RedCapConfig extends ProtoConfigOptions {
   redCapLocalVersion?: string; // if specified, refer the local package file
   domain?: string;
   subdomain?: string;
-  hostInRoute53: boolean;
+  hostInRoute53: boolean | string; // if string, this will perform a lookup in Route 53 for the provided domain name. If true, it will create a new Hosted Zone in Route 53.
   email?: string; // used for AWS appRunner notifications and SES if no domain is provided.
   appRunnerConcurrency?: number;
   appRunnerMaxSize?: number;
@@ -27,6 +28,12 @@ export interface RedCapConfig extends ProtoConfigOptions {
   ec2ServerStack?: {
     // an EC2 server running the REDCap docker image, used for long running server requests
     ec2StackDuration: Duration; // after this time, the EC2 stack will be destroyed
+  };
+  ecs?: {
+    //Override AppRunner deployment and use Amazon ECS Fargate
+    memory: ServiceProps['memory'];
+    cpu: ServiceProps['cpu'];
+    scaling: ServiceProps['scaling'];
   };
 }
 

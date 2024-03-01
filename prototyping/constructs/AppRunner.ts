@@ -21,6 +21,7 @@ import {
   aws_events_targets,
   aws_iam,
   aws_sns,
+  cloudformation_include,
 } from 'aws-cdk-lib';
 import {
   CfnAutoScalingConfiguration,
@@ -28,42 +29,57 @@ import {
   CfnService,
 } from 'aws-cdk-lib/aws-apprunner';
 import { Construct } from 'constructs';
+import { getAppRunnerHostedZone } from '../../stacks/Backend/AppRunnerHostedZones';
+import { App, Stack } from 'sst/constructs';
+import {
+  AliasRecordTargetConfig,
+  IAliasRecordTarget,
+  IPublicHostedZone,
+  RecordSet,
+  RecordTarget,
+  RecordType,
+} from 'aws-cdk-lib/aws-route53';
+
+export interface AppRunnerProps {
+  app: App;
+  stack: Stack;
+  domain?: string;
+  subdomain?: string;
+  publicHostedZone?: IPublicHostedZone;
+  instanceRole?: aws_iam.Role;
+  accessRole?: aws_iam.Role;
+  autoDeploymentsEnabled?: boolean;
+  notificationEmail?: string;
+  network: {
+    vpc: aws_ec2.Vpc;
+    subnetType: aws_ec2.SubnetType;
+    securityGroups?: aws_ec2.ISecurityGroup[];
+  };
+  appName: string;
+  service: {
+    config?: {
+      cpu?: Cpu;
+      port?: ImageConfiguration['port'];
+      memory?: Memory;
+      environmentSecrets?: ImageConfiguration['environmentSecrets'];
+      environmentVariables?: ImageConfiguration['environmentVariables'];
+    };
+    image: {
+      repositoryName: string;
+      tag?: string;
+    };
+    healthCheck?: {
+      path?: string;
+    };
+  };
+  scalingConfiguration?: CfnAutoScalingConfigurationProps;
+}
 
 export class AppRunner extends Construct {
   public readonly service;
-  constructor(
-    scope: Construct,
-    id: string,
-    props: {
-      instanceRole?: aws_iam.Role;
-      accessRole?: aws_iam.Role;
-      autoDeploymentsEnabled?: boolean;
-      notificationEmail?: string;
-      network?: {
-        vpc: aws_ec2.Vpc;
-        subnetType: aws_ec2.SubnetType;
-        securityGroups?: aws_ec2.ISecurityGroup[];
-      };
-      appName: string;
-      service: {
-        config?: {
-          cpu?: Cpu;
-          port?: ImageConfiguration['port'];
-          memory?: Memory;
-          environmentSecrets?: ImageConfiguration['environmentSecrets'];
-          environmentVariables?: ImageConfiguration['environmentVariables'];
-        };
-        image: {
-          repositoryName: string;
-          tag?: string;
-        };
-        healthCheck?: {
-          path?: string;
-        };
-      };
-      scalingConfiguration?: CfnAutoScalingConfigurationProps;
-    },
-  ) {
+  public readonly customUrl;
+
+  constructor(scope: Construct, id: string, props: AppRunnerProps) {
     super(scope, id);
 
     // Create VPC Connector
@@ -170,6 +186,48 @@ export class AppRunner extends Construct {
         protocol: aws_sns.SubscriptionProtocol.EMAIL,
         topic: snsTopic,
       });
+    }
+
+    // Workaround to link AppRunner to custom domain
+    if (props.domain && props.publicHostedZone) {
+      const DomainName = props.subdomain ? `${props.subdomain}.${props.domain}` : props.domain;
+      const ARHostedZone = getAppRunnerHostedZone(props.stack.region);
+
+      const customDomainCfn = new cloudformation_include.CfnInclude(
+        this,
+        `${props.app.stage}-${props.app.name}-apprunner-custom-domain`,
+        {
+          templateFile: './prototyping/cfn/AppRunnerCustomDomain.yaml',
+          parameters: {
+            DomainName,
+            AppRunnerHostedZones: getAppRunnerHostedZone(props.stack.region),
+            ServiceUrl: this.service.serviceUrl,
+            ServiceArn: this.service.serviceArn,
+            DNSDomainId: props.publicHostedZone.hostedZoneId,
+          },
+        },
+      );
+
+      if (ARHostedZone) {
+        const record: IAliasRecordTarget = {
+          bind: (): AliasRecordTargetConfig => ({
+            dnsName: this.service.serviceUrl,
+            hostedZoneId: ARHostedZone,
+          }),
+        };
+
+        const recordSet = new RecordSet(this, 'apprunner-arecord-alias', {
+          recordType: RecordType.A,
+          target: RecordTarget.fromAlias(record),
+          zone: props.publicHostedZone,
+          deleteExisting: true,
+        });
+
+        customDomainCfn.node.addDependency(recordSet);
+      }
+
+      customDomainCfn.node.addDependency(this.service);
+      this.customUrl = DomainName;
     }
   }
 }
