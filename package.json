@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "sst dev",
     "build": "sst build",
-    "deploy": "yarn install && sst deploy",
+    "deploy": "sst deploy",
     "removeRoute53NS": "sst remove --stage route53NS",
     "destroy": "npm run removeRoute53NS && sst remove",
     "console": "sst console",
