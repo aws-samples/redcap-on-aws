@@ -56,7 +56,7 @@ JP | [EN](README.md)
 
 デプロイ実行するローカルマシンに Node.jsバージョン、v18.16.1以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
 
-[yarn](https://yarnpkg.com/) >= 4.0.2の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
+[yarn](https://yarnpkg.com/)の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
 
 ```sh
 npm -g install yarn
@@ -153,9 +153,9 @@ stages.tsファイルでhostInRoute53および/またはdomainのオプション
 ```ts
 const prod: RedCapConfig = {
   ...baseOptions,
-  hostInRoute53: true,
+  hostInRoute53: 'acme.com',
   domain: 'acme.com',
-  subdomain: 'redcap',
+  subdomain: 'redcap', // <-- 新しいHosted Zoneの作成 redcap.acme.com
   ...
 ```
 
@@ -191,9 +191,9 @@ const prod: RedCapConfig = {
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: 'acme.com', 
+   hostInRoute53: true,
    domain: 'acme.com',
-   subdomain: 'redcap', // <-- 新しいHosted Zoneの作成
+   subdomain: 'redcap', // <-- 新しいHosted Zoneの作成 redcap.acme.com
    ...
    ```
 

@@ -58,7 +58,7 @@ A registered domain name is highly recommended for this deployment. To see what 
 
 You need to install in your machine Node.js version >= v18.16.1. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
 
-It is recommended to use [yarn](https://yarnpkg.com/) >= 4.0.2, so after installing node, install it by
+It is recommended to use [yarn](https://yarnpkg.com/), so after installing node, install it by
 
 ```sh
 npm -g install yarn
@@ -151,9 +151,9 @@ In this option, your stage config should look like this:
 ```ts
 const prod: RedCapConfig = {
   ...baseOptions,
-  hostInRoute53: true,
+  hostInRoute53: 'acme.com',
   domain: 'acme.com',
-  subdomain: 'redcap',
+  subdomain: 'redcap', // <-- Create a new Hosted Zone named redcap.acme.com
   ...
 ```
 
@@ -189,7 +189,7 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: 'acme.com', 
+   hostInRoute53: true,
    domain: 'acme.com',
    subdomain: 'redcap', // <-- Create a new Hosted Zone named redcap.acme.com
    ...
