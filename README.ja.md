@@ -153,9 +153,9 @@ stages.tsファイルでhostInRoute53および/またはdomainのオプション
 ```ts
 const prod: RedCapConfig = {
   ...baseOptions,
-  hostInRoute53: true,
+  hostInRoute53: 'acme.com',
   domain: 'acme.com',
-  subdomain: 'redcap',
+  subdomain: 'redcap', // <-- 新しいHosted Zoneの作成 redcap.acme.com
   ...
 ```
 
@@ -191,9 +191,9 @@ const prod: RedCapConfig = {
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: 'acme.com', 
+   hostInRoute53: true,
    domain: 'acme.com',
-   subdomain: 'redcap', // <-- 新しいHosted Zoneの作成
+   subdomain: 'redcap', // <-- 新しいHosted Zoneの作成 redcap.acme.com
    ...
    ```
 

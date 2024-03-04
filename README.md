@@ -151,9 +151,9 @@ In this option, your stage config should look like this:
 ```ts
 const prod: RedCapConfig = {
   ...baseOptions,
-  hostInRoute53: true,
+  hostInRoute53: 'acme.com',
   domain: 'acme.com',
-  subdomain: 'redcap',
+  subdomain: 'redcap', // <-- Create a new Hosted Zone named redcap.acme.com
   ...
 ```
 
@@ -189,7 +189,7 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: 'acme.com', 
+   hostInRoute53: true,
    domain: 'acme.com',
    subdomain: 'redcap', // <-- Create a new Hosted Zone named redcap.acme.com
    ...
