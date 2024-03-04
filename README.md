@@ -189,9 +189,9 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: true, // <-- Create a new Hosted Zone.
+   hostInRoute53: 'acme.com', 
    domain: 'acme.com',
-   subdomain: 'redcap'
+   subdomain: 'redcap', // <-- Create a new Hosted Zone named redcap.acme.com
    ...
    ```
 
