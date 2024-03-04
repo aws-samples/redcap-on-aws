@@ -58,7 +58,7 @@ A registered domain name is highly recommended for this deployment. To see what 
 
 You need to install in your machine Node.js version >= v18.16.1. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
 
-It is recommended to use [yarn](https://yarnpkg.com/), so after installing node, install it by
+It is recommended to use [yarn](https://yarnpkg.com/) >= 4.0.2, so after installing node, install it by
 
 ```sh
 npm -g install yarn

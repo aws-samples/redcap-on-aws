@@ -56,7 +56,7 @@ JP | [EN](README.md)
 
 デプロイ実行するローカルマシンに Node.jsバージョン、v18.16.1以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
 
-[yarn](https://yarnpkg.com/)の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
+[yarn](https://yarnpkg.com/) >= 4.0.2の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
 
 ```sh
 npm -g install yarn
