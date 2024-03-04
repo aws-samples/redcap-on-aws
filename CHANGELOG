@@ -2,6 +2,11 @@
 
 # CHANGELOG
 
+## v1.0.2
+
+- Package dependency updates
+- README updates to deploy on AWS Route 53 with subdomains.
+
 ## v1.0.1
 
 - Add support to deploy REDCap instances in `Amazon ECS on AWS Fargate` as an alternative to AWS App Runner. This is for users that require REDCap to execute user request that are longer than 120 seconds.
