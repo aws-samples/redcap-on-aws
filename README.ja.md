@@ -191,9 +191,9 @@ const prod: RedCapConfig = {
    ```ts
    const prod: RedCapConfig = {
    ...baseOptions,
-   hostInRoute53: true, // <-- 新しいHosted Zoneの作成
+   hostInRoute53: 'acme.com', 
    domain: 'acme.com',
-   subdomain: 'redcap'
+   subdomain: 'redcap', // <-- 新しいHosted Zoneの作成
    ...
    ```
 
