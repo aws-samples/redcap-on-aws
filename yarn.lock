@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 6
   cacheKey: 10c0
 
 "@aashutoshrathi/word-wrap@npm:^1.2.3":
@@ -4208,14 +4208,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sst/functions@workspace:packages/functions"
   dependencies:
-    "@aws-sdk/client-codebuild": "npm:^3.525.0"
-    "@aws-sdk/client-iam": "npm:^3.525.0"
-    "@aws-sdk/client-secrets-manager": "npm:^3.525.0"
-    "@aws-sdk/client-sfn": "npm:^3.525.0"
-    "@types/aws-lambda": "npm:^8.10.134"
-    "@types/node": "npm:^20.11.24"
-    deasync: "npm:^0.1.28"
-    sst: "npm:2.40.6"
+    "@aws-sdk/client-codebuild": ^3.525.0
+    "@aws-sdk/client-iam": ^3.525.0
+    "@aws-sdk/client-secrets-manager": ^3.525.0
+    "@aws-sdk/client-sfn": ^3.525.0
+    "@types/aws-lambda": ^8.10.134
+    "@types/node": ^20.11.24
+    deasync: ^0.1.28
+    sst: 2.40.6
   languageName: unknown
   linkType: soft
 
@@ -6431,12 +6431,12 @@ __metadata:
   linkType: hard
 
 "follow-redirects@npm:^1.15.0":
-  version: 1.15.3
-  resolution: "follow-redirects@npm:1.15.3"
+  version: 1.15.6
+  resolution: "follow-redirects@npm:1.15.6"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: 915a2cf22e667bdf47b1a43cc6b7dce14d95039e9bbf9a24d0e739abfbdfa00077dd43c86d4a7a19efefcc7a99af144920a175eedc3888d268af5df67c272ee5
+  checksum: 8/a62c378dfc8c00f60b9c80cab158ba54e99ba0239a5dd7c81245e5a5b39d10f0c35e249c3379eae719ff0285fff88c365dd446fab19dee771f1d76252df1bbf5
   languageName: node
   linkType: hard
 
@@ -6579,18 +6579,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+"fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>":
   version: 2.3.2
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
   dependencies:
     node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
 
-"fsevents@patch:fsevents@npm%3A~2.3.2#optional!builtin<compat/fsevents>":
+"fsevents@patch:fsevents@npm%3A~2.3.2#~builtin<compat/fsevents>":
   version: 2.3.3
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.3#optional!builtin<compat/fsevents>::version=2.3.3&hash=df0bf1"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.3#~builtin<compat/fsevents>::version=2.3.3&hash=df0bf1"
   dependencies:
     node-gyp: "npm:latest"
   conditions: os=darwin
@@ -8827,23 +8827,23 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "redcap-on-aws@workspace:."
   dependencies:
-    "@aws-cdk/aws-apprunner-alpha": "npm:2.124.0-alpha.0"
-    "@tsconfig/node18": "npm:^18.2.2"
-    "@types/lodash": "npm:^4.14.202"
-    "@types/node": "npm:^20.11.24"
-    "@typescript-eslint/eslint-plugin": "npm:^5.10.0"
-    "@typescript-eslint/parser": "npm:^5.10.0"
-    aws-cdk-lib: "npm:2.124.0"
-    cdk-nag: "npm:^2.28.53"
-    constructs: "npm:10.3.0"
-    csv-parse: "npm:^5.5.5"
-    eslint: "npm:^8.10.0"
-    eslint-config-prettier: "npm:^9.0.0"
-    hygen: "npm:^6.2.11"
-    node-gyp: "npm:^9.4.0"
-    prettier: "npm:^3.0.2"
-    sst: "npm:2.40.6"
-    typescript: "npm:^5.1.6"
+    "@aws-cdk/aws-apprunner-alpha": 2.124.0-alpha.0
+    "@tsconfig/node18": ^18.2.2
+    "@types/lodash": ^4.14.202
+    "@types/node": ^20.11.24
+    "@typescript-eslint/eslint-plugin": ^5.10.0
+    "@typescript-eslint/parser": ^5.10.0
+    aws-cdk-lib: 2.124.0
+    cdk-nag: ^2.28.53
+    constructs: 10.3.0
+    csv-parse: ^5.5.5
+    eslint: ^8.10.0
+    eslint-config-prettier: ^9.0.0
+    hygen: ^6.2.11
+    node-gyp: ^9.4.0
+    prettier: ^3.0.2
+    sst: 2.40.6
+    typescript: ^5.1.6
   languageName: unknown
   linkType: soft
 
@@ -9634,13 +9634,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.1.6#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@^5.1.6#~builtin<compat/typescript>":
   version: 5.2.2
-  resolution: "typescript@patch:typescript@npm%3A5.2.2#optional!builtin<compat/typescript>::version=5.2.2&hash=f3b441"
+  resolution: "typescript@patch:typescript@npm%3A5.2.2#~builtin<compat/typescript>::version=5.2.2&hash=f3b441"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 062c1cee1990e6b9419ce8a55162b8dc917eb87f807e4de0327dbc1c2fa4e5f61bc0dd4e034d38ff541d1ed0479b53bcee8e4de3a4075c51a1724eb6216cb6f5
+  checksum: 8/0f4da2f15e6f1245e49db15801dbee52f2bbfb267e1c39225afdab5afee1a72839cd86000e65ee9d7e4dfaff12239d28beaf5ee431357fcced15fb08583d72ca
   languageName: node
   linkType: hard
 
