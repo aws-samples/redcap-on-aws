@@ -2,6 +2,12 @@
 
 # CHANGELOG
 
+## v1.0.4
+
+- Package dependency updates
+- Fix the usage of Amazon Aurora READ replica
+- Update documentation regarding database replica
+
 ## v1.0.3
 
 - Ensure REDCap database settings update when S3 IAM user is updated/changed
