@@ -7,15 +7,15 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.134",
+    "@types/aws-lambda": "^8.10.137",
     "@types/node": "^20.11.24",
-    "sst": "2.40.6"
+    "sst": "2.41.5"
   },
   "dependencies": {
-    "@aws-sdk/client-codebuild": "^3.525.0",
-    "@aws-sdk/client-iam": "^3.525.0",
-    "@aws-sdk/client-secrets-manager": "^3.525.0",
-    "@aws-sdk/client-sfn": "^3.525.0",
+    "@aws-sdk/client-codebuild": "^3.572.0",
+    "@aws-sdk/client-iam": "^3.572.0",
+    "@aws-sdk/client-secrets-manager": "^3.572.0",
+    "@aws-sdk/client-sfn": "^3.572.0",
     "deasync": "^0.1.28"
   }
 }
