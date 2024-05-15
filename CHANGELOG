@@ -2,6 +2,11 @@
 
 # CHANGELOG
 
+## v1.0.5
+
+- Bug fixes when creating a new deployment with replica enabled
+- Update documentation regarding dev env.
+
 ## v1.0.4
 
 - Package dependency updates
