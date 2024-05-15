@@ -8,12 +8,6 @@ JP | [EN](../en/devenv.md)
 
 ## 本番環境とのアーキテクチャの違い
 
-### Database
-
-1. 開発環境ではAurora Serverless v1、本番環境ではv2を使用します。MySQLのバージョンに関しても、v1ではMySQL 5.7、v2ではMySQL 8.0という違いがあります。REDCapは両バージョンと互換性はありますが、パフォーマンスなどのいくつかの違いが見られます。
-2. 開発環境のデータベースはData API経由でアクセス可能です。これは、Aurora Serverless v1のみで利用できる特別な機能で、REDCapデータベースに簡単にクエリを実行できます。
-3. Aurora Serverless v2をデプロイした場合のみ、リードレプリカの設定が可能です。
-
 ### SST Console
 
 [SST](https://docs.sst.dev/learn) はCDKで動作するフレームワークです。`development`利用時は、ご自身のAWS環境ににデプロイされたリソースに接続されたウェブアプリケーションであるSST Consoleにアクセスできます。SST ConsoleからREDCapデータベースへのクエリやREDCapの新しいバージョンのデプロイ(Lambda経由)やテストが可能です。
