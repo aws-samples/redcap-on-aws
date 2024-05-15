@@ -41,17 +41,6 @@ else
     echo "include '/usr/local/share/redcap/redcap_connect_base.php';" >>/var/www/html/database.php
 fi
 
-if [ ! -z "$READ_REPLICA_HOSTNAME" ]; then
-    echo "- Using replica"
-    echo "include '/usr/local/share/redcap/redcap_connect_replica.php';" >>/var/www/html/database.php
-    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
-        UPDATE IGNORE redcap_config SET value = '1' WHERE field_name = 'read_replica_enable';
-    "
-    REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v") 
-    # Disable the lag check as this does not apply to Amazon RDS Aurora Serverless V2
-    sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
-fi
-
 # EMAIL Setting for REDCap
 if [ -z "$SES_USERNAME" ]; then
     echo "Credentials not set, smtp will not be configured"
@@ -78,6 +67,18 @@ if [ -f "/var/www/html/install.php" ]; then
     echo " - Executing install.php"
     cd /var/www/html
     php -r '$_GET["auto"]=1; $_GET["sql"]=1 ; $_SERVER["REQUEST_METHOD"] = "POST"; $_SERVER["PHP_SELF"]= "install.php"; require_once("install.php");'
+fi
+
+# REDCap replica config for Aurora serverless V2
+if [ ! -z "$READ_REPLICA_HOSTNAME" ]; then
+    echo "- Using replica"
+    echo "include '/usr/local/share/redcap/redcap_connect_replica.php';" >>/var/www/html/database.php
+    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
+        UPDATE IGNORE redcap_config SET value = '1' WHERE field_name = 'read_replica_enable';
+    "
+    REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v") 
+    # Disable the lag check as this does not apply to Amazon RDS Aurora Serverless V2
+    sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
 fi
 
 DB_S3_SECRET_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_secret'")
