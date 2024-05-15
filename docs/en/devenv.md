@@ -8,12 +8,6 @@ This environment has a few differences when is deployed.
 
 ## Architecture differences vs production
 
-### Database
-
-1. The database is Aurora Serverless V1 vs V2 in production. The version is also different MySQL 5.7 vs MySQL 8.0. Although, REDCap is compatible with both some differences can happen, specially on performance.
-2. The database is accessible via Data API in the development environment. This is a special feature only available on Aurora Serverless V1 that gives you easy access to query the REDCap database.
-3. The database does contain read-replica configuration (only available while deploying V2)
-
 ### SST Console
 
 [SST](https://docs.sst.dev/learn) is a framework that works with CDK. While using `development` mode, you can access the SST console that is a webapp connected to your AWS deployed resources for this environment. From here, you can query your REDCap's database, deploy new versions of REDCap (via lambda functions) and testing.
