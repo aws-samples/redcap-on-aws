@@ -37,10 +37,10 @@ const { createHmac } = await import('node:crypto');
 
 export function Backend({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
-  const { dbSecret, dbAllowedSg, readReplicaHostname, auroraClusterV2 } = use(Database);
+  const { dbAllowedSg, auroraClusterV2 } = use(Database);
   const repository = use(BuildImage);
 
-  if (!dbSecret) {
+  if (!auroraClusterV2.aurora.secret) {
     throw new Error('No database secret found');
   }
 
@@ -141,16 +141,21 @@ export function Backend({ stack, app }: StackContext) {
 
   const environmentVariables = {
     S3_BUCKET: redcapApplicationBucket.bucketName,
-    READ_REPLICA_HOSTNAME: readReplicaHostname || '',
     USE_IAM_DB_AUTH: 'true',
-    DB_SECRET_NAME: dbSecret.secretName,
+    DB_SECRET_NAME: auroraClusterV2.aurora.secret.secretName,
     SMTP_EMAIL: email,
-    DB_SECRET_ID: dbSecret.secretArn,
+    DB_SECRET_ID: auroraClusterV2.aurora.secret.secretArn,
     DB_SALT_SECRET_ID: dbSalt.secretArn,
     SES_CREDENTIALS_SECRET_ID: ses.sesUserCredentials.secretArn,
     S3_SECRET_ID: redCapS3AccessUser.secret.secretArn,
     PHP_TIMEZONE: phpTimezone || 'UTC',
   };
+
+  if (auroraClusterV2 && auroraClusterV2.aurora.clusterReadEndpoint.hostname) {
+    assign(environmentVariables, {
+      READ_REPLICA_HOSTNAME: auroraClusterV2.aurora.clusterReadEndpoint.hostname,
+    });
+  }
 
   const service = new RedcapService(stack, app, {
     databaseCluster: auroraClusterV2.aurora,
@@ -160,7 +165,7 @@ export function Backend({ stack, app }: StackContext) {
     waf,
     secrets: {
       dbSalt,
-      dbSecret,
+      dbSecret: auroraClusterV2.aurora.secret,
       redCapS3AccessUser,
       ses,
     },

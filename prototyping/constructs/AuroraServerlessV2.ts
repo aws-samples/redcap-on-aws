@@ -4,13 +4,15 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { isEmpty } from 'lodash';
+import { isEmpty, isNumber } from 'lodash';
 
 import { Duration, RemovalPolicy, Stack, aws_ec2, aws_iam, aws_logs, aws_rds } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 
 import { Construct } from 'constructs';
 import { Config } from 'sst/constructs';
+import { IClusterInstance } from 'aws-cdk-lib/aws-rds';
+import { NagSuppressions } from 'cdk-nag';
 
 type ScalingConfiguration = {
   minCapacityAcu?: number;
@@ -31,6 +33,8 @@ type AuroraProps = {
   parameterGroupParameters?: aws_rds.ParameterGroupProps['parameters'];
   disableKeyRotation?: boolean;
   rotateSecretAfterDays?: Duration;
+  readers?: number;
+  snapshotIdentifier?: string;
 };
 
 type RdsV2Engines = {
@@ -47,7 +51,6 @@ export class AuroraServerlessV2 extends Construct {
   public readonly aurora: aws_rds.DatabaseCluster;
   public readonly proxyRole: aws_iam.Role | undefined;
   public readonly proxy: aws_rds.DatabaseProxy | undefined;
-  public readonly databaseCredentials: aws_rds.Credentials;
   private props: AuroraProps | undefined;
   private parameterGroup: aws_rds.ParameterGroup | undefined;
 
@@ -66,12 +69,6 @@ export class AuroraServerlessV2 extends Construct {
       throw new Error('You should speficy the isolated subnets in subnets');
     }
 
-    // Auto-generated secret
-    this.databaseCredentials = aws_rds.Credentials.fromGeneratedSecret(
-      props.dbUserName || 'dbadmin',
-      {},
-    );
-
     // Create parameter group if there's no parameter group in props
     if (props.parameterGroupParameters) {
       this.parameterGroup = new aws_rds.ParameterGroup(this, 'AuroraV2ParameterGroup', {
@@ -80,8 +77,31 @@ export class AuroraServerlessV2 extends Construct {
       });
     }
 
-    // Create Aurora Cluster
-    this.aurora = new aws_rds.DatabaseCluster(this, 'ServerlessAuroraDatabase', {
+    let readers: Array<IClusterInstance> | undefined = [
+      aws_rds.ClusterInstance.serverlessV2('ReaderClusterInstance1', {
+        autoMinorVersionUpgrade: true,
+        publiclyAccessible: false,
+        caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
+      }),
+    ];
+
+    if (isNumber(props.readers))
+      if (props.readers > 0) {
+        readers = [];
+        for (let index = 1; index <= props.readers; index++) {
+          readers.push(
+            aws_rds.ClusterInstance.serverlessV2(`ReaderClusterInstance${index}`, {
+              autoMinorVersionUpgrade: true,
+              publiclyAccessible: false,
+              caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
+            }),
+          );
+        }
+      } else if (props.readers === 0) {
+        readers = undefined;
+      }
+
+    let databaseProps: aws_rds.DatabaseClusterProps | aws_rds.DatabaseClusterFromSnapshotProps = {
       vpc: props.vpc,
       vpcSubnets: {
         subnets: props.vpc.isolatedSubnets,
@@ -97,13 +117,7 @@ export class AuroraServerlessV2 extends Construct {
         publiclyAccessible: false,
         caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
       }),
-      readers: [
-        aws_rds.ClusterInstance.serverlessV2('ReaderClusterInstance1', {
-          autoMinorVersionUpgrade: true,
-          publiclyAccessible: false,
-          caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
-        }),
-      ],
+      readers,
       serverlessV2MinCapacity: props.scaling.minCapacityAcu || 0.5,
       serverlessV2MaxCapacity: props.scaling.maxCapacityAcu || 2,
       backup: {
@@ -111,13 +125,45 @@ export class AuroraServerlessV2 extends Construct {
           ? Duration.days(props.backupRetentionInDays)
           : Duration.days(30),
       },
-
-      credentials: this.databaseCredentials,
+      credentials: aws_rds.Credentials.fromGeneratedSecret(props.dbUserName || 'dbadmin', {}),
       backtrackWindow: Duration.hours(24),
       parameterGroup: this.parameterGroup,
       storageEncrypted: true,
       removalPolicy: props.removalPolicy ? props.removalPolicy : RemovalPolicy.SNAPSHOT,
-    });
+    };
+
+    // Create Aurora Cluster
+    if (props.snapshotIdentifier) {
+      console.info(`\nAurora serverless: Deploying from snapshot: ${props.snapshotIdentifier}\n`);
+
+      databaseProps = {
+        ...databaseProps,
+        credentials: undefined,
+        snapshotIdentifier: props.snapshotIdentifier,
+        snapshotCredentials: aws_rds.SnapshotCredentials.fromGeneratedSecret(
+          props.dbUserName || 'dbadmin',
+        ),
+      };
+
+      this.aurora = new aws_rds.DatabaseClusterFromSnapshot(
+        this,
+        'ServerlessAuroraDatabase',
+        databaseProps,
+      );
+
+      NagSuppressions.addResourceSuppressions(
+        this.aurora,
+        [
+          {
+            id: 'AwsSolutions-SMG4',
+            reason: 'Restored from a snapshot with password re-generated',
+          },
+        ],
+        true,
+      );
+    } else {
+      this.aurora = new aws_rds.DatabaseCluster(this, 'ServerlessAuroraDatabase', databaseProps);
+    }
 
     // Secret Rotation
     if (!props.disableKeyRotation)

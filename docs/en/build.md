@@ -48,3 +48,5 @@ Run the command which is outputted as `UpdateDeploymentCommand` after deployment
    UpdateDeploymentCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
    ...
 ```
+
+**NOTE**: If you are running in the `dev` environment, e.g `sst dev ...`, make sure this command is running before executing the aws lambda invoke.

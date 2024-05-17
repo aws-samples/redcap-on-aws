@@ -78,29 +78,31 @@ cp stages.sample.ts stages.ts
 
 各プロパティは以下の通りで、デプロイの設定が可能です。
 
-| プロパティ名         | 説明                                                                                                                                                                                                                                                             | Type    | Default                                               |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------- |
-| name                 | デプロイする環境ごとに付与する名前です。                                                                                                                                                                                                                         | String  | \* ユーザー定義                                       |
-| profile              | AWS アカウントのプロファイルです。`~/.aws/config`に記載されているものを指定します。                                                                                                                                                                              | String  | \* ユーザー定義                                       |
-| region               | Stack をデプロイする際に用いる AWS リージョンを指定します。                                                                                                                                                                                                      | String  | AWS config setting                                    |
-| allowedIps           | REDCap アプリケーションに対して、アクセス元の IP を制限する場合、ここで許可する IP アドレスのリストを設定します。                                                                                                                                                | Array   | `['']`                                                |
-| redCapLocalVersion   | デプロイする REDCap のバージョンを指定します。`packages/REDCap`ディレクトリに、`redcap${redCapLocalVersion}.zip`の形でファイルを配置する必要があります。下記の`redCapS3Path`プロパティを設定している場合、設定できません。                                       | String  | `undefined`(`redCapS3Path`が設定されている場合)       |
-| redCapS3Path         | デプロイする REDCap のバージョンを指定します。あらかじめ、S3 上に zip 形式で REDCap アプリケーションをアップロードし、`${S3BucketName}/${S3ObjectKey}`の形でファイルの位置を指定します。上記の`redCapLocalVersion`プロパティを設定している場合、設定できません。 | String  | `undefined`(`redCapLocalVersion`が設定されている場合) |
-| domain               | REDCap アプリケーションをホストする際に用いるドメイン名を指定します。                                                                                                                                                                                            | String  | `undefined`                                           |
-| subdomain            | REDCap アプリケーションをホストする際に用いるサブドメインを指定します。                                                                                                                                                                                          | String  | `undefined`                                           |
+| プロパティ名             | 説明                                                                                                                                                                                                                                                             | Type              | Default                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------- |
+| name                     | デプロイする環境ごとに付与する名前です。                                                                                                                                                                                                                         | String            | \* ユーザー定義                                       |
+| profile                  | AWS アカウントのプロファイルです。`~/.aws/config`に記載されているものを指定します。                                                                                                                                                                              | String            | \* ユーザー定義                                       |
+| region                   | Stack をデプロイする際に用いる AWS リージョンを指定します。                                                                                                                                                                                                      | String            | AWS config setting                                    |
+| allowedIps               | REDCap アプリケーションに対して、アクセス元の IP を制限する場合、ここで許可する IP アドレスのリストを設定します。                                                                                                                                                | Array             | `['']`                                                |
+| redCapLocalVersion       | デプロイする REDCap のバージョンを指定します。`packages/REDCap`ディレクトリに、`redcap${redCapLocalVersion}.zip`の形でファイルを配置する必要があります。下記の`redCapS3Path`プロパティを設定している場合、設定できません。                                       | String            | `undefined`(`redCapS3Path`が設定されている場合)       |
+| redCapS3Path             | デプロイする REDCap のバージョンを指定します。あらかじめ、S3 上に zip 形式で REDCap アプリケーションをアップロードし、`${S3BucketName}/${S3ObjectKey}`の形でファイルの位置を指定します。上記の`redCapLocalVersion`プロパティを設定している場合、設定できません。 | String            | `undefined`(`redCapLocalVersion`が設定されている場合) |
+| domain                   | REDCap アプリケーションをホストする際に用いるドメイン名を指定します。                                                                                                                                                                                            | String            | `undefined`                                           |
+| subdomain                | REDCap アプリケーションをホストする際に用いるサブドメインを指定します。                                                                                                                                                                                          | String            | `undefined`                                           |
 | hostInRoute53 [1]        | ドメイン/サブドメインを Route53 に登録し、簡単に App Runner と SES のドメイン検証を行えるようにします。                                                                                                                                                          | Boolean or String | `true`                                                |
-| email [2]                | App Runner サービスステータスに関するメール通知を受け取るメールアドレスを指定します。また、ドメインが指定されていない場合、このメールアドレスを使って認証を行います。                                                                                            | String  | `undefined`                                           |
-| appRunnerConcurrency [3] | REDCap アプリケーションを動かす App Runner について、1 つのインスタンスが処理するリクエスト数の閾値を設定します。この値を超えると、インスタンスは自動で水平スケールします。                                                                                      | Number  | 10 (\*\*)                                             |
-| appRunnerMaxSize     | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の上限を設定します。                                                                                                                                                                  | Number  | 2                                                     |
-| appRunnerMinSize     | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の下限を設定します。                                                                                                                                                                  | Number  | 1                                                     |
-| cronSecret           | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String  | 'mysecret'                                            |
-| cpu                  | インスタンスあたりの vCPU 数を指定します。                                                                                                                                                                                                                       | Cpu     | `Cpu.TWO_VCPU`                                        |
-| memory               | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory  | `Memory.FOUR_GB`                                      |
-| phpTimezone          | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String  | `UTC`                                                 |
-| port                 | App Runnerで使用されるポート番号です。                                                                                                                                                                                                                           | String  | `UTC`                                                 |
-| rebuildImage [4]         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean | `false`                                               |
-| ec2ServerStack [5]       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object  | `undefined`                                           |
-| ecs [6] | Amazon ECS on AWS FargateをAWS App Runnerの代わりに使用するための設定 | Object | `undefined` |
+| email [2]                | App Runner サービスステータスに関するメール通知を受け取るメールアドレスを指定します。また、ドメインが指定されていない場合、このメールアドレスを使って認証を行います。                                                                                            | String            | `undefined`                                           |
+| appRunnerConcurrency [3] | REDCap アプリケーションを動かす App Runner について、1 つのインスタンスが処理するリクエスト数の閾値を設定します。この値を超えると、インスタンスは自動で水平スケールします。                                                                                      | Number            | 10 (\*\*)                                             |
+| appRunnerMaxSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の上限を設定します。                                                                                                                                                                  | Number            | 2                                                     |
+| appRunnerMinSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の下限を設定します。                                                                                                                                                                  | Number            | 1                                                     |
+| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 'mysecret'                                            |
+| cpu                      | インスタンスあたりの vCPU 数を指定します。                                                                                                                                                                                                                       | Cpu               | `Cpu.TWO_VCPU`                                        |
+| memory                   | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory            | `Memory.FOUR_GB`                                      |
+| phpTimezone              | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String            | `UTC`                                                 |
+| port                     | App Runnerで使用されるポート番号です。                                                                                                                                                                                                                           | String            | `UTC`                                                 |
+| rebuildImage [4]         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean           | `false`                                               |
+| ec2ServerStack [5]       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object            | `undefined`                                           |
+| ecs [6]                  | Amazon ECS on AWS FargateをAWS App Runnerの代わりに使用するための設定                                                                                                                                                                                            | Object            | `undefined`                                           |
+| dbReaders                | データベース読み取り専用インスタンスの数                                                                                                                                                                                                                         | Number            | `undefined`                                           |
+| dbSnapshotId             | 新しいデータベース クラスターを作成するためのデータベース スナップショット                                                                                                                                                                                       | String            | `undefined`                                           |
 
 [1] `hostInRoute53` は必須の値です。既存のAmazon Route 53でホストされているゾーンを使用するには、ここにドメイン名を指定してください。 `domain` の設定値を使用して新しいホストゾーンを作成するには `true` を指定してください。Amazon Route 53を全く使用しない場合は `false` を指定してください。`hostInRoute53` を使用すると、このプロジェクトがドメインでAmazon SESを自動的に設定し、SSL接続用の証明書も作成できます。それ以外の場合は、SES、App Runner、証明書が必要なその他の接続を独自のDNSプロバイダーで手動で検証する必要があります。
 
@@ -247,9 +249,9 @@ const prod: RedCapConfig = {
 
 3. App Runnerドメインのリンク、SESドメインIDの設定、必要に応じてECS ALBのAレコードの作成をドメインのAWSアカウントで行ってください。
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.3 外部DNSプロバイダーを使用する
 
@@ -302,9 +304,9 @@ const prod: RedCapConfig = {
 
 3. App Runnerドメインのリンク、SESドメインIDの設定、必要に応じてECS ALBのAレコードの作成をDNSプロバイダーで行ってください。
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.4 登録済みのドメインをお持ちでない場合
 
@@ -398,11 +400,11 @@ AWS CodeBuildにより新しいDockerイメージをビルドし、新しいイ�
 
 AWS AppRunner には 120 秒のリクエストタイムアウトがあります。これは、 REDCap のインポート/エクスポートなどの一部の操作に対しては十分でない場合があります。この制限を克服するために、一時的なEC2サーバーと、ALB + ECSの二つのデプロイオプションを用意しています。
 
-| Use case / Deployment                     | EC2 Server                    | App Runner | ECS               |
-| ----------------------------------------- | ----------------------------- | ---------- | ----------------- |
+| Use case / Deployment                   | EC2 Server               | App Runner | ECS               |
+| --------------------------------------- | ------------------------ | ---------- | ----------------- |
 | 大規模データのインポート                | OK (AWSの認証情報が必要) | X          | OK (4000秒の制限) |
-| 通常利用                               | X                             | OK         | OK                |
-| 120秒以上のリクエストが発生する通常利用 | X                             | X          | OK (4000秒の制限) |
+| 通常利用                                | X                        | OK         | OK                |
+| 120秒以上のリクエストが発生する通常利用 | X                        | X          | OK (4000秒の制限) |
 
 ### 1. EC2 Server stack
 
@@ -482,6 +484,41 @@ const stag: RedCapConfig = {
 ```
 
 重要: まず開発環境で変更をテストしてください。AWS App Runnerを使用してこのプロジェクトを以前にデプロイした場合、AWS App Runnerのリソースのみが破棄されます。これにはデータストレージのAmazon S3バケットやデータベースは含まれません。この変更には最大20分かかる場合があります。
+
+---
+
+## データベース スナップショットからのデプロイまたは復元
+
+### スナップショットからの新規インストールのデプロイ
+
+stages.ts に、値としてスナップショット名を指定したパラメーター `dbSnapshotId` を追加し、デプロイします。
+
+```ts
+const テスト: RedCapConfig = {
+   ...ベースオプション、
+   // ...より多くのオプション
+   dbSnapshotId: 'redcap-dev', // スナップショット名。
+};
+```
+
+これにより、新しいデータベース クラスターが作成され、既存のデータベース クラスターが削除されます。
+
+### スナップショットから既存のデータベース クラスターを更新する
+
+1. `dbSnapshotId` を使用して、stages.ts を編集します。
+
+     ```ts
+     const テスト: RedCapConfig = {
+       ...ベースオプション、
+       // ...より多くのオプション
+       dbSnapshotId: 'redcap-dev', // スナップショット名。
+     };
+
+     ```
+
+2. まず、AWS コンソールから「バックエンド」スタックを削除する必要があります。 たとえば、相互参照の問題を回避するための「mystage-REDCap-Backend」。
+
+3. アプリケーションをデプロイします。 これにより、データベース スタックが更新され、バックエンド スタックが再デプロイされます。
 
 ---
 

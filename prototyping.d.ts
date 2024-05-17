@@ -35,6 +35,9 @@ export interface RedCapConfig extends ProtoConfigOptions {
     cpu: ServiceProps['cpu'];
     scaling: ServiceProps['scaling'];
   };
+  // The number of additional aurora readers, by deafault 1 reader is added. Use 0 to use single writer/reader
+  dbReaders?: number;
+  dbSnapshotId?: string;
 }
 
 interface DomainAppConfig {

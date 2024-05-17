@@ -5,22 +5,26 @@
  */
 
 import { Duration, aws_ec2 } from 'aws-cdk-lib';
-import { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { StackContext, use } from 'sst/constructs';
 import { Suppressions } from '../prototyping/cdkNag/Suppressions';
 import { AuroraServerlessV2 } from '../prototyping/constructs/AuroraServerlessV2';
 import { Network } from './Network';
+import { get } from 'lodash';
+
+import * as stage from '../stages';
 
 export function Database({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
 
   let auroraClusterV2;
-  let dbSecret: ISecret | undefined;
 
   const dbAllowedSg = new aws_ec2.SecurityGroup(stack, `${app.stage}-${app.name}-apprunner-db-sg`, {
     vpc: networkVpc.vpc,
     allowAllOutbound: true,
   });
+
+  const readers = get(stage, [stack.stage, 'dbReaders'], undefined);
+  const snapshotIdentifier = get(stage, [stack.stage, 'dbSnapshotId'], undefined);
 
   auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
     engine: 'mysql8.0',
@@ -36,16 +40,15 @@ export function Database({ stack, app }: StackContext) {
     parameterGroupParameters: {
       max_allowed_packet: '4194304',
     },
+    readers,
+    snapshotIdentifier,
   });
 
   stack.exportValue(auroraClusterV2.aurora.clusterResourceIdentifier);
   stack.exportValue(auroraClusterV2.aurora.connections.securityGroups[0].securityGroupId);
 
-  dbSecret = auroraClusterV2.aurora.secret;
-
   auroraClusterV2?.aurora.connections.allowDefaultPortFrom(dbAllowedSg);
   Suppressions.RDSV2Suppressions(auroraClusterV2);
 
-  const readReplicaHostname = auroraClusterV2?.aurora.clusterReadEndpoint.hostname;
-  return { dbSecret, dbAllowedSg, readReplicaHostname, auroraClusterV2 };
+  return { dbAllowedSg, auroraClusterV2 };
 }

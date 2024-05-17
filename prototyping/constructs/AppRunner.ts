@@ -121,7 +121,7 @@ export class AppRunner extends Construct {
     // Create App Runner service
     this.service = new Service(this, 'apprunner-service', {
       source: Source.fromEcr({
-        imageConfiguration: { ...props.service.config },
+        imageConfiguration: props.service.config,
         repository: ecr.Repository.fromRepositoryName(
           this,
           `${props.appName}-reponame`,
