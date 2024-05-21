@@ -502,7 +502,7 @@ const test: RedCapConfig = {
 };
 ```
 
-This will create a new database cluster and deleting the existing one.
+This will create a new database cluster and delete the existing one.
 
 ---
 
