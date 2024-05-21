@@ -492,8 +492,6 @@ const stag: RedCapConfig = {
 
 ## Deploy or restore from a database snapshot
 
-### Deploy a fresh install from snapshot
-
 In your stages.ts add the parameter `dbSnapshotId` with the snapshot name as value and deploy.
 
 ```ts
@@ -505,23 +503,6 @@ const test: RedCapConfig = {
 ```
 
 This will create a new database cluster and deleting the existing one.
-
-### Update a existing database cluster from a snapshot
-
-1. Edit your stages.ts with the `dbSnapshotId`
-
-    ```ts
-    const test: RedCapConfig = {
-      ...baseOptions,
-      // ...more options
-      dbSnapshotId: 'redcap-dev', // Snapshot name.
-    };
-
-    ```
-
-2. You must first delete the `Backend` stack from the AWS Console. e.g `mystage-REDCap-Backend` to avoid cross-reference problems.
-
-3. Deploy your application. This will update the database stack and re-deploy the backend stack.
 
 ---
 
