@@ -147,7 +147,7 @@ export class AuroraServerlessV2 extends Construct {
 
       this.aurora = new aws_rds.DatabaseClusterFromSnapshot(
         this,
-        'ServerlessAuroraDatabase',
+        'ServerlessAuroraDatabaseFromSnapshot',
         databaseProps,
       );
 
