@@ -14,6 +14,8 @@ import { Config } from 'sst/constructs';
 import { IClusterInstance } from 'aws-cdk-lib/aws-rds';
 import { NagSuppressions } from 'cdk-nag';
 
+import { createHash } from 'crypto';
+
 type ScalingConfiguration = {
   minCapacityAcu?: number;
   maxCapacityAcu?: number;
@@ -147,7 +149,7 @@ export class AuroraServerlessV2 extends Construct {
 
       this.aurora = new aws_rds.DatabaseClusterFromSnapshot(
         this,
-        'ServerlessAuroraDatabaseFromSnapshot',
+        `ServerlessAuroraDatabaseFromSnapshot-${createHash('sha1').update(props.snapshotIdentifier).digest('hex')}`,
         databaseProps,
       );
 
