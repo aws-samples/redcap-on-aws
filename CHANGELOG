@@ -7,6 +7,7 @@
 - Allow database deployment with zero or more readers.
 - Allow database deployment from snapshot Id.
 - Upgrade to SST 2.42.0.
+- Fixed an issue that always executed the initial database settings.
 
 ## v1.0.5
 

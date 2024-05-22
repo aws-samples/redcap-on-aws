@@ -58,7 +58,7 @@ export function EC2Server({ stack, app }: StackContext) {
   const repository = use(BuildImage);
   const { networkVpc } = use(Network);
   const { dbSalt, s3UserCredentials, sesUserCredentials, environmentVariables } = use(Backend);
-  const { dbSecret, dbAllowedSg, auroraClusterV2 } = use(Database);
+  const { dbAllowedSg, auroraClusterV2 } = use(Database);
 
   const userData = UserData.forLinux({ shebang: '#!/bin/bash' });
 
@@ -112,7 +112,7 @@ export function EC2Server({ stack, app }: StackContext) {
   });
 
   // Allow secrets read for EC2 instance
-  dbSecret?.grantRead(ec2ServerInstance.role);
+  auroraClusterV2.aurora.secret?.grantRead(ec2ServerInstance.role);
   dbSalt.grantRead(ec2ServerInstance.role);
   s3UserCredentials.grantRead(ec2ServerInstance.role);
   sesUserCredentials.grantRead(ec2ServerInstance.role);
