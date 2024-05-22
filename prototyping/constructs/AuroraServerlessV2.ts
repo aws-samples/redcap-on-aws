@@ -158,7 +158,8 @@ export class AuroraServerlessV2 extends Construct {
         [
           {
             id: 'AwsSolutions-SMG4',
-            reason: 'Restored from a snapshot with password re-generated',
+            reason:
+              'Related to https://github.com/aws/aws-cdk/issues/28761 that creates an additional secret.',
           },
         ],
         true,
