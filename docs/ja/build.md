@@ -47,3 +47,5 @@ aws --version
    UpdateDeploymentCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
    ...
 ```
+
+**注**: `dev` 環境 (例: `sst dev ...`) で実行している場合は、AWS lambda 呼び出しを実行する前にコマンドが実行されていることを確認してください。

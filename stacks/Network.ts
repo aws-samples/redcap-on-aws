@@ -25,6 +25,5 @@ export function Network({ stack, app }: StackContext) {
 
   networkVpc.vpc.publicSubnets.forEach((publicSubnet) => stack.exportValue(publicSubnet.subnetId));
   Suppressions.NetworkVpcSuppressions(networkVpc);
-
   return { networkVpc };
 }

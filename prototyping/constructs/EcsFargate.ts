@@ -22,13 +22,7 @@ import {
   CfnListener,
   SslPolicy,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import {
-  ARecord,
-  CnameRecord,
-  IPublicHostedZone,
-  PublicHostedZone,
-  RecordTarget,
-} from 'aws-cdk-lib/aws-route53';
+import { ARecord, IPublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import { NagSuppressions } from 'cdk-nag';

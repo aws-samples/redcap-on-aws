@@ -89,7 +89,7 @@ Each property described below allows you to configure your deployment.
 | redCapLocalVersion       | Specify the version of REDCap you want to deploy. You need to place files named as `redcap${redCapLocalVersion}.zip` in `packages/REDCap`. If `redCapS3Path` below is set, it cannot be set.                                                          | String            | `undefined`, if redCapS3Path is set       |
 | redCapS3Path             | Specify the version of REDCap you want to deploy. First, upload the REDCap application in zip format to S3 and specify the location of the file in the form `${s3BucketName}/${s3ObjectKey}`. If `redCapLocalVersion` above is set, it cannot be set. | String            | `undefined`, if redCapLocalVersion is set |
 | domain                   | Your DNS name to use in your REDCap installation.                                                                                                                                                                                                     | String            | `undefined`                               |
-| subdomain                | Subdomain where your REDCap service is, e.g. redcap.mydomain.com                                                                                                                                                                                       | String            | `undefined`                               |
+| subdomain                | Subdomain where your REDCap service is, e.g. redcap.mydomain.com                                                                                                                                                                                      | String            | `undefined`                               |
 | hostInRoute53 [1]        | Enables the provided domain/subdomain to be registered in Route53 to allow easy enablement of SES and App Runner domain validations                                                                                                                   | Boolean or String | `true`                                    |
 | email [2]                | Sets and enable email notification from App Runner service status and used to validate this email identity if a domain is not provided in the stage                                                                                                   | String            | `undefined`                               |
 | appRunnerConcurrency [3] | The number of requests that a single REDCap instance can process. When the value is exceeded, it will trigger the auto-scaling.                                                                                                                       | Number            | 10                                        |
@@ -103,6 +103,8 @@ Each property described below allows you to configure your deployment.
 | rebuildImage [4]         | Whether to rebuild the REDCap Docker Image each time it is deployed                                                                                                                                                                                   | Boolean           | `false`                                   |
 | ec2ServerStack [5]       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object            | `undefined`                               |
 | ecs [6]                  | Configuration to use Amazon ECS on AWS Fargate instead of AWS App Runner                                                                                                                                                                              | Object            | `undefined`                               |
+| dbReaders                | Number of database read only instances                                                                                                                                                                                                                | Number            | `undefined`                               |
+| dbSnapshotId             | Database snapshot to create a new database cluster                                                                                                                                                                                                    | String            | `undefined`                               |
 
 - [1] `hostInRoute53`: is a required value. To use an existing Hosted Zone in Amazon Route 53, provide the domain name here. Use `true` to create a new Hosted Zone with the configured `domain` value. Use `false` to not use Amazon Route 53 at all. Using `hostInRoute53` allows this project to automatically configure Amazon SES with the domain and also create certificates for SSL connections. Otherwise, validate SES, App Runner, or any connection that requires a certificate manually with your own DNS provider.
 
@@ -485,6 +487,22 @@ const stag: RedCapConfig = {
 ```
 
 **Important:** Test you change in a development environment first. If you have previously deployed this project using AWS App Runner and choose to use Amazon ECS, only the AWS App Runner resources will be destroyed, this does not include Amazon S3 buckets for data storage or database. This only change can take up to 20 minutes to complete.
+
+---
+
+## Deploy or restore from a database snapshot
+
+In your stages.ts add the parameter `dbSnapshotId` with the snapshot name as value and deploy.
+
+```ts
+const test: RedCapConfig = {
+  ...baseOptions,
+  // ...more options
+  dbSnapshotId: 'redcap-dev', // Snapshot name.
+};
+```
+
+This will create a new database cluster and delete the existing one.
 
 ---
 

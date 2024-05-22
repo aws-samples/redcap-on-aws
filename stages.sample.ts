@@ -17,6 +17,7 @@ const dev: RedCapConfig = {
   cronSecret: 'mysecret',
   email: 'email@mydomain.com',
   port: 8080,
+  dbReaders: 0, // disable readers for dev envs
   // Uncomment to use ECS as backend instead of appRunner
   // ecs: {
   //   memory: '4 GB',
