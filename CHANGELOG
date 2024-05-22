@@ -2,6 +2,12 @@
 
 # CHANGELOG
 
+## v1.0.6
+
+- Allow database deployment with zero or more readers.
+- Allow database deployment from snapshot Id.
+- Upgrade to SST 2.42.0.
+
 ## v1.0.5
 
 - Bug fixes when creating a new deployment with replica enabled
