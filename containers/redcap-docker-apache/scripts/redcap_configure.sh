@@ -81,9 +81,9 @@ if [ ! -z "$READ_REPLICA_HOSTNAME" ]; then
     sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
 fi
 
-DB_S3_SECRET_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_secret'")
+DB_S3_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
 
-if [ "$DB_S3_SECRET_ACCESS_KEY" = "$S3_SECRET_ACCESS_KEY" ]; then
+if [ "$DB_S3_ACCESS_KEY" = "$S3_ACCESS_KEY" ]; then
     echo '- REDCap initial settings already configured, skipping'
 else
     # REDCap SQL Initialization Configuration
