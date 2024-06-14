@@ -83,7 +83,7 @@ export class AuroraServerlessV2 extends Construct {
       aws_rds.ClusterInstance.serverlessV2('ReaderClusterInstance1', {
         autoMinorVersionUpgrade: true,
         publiclyAccessible: false,
-        caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
+        caCertificate: aws_rds.CaCertificate.RDS_CA_RSA2048_G1,
       }),
     ];
 
@@ -95,7 +95,7 @@ export class AuroraServerlessV2 extends Construct {
             aws_rds.ClusterInstance.serverlessV2(`ReaderClusterInstance${index}`, {
               autoMinorVersionUpgrade: true,
               publiclyAccessible: false,
-              caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
+              caCertificate: aws_rds.CaCertificate.RDS_CA_RSA2048_G1,
             }),
           );
         }
@@ -117,7 +117,7 @@ export class AuroraServerlessV2 extends Construct {
       writer: aws_rds.ClusterInstance.serverlessV2('WriterClusterInstance', {
         autoMinorVersionUpgrade: true,
         publiclyAccessible: false,
-        caCertificate: aws_rds.CaCertificate.RDS_CA_RDS2048_G1,
+        caCertificate: aws_rds.CaCertificate.RDS_CA_RSA2048_G1,
       }),
       readers,
       serverlessV2MinCapacity: props.scaling.minCapacityAcu || 0.5,
