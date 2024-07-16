@@ -1,10 +1,11 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Duration } from 'aws-cdk-lib';
-import { ConfigOptions } from 'sst/project';
 import { ServiceProps } from 'sst/constructs';
+import { ConfigOptions } from 'sst/project';
 
 export interface ProtoConfigOptions extends ConfigOptions {
   allowedIps?: string[];
+  allowedCountries?: string[]; // WAF allowed country list,  ISO 3166-2.
 }
 
 export interface RedCapConfig extends ProtoConfigOptions {
@@ -38,6 +39,8 @@ export interface RedCapConfig extends ProtoConfigOptions {
   // The number of additional aurora readers, by deafault 1 reader is added. Use 0 to use single writer/reader
   dbReaders?: number;
   dbSnapshotId?: string;
+  generalLogRetention?: ServiceProps['logRetention']; // Optional general log retention period for <ecs fargate, aurora rds, vpc>
+  bounceNotificationEmail?: string;
 }
 
 interface DomainAppConfig {

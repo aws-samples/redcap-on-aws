@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/php:8.1-apache
+FROM public.ecr.aws/docker/library/php:8.2-apache
 
 ARG PORT
 ARG LANG_S3_URI

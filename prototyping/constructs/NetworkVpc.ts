@@ -36,19 +36,21 @@ export class NetworkVpc extends Construct {
       vpcEndpoints?: Array<InterfaceVpcEndpointAwsService>;
       vpcEndpointS3?: boolean;
       vpcEndpointDynamoDb?: boolean;
+      logRetention?: Lowercase<keyof typeof RetentionDays>;
     },
   ) {
     super(scope, id);
 
-    // Vpc logging - 60 days
+    const logRetention = props.logRetention || 'TWO_MONTHS';
+
+    // Vpc logging
     const cwLogs = new LogGroup(this, 'vpc-logs', {
       logGroupName: `/${id}/vpc-logs/`,
-      retention: RetentionDays.TWO_MONTHS,
+      retention: RetentionDays[logRetention.toUpperCase() as keyof typeof RetentionDays],
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
     // configure subnets following props value
-
     const subnetConfiguration: VpcProps['subnetConfiguration'] = [];
 
     if (props.publicSubnet) {
@@ -132,7 +134,6 @@ export class NetworkVpc extends Construct {
     });
 
     // Vpc endpoints for s3 and dynamodb
-
     if (props.vpcEndpointDynamoDb)
       this.vpc.addGatewayEndpoint('DynamoDbEndpoint', {
         service: aws_ec2.GatewayVpcEndpointAwsService.DYNAMODB,

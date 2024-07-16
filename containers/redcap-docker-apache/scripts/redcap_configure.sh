@@ -83,6 +83,9 @@ fi
 
 DB_S3_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
 
+# Force new database configuration
+# DB_S3_ACCESS_KEY='key'
+
 if [ "$DB_S3_ACCESS_KEY" = "$S3_ACCESS_KEY" ]; then
     echo '- REDCap initial settings already configured, skipping'
 else
@@ -97,7 +100,11 @@ else
     fi
 
     echo ' - Configuring REDCap DB settings...'
-    sed -i "s|\\APPLICATION_BUCKET_NAME|$S3_BUCKET|g; s|\\REDCAP_IAM_USER_ACCESS_KEY|${S3_ACCESS_KEY//\//\\/}|g; s|\\REDCAP_IAM_USER_SECRET|${S3_SECRET_ACCESS_KEY//\//\\/}|g; s|\\REGION|$AWS_REGION|g;" $REDCAP_CONFIG_SQL
+    ESCAPED_S3_SECRET_ACCESS_KEY=$(printf '%s\n' "$S3_SECRET_ACCESS_KEY" | sed -e 's/[\/&]/\\&/g')
+    sed -i "s/APPLICATION_BUCKET_NAME/$S3_BUCKET/g" $REDCAP_CONFIG_SQL
+    sed -i "s/REDCAP_IAM_USER_ACCESS_KEY/$S3_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
+    sed -i "s/REDCAP_IAM_USER_SECRET/$ESCAPED_S3_SECRET_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
+    sed -i "s/REGION/$AWS_REGION/g" $REDCAP_CONFIG_SQL
     mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D redcap --password=${RDS_PASSWORD} <$REDCAP_CONFIG_SQL
     echo ' - Done'
 fi

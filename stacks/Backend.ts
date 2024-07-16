@@ -8,7 +8,7 @@ import * as stage from '../stages';
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Fn, RemovalPolicy, aws_secretsmanager } from 'aws-cdk-lib';
-import { assign, get, isEmpty } from 'lodash';
+import { assign, get, isEmpty, without } from 'lodash';
 
 // SST
 import { Bucket, StackContext, use } from 'sst/constructs';
@@ -25,13 +25,13 @@ import {
   SimpleEmailServiceProps,
 } from '../prototyping/constructs/SimpleEmailService';
 import { Waf } from '../prototyping/constructs/Waf';
-import { getRedcapCronRuleIpFilter, getRedcapCronRuleNoIpFilter } from './Backend/WafRuleForCron';
+import { getRedcapCronRule, getCountryLimitRule } from './Backend/WafExtraRules';
 
 // Nag suppressions
 import { Suppressions } from '../prototyping/cdkNag/Suppressions';
 import { bucketProps } from '../prototyping/overrides/BucketProps';
-import { RedcapService } from './Backend/RedCapService';
 import { DomainConfiguration } from './Backend/DomainConfiguration';
+import { RedcapService } from './Backend/RedCapService';
 
 const { createHmac } = await import('node:crypto');
 
@@ -51,10 +51,13 @@ export function Backend({ stack, app }: StackContext) {
   const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
   const cronSecret = get(stage, [stack.stage, 'cronSecret'], 'mysecret');
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
+  const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
   const email = get(stage, [stack.stage, 'email']);
+  const bounceNotificationEmail = get(stage, [stack.stage, 'bounceNotificationEmail']);
   const port = get(stage, [stack.stage, 'port']);
   const tag = get(stage, [stack.stage, 'deployTag'], 'latest');
+  const generalLogRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
 
   // IAM user and group to access AWS S3 service (file system)
   const redCapS3AccessUser = new RedCapAwsAccessUser(stack, `${app.stage}-${app.name}-s3-access`, {
@@ -75,6 +78,7 @@ export function Backend({ stack, app }: StackContext) {
     user: redCapSESAccessUser.user,
     group: redCapSESAccessUser.userGroup,
     transformCredentials: redCapSESAccessUser.secret,
+    bounceNotificationEmail: bounceNotificationEmail,
   };
 
   const domainConfig = new DomainConfiguration({
@@ -125,18 +129,23 @@ export function Backend({ stack, app }: StackContext) {
 
   redcapApplicationBucket.cdk.bucket.grantReadWrite(redCapS3AccessUser.userGroup);
 
-  // WAF and rules for /cron.php
+  // AWS WAF: CRON SHARED SECRET
   const searchString = createHmac('sha256', cronSecret)
     .update(cronSecret.split('').reverse().join(''))
     .digest('hex');
 
-  const { redcapCronRule } = isEmpty(allowedIps)
-    ? getRedcapCronRuleNoIpFilter(searchString, 10)
-    : getRedcapCronRuleIpFilter(searchString, 10);
+  // AWS WAF: CRON RULE
+  const extraRules = [getRedcapCronRule(searchString, 20)];
+
+  // AWS WAF: COUNTRY ALLOW IF IN LIST
+  if (!isEmpty(allowedCountries)) {
+    const countryRules = getCountryLimitRule(allowedCountries, 10);
+    if (countryRules) extraRules.push(countryRules);
+  }
 
   const waf = new Waf(stack, `${app.stage}-${app.name}-appwaf`, {
     allowedIps,
-    extraRules: [redcapCronRule],
+    extraRules,
   });
 
   const environmentVariables = {
@@ -172,6 +181,7 @@ export function Backend({ stack, app }: StackContext) {
     environmentVariables,
     vpc: networkVpc.vpc,
     servicePort: port,
+    logRetention: generalLogRetention,
     repository,
     searchString,
   });

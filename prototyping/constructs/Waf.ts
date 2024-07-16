@@ -58,10 +58,10 @@ export class Waf extends Construct {
 let wafRules: WafRule[] = [
   // Rate Filter
   {
-    name: 'web-rate-filter',
+    name: 'rate-filter',
     rule: {
-      name: 'web-rate-filter',
-      priority: 100,
+      name: 'rate-filter',
+      priority: 30,
       statement: {
         rateBasedStatement: {
           limit: 3000,
@@ -74,7 +74,7 @@ let wafRules: WafRule[] = [
       visibilityConfig: {
         sampledRequestsEnabled: true,
         cloudWatchMetricsEnabled: true,
-        metricName: 'web-rate-filter',
+        metricName: 'rate-filter',
       },
     },
   },
@@ -187,17 +187,42 @@ export class WAF extends wafv2.CfnWebACL {
     }
     if (ipset) {
       wafRules.push({
-        name: 'custom-web-ipfilter',
+        name: 'ip-filter',
         rule: {
-          name: 'custom-web-ipfilter',
-          priority: 600,
+          name: 'ip-filter',
+          priority: 40,
           statement: {
-            notStatement: {
-              statement: {
-                ipSetReferenceStatement: {
-                  arn: ipset.attrArn,
+            andStatement: {
+              statements: [
+                {
+                  notStatement: {
+                    statement: {
+                      ipSetReferenceStatement: {
+                        arn: ipset.attrArn,
+                      },
+                    },
+                  },
                 },
-              },
+                {
+                  notStatement: {
+                    statement: {
+                      byteMatchStatement: {
+                        searchString: 'cron.php',
+                        fieldToMatch: {
+                          uriPath: {},
+                        },
+                        textTransformations: [
+                          {
+                            priority: 0,
+                            type: 'NONE',
+                          },
+                        ],
+                        positionalConstraint: 'ENDS_WITH',
+                      },
+                    },
+                  },
+                },
+              ],
             },
           },
           action: {
@@ -211,7 +236,7 @@ export class WAF extends wafv2.CfnWebACL {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'custom-web-ipfilter',
+            metricName: 'ip-filter',
           },
         },
       });

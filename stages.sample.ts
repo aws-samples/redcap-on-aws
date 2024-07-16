@@ -1,12 +1,13 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Duration } from 'aws-cdk-lib';
-import { DomainAppsConfig, RedCapConfig } from './prototyping';
+import { DomainAppsConfig, ProtoConfigOptions, RedCapConfig } from './prototyping';
 
-const baseOptions = {
+const baseOptions: ProtoConfigOptions = {
   name: 'REDCap',
   profile: 'your_aws_profile',
   region: 'ap-northeast-1',
   allowedIps: ['192.0.3.0/24'],
+  allowedCountries: ['JP'], //(ISO) 3166
 };
 
 const dev: RedCapConfig = {
@@ -47,6 +48,7 @@ const prod: RedCapConfig = {
   ec2ServerStack: {
     ec2StackDuration: Duration.hours(3),
   },
+  bounceNotificationEmail: 'email+bounce@mydomain.com',
 };
 
 const stag: RedCapConfig = {

@@ -25,6 +25,7 @@ export function Database({ stack, app }: StackContext) {
 
   const readers = get(stage, [stack.stage, 'dbReaders'], undefined);
   const snapshotIdentifier = get(stage, [stack.stage, 'dbSnapshotId'], undefined);
+  const generalLogRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
 
   auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
     engine: 'mysql8.0',
@@ -36,6 +37,7 @@ export function Database({ stack, app }: StackContext) {
       maxCapacityAcu: 8,
     },
     enabledProxy: false,
+    logRetention: generalLogRetention,
     rotateSecretAfterDays: Duration.days(120),
     parameterGroupParameters: {
       max_allowed_packet: '4194304',

@@ -39,6 +39,8 @@ export function BuildImage({ stack, app }: StackContext) {
   // Use local redcap file as deployment
   const redCapLocalVersion = get(stage, [stack.stage, 'redCapLocalVersion']);
 
+  const generalLogRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
+
   // Use a remote S3 location to deploy redcap
   let redCapS3Path = get(stage, [stack.stage, 'redCapS3Path']);
   let redcapTag = get(stage, [stack.stage, 'deployTag'], Helpers.extractRedCapTag(redCapS3Path));
@@ -163,6 +165,7 @@ export function BuildImage({ stack, app }: StackContext) {
     handler: 'packages/functions/src/startProjectBuild.handler',
     name: 'redcap-build',
     rebuild: rebuild,
+    logRetention: generalLogRetention,
     executeAfter: [codeBuild],
     executeBefore: [],
   });

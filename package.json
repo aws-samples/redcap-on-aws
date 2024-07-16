@@ -17,9 +17,9 @@
     "gen": "hygen"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.2",
-    "@types/lodash": "^4.17.1",
-    "@types/node": "^20.11.24",
+    "@tsconfig/node18": "^18.2.4",
+    "@types/lodash": "^4.17.6",
+    "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "aws-cdk-lib": "2.142.1",
@@ -28,16 +28,16 @@
     "eslint-config-prettier": "^9.1.0",
     "hygen": "^6.2.11",
     "prettier": "^3.3.2",
-    "sst": "2.43.1",
+    "sst": "2.43.3",
     "typescript": "^5.1.6"
   },
   "workspaces": [
     "packages/*"
   ],
   "dependencies": {
-    "@aws-cdk/aws-apprunner-alpha": "2.142.1-alpha.0",
+    "@aws-cdk/aws-apprunner-alpha": "2.148.0-alpha.0",
     "cdk-nag": "^2.28.112",
     "csv-parse": "^5.5.6",
-    "node-gyp": "^9.4.0"
+    "node-gyp": "^9.4.1"
   }
 }

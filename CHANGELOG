@@ -2,6 +2,14 @@
 
 # CHANGELOG
 
+## v1.0.7
+
+- Docker base image upgraded to php8.2
+- Upgrade packages sst 2.43.3 and other dependencies
+- Add `allowedCountries` for AWS WAF to limit access by country in `stages.ts`, e.g.`allowedCountries: ['JP']`
+- Add `generalLogRetention` for general retention period configuration in `stage.ts` for Amazon ECS Fargate, Amazon Aurora RDS, Amazon VPC logs and AWS Lambda, e.g `generalLogRetention: 'one_year'`,
+- Add `bounceNotificationEmail` stage config to receive bounce notifications from Amazon SES.
+
 ## v1.0.6
 
 - Allow database deployment with zero or more readers.
