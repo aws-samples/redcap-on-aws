@@ -48,6 +48,7 @@ export class RedcapService {
       repository: Repository;
       environmentVariables: Record<string, string>;
       searchString: string;
+      logRetention?: ServiceProps['logRetention']; //Only for ECS, AppRunner has no logRetention setting
     },
   ) {
     this.common = common;
@@ -127,6 +128,7 @@ export class RedcapService {
         subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
         servicePort: this.common.servicePort || 8080,
       },
+      logRetention: this.common.logRetention,
       cpu: config.cpu || '2 vCPU',
       memory: config.memory || '4 GB',
       scaling: config.scaling,

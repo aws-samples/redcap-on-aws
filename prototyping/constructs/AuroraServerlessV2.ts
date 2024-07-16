@@ -6,13 +6,14 @@
 
 import { isEmpty, isNumber } from 'lodash';
 
-import { Duration, RemovalPolicy, Stack, aws_ec2, aws_iam, aws_logs, aws_rds } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack, aws_ec2, aws_iam, aws_rds } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 
 import { Construct } from 'constructs';
 import { Config } from 'sst/constructs';
 import { IClusterInstance } from 'aws-cdk-lib/aws-rds';
 import { NagSuppressions } from 'cdk-nag';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 import { createHash } from 'crypto';
 
@@ -37,6 +38,7 @@ type AuroraProps = {
   rotateSecretAfterDays?: Duration;
   readers?: number;
   snapshotIdentifier?: string;
+  logRetention?: Lowercase<keyof typeof RetentionDays>;
 };
 
 type RdsV2Engines = {
@@ -103,6 +105,7 @@ export class AuroraServerlessV2 extends Construct {
         readers = undefined;
       }
 
+    const logRetention = props.logRetention || 'ONE_YEAR';
     let databaseProps: aws_rds.DatabaseClusterProps | aws_rds.DatabaseClusterFromSnapshotProps = {
       vpc: props.vpc,
       vpcSubnets: {
@@ -112,7 +115,8 @@ export class AuroraServerlessV2 extends Construct {
       cloudwatchLogsExports:
         props.engine === 'mysql8.0' ? ['error', 'general', 'slowquery', 'audit'] : ['postgresql'], // Export all available MySQL-based logs
       defaultDatabaseName: props.defaultDatabaseName || 'sampleDB',
-      cloudwatchLogsRetention: aws_logs.RetentionDays.ONE_YEAR,
+      cloudwatchLogsRetention:
+        RetentionDays[logRetention.toUpperCase() as keyof typeof RetentionDays],
       iamAuthentication: true,
       writer: aws_rds.ClusterInstance.serverlessV2('WriterClusterInstance', {
         autoMinorVersionUpgrade: true,

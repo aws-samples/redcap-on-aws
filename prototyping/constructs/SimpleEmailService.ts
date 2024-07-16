@@ -7,10 +7,19 @@
 import { Duration, RemovalPolicy, aws_iam, aws_secretsmanager, triggers } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
-import { EmailIdentity, Identity } from 'aws-cdk-lib/aws-ses';
+import {
+  ConfigurationSet,
+  EmailIdentity,
+  EmailSendingEvent,
+  EventDestination,
+  Identity,
+} from 'aws-cdk-lib/aws-ses';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 
 import { Construct } from 'constructs';
 import { Function } from 'sst/constructs';
+import { Suppressions } from '../cdkNag/Suppressions';
 
 export interface SimpleEmailServiceProps {
   group?: aws_iam.Group;
@@ -27,6 +36,7 @@ export interface SimpleEmailServiceProps {
   domain?: string;
   subdomain?: string;
   email?: string;
+  bounceNotificationEmail?: string;
 }
 
 export class SimpleEmailService extends Construct {
@@ -46,6 +56,24 @@ export class SimpleEmailService extends Construct {
       throw new Error('SES can be configured with one public hosted zone, domain or email');
     }
 
+    let configSet: ConfigurationSet | undefined = undefined;
+
+    if (props.bounceNotificationEmail) {
+      const bounceTopic = new Topic(this, 'BounceTopic', {
+        topicName: `${id}-bounce-notifications`,
+      });
+
+      bounceTopic.addSubscription(new EmailSubscription(props.bounceNotificationEmail));
+
+      configSet = new ConfigurationSet(this, 'configSet', {});
+      configSet.addEventDestination('bounceSns', {
+        destination: EventDestination.snsTopic(bounceTopic),
+        events: [EmailSendingEvent.BOUNCE],
+      });
+
+      Suppressions.SimpleEmailServiceSuppressions(bounceTopic);
+    }
+
     // create Identity
     if (props.publicHostedZone) {
       identity = Identity.publicHostedZone(props.publicHostedZone);
@@ -57,16 +85,18 @@ export class SimpleEmailService extends Construct {
     } else if (props.email) {
       new EmailIdentity(this, `${id}-identity`, {
         identity: Identity.email(props.email),
+        configurationSet: configSet,
       });
     }
 
-    if (identity)
+    if (identity) {
       new EmailIdentity(this, `${id}-identity`, {
         identity,
         mailFromDomain,
+        configurationSet: configSet,
       });
+    }
 
-    // grant redcap user send e-mail
     const user = props.user;
 
     const policy = new aws_iam.Policy(this, 'user-policy', {

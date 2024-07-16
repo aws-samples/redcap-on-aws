@@ -15,14 +15,15 @@ import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 import { Instance } from 'aws-cdk-lib/aws-ec2';
 import { IHostedZone } from 'aws-cdk-lib/aws-route53';
+import { ITopic } from 'aws-cdk-lib/aws-sns';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { AppRunner } from '../constructs/AppRunner';
 import { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
 import { CodeBuildProject } from '../constructs/CodeBuildProject';
+import { EcsFargate } from '../constructs/EcsFargate';
 import { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
 import { SimpleEmailService } from '../constructs/SimpleEmailService';
 import { Waf } from '../constructs/Waf';
-import { EcsFargate } from '../constructs/EcsFargate';
 
 export class Suppressions {
   static ECSSuppressions(service: EcsFargate) {
@@ -276,9 +277,8 @@ export class Suppressions {
   }
 
   static NetworkVpcSuppressions(networkVpc: Construct) {
-    NagSuppressions.addStackSuppressions(
-      Stack.of(networkVpc),
-      [
+    try {
+      NagSuppressions.addStackSuppressions(Stack.of(networkVpc), [
         {
           id: 'AwsSolutions-IAM4',
           reason: 'Related to custom handler self-policy deployed by cdk (flowlogs)',
@@ -292,9 +292,12 @@ export class Suppressions {
           id: 'CdkNagValidationFailure',
           reason: 'TODO: SG created by by privatelink ',
         },
-      ],
-      true,
-    );
+        {
+          id: 'AwsSolutions-EC23',
+          reason: 'TODO: SG created by by privatelink ',
+        },
+      ]);
+    } catch (e) {}
   }
 
   static DBSecretSalt(secret: Secret) {
@@ -414,28 +417,24 @@ export class Suppressions {
   static BuildImageSuppressions(project: CodeBuildProject, app: App) {
     const stack = Stack.of(project);
     try {
-      NagSuppressions.addStackSuppressions(
-        stack,
-        [
-          {
-            id: 'AwsSolutions-IAM4',
-            reason: 'Custom handler service role',
-          },
-          {
-            id: 'AwsSolutions-CB3',
-            reason: 'Priviledge mode to build docker image',
-          },
-          {
-            id: 'AwsSolutions-L1',
-            reason: 'Custom resource lambda version',
-          },
-          {
-            id: 'AwsSolutions-IAM5',
-            reason: 'need to grant to get all assets under specific bucket',
-          },
-        ],
-        true,
-      );
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'Custom handler service role',
+        },
+        {
+          id: 'AwsSolutions-CB3',
+          reason: 'Priviledge mode to build docker image',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'Custom resource lambda version',
+        },
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Xray and ec2 policies',
+        },
+      ]);
     } catch (e) {}
   }
 
@@ -509,6 +508,21 @@ export class Suppressions {
         ],
         true,
       );
+    } catch (e) {}
+  }
+
+  static SimpleEmailServiceSuppressions(snsTopic: ITopic) {
+    try {
+      NagSuppressions.addResourceSuppressions(snsTopic, [
+        {
+          id: 'AwsSolutions-SNS2',
+          reason: 'SES bounce, no encryption',
+        },
+        {
+          id: 'AwsSolutions-SNS3',
+          reason: 'SES bounce, no encryption',
+        },
+      ]);
     } catch (e) {}
   }
 }

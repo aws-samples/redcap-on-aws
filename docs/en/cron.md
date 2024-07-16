@@ -42,8 +42,6 @@ const rule = new aws_events.Rule(stack, 'redcap-cron', {
 
 ## About WAF and filtered Ips
 
-You can setup WAF with filtered IPs limiting access to your REDCap setup. However, we need to allow access to Amazon EventBridge to always access the URL <https://your_domain.com/cron.php> from public access (it's not possible to determine the IP of the EventBridge call). The AWS WAF rules implementation for this is here [WafRuleForCron.ts](../../stacks/Backend/WafRuleForCron.ts)
+You can setup WAF with filtered IPs limiting access to your REDCap setup. However, we need to allow access to Amazon EventBridge to always access the URL <https://your_domain.com/cron.php> from public access (it's not possible to determine the IP of the EventBridge call). The AWS WAF rule implementation for this is here [WafExtraRules.ts](../../stacks/Backend/WafExtraRules.ts)
 
-In practice, the cron.php endpoint is always public, even with filtered IPs enabled, but with protected via the WAF rule access for EventBridge via a shared secret. If an Internet user tries to execute this endpoint, WAF will validate the secret parameter and deny the request to the service. This is also in place to prevent a potential DoS attack.
-
-The secret is auto-generated and updated every time you execute a deploy.
+In practice, the cron.php endpoint is protected in AWS WAF with a shared secret in EventBridge. If an Internet user tries to execute this endpoint, WAF will validate the secret parameter and deny the request to the service. This is also in place to prevent a potential DoS attack. The secret value is auto-generated and updated every time you execute a deploy.

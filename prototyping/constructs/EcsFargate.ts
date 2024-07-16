@@ -41,6 +41,7 @@ export interface EcsFargateProps {
   cpu?: ServiceProps['cpu'];
   memory?: ServiceProps['memory'];
   scaling?: ServiceProps['scaling'];
+  logRetention?: ServiceProps['logRetention'];
   network: {
     vpc: aws_ec2.Vpc;
     subnetType: aws_ec2.SubnetType;
@@ -128,7 +129,7 @@ export class EcsFargate extends Construct {
       cpu: props.cpu ?? '2 vCPU',
       memory: props.memory ?? '4 GB',
       scaling: props.scaling,
-      logRetention: 'two_years',
+      logRetention: props.logRetention ?? 'two_years',
       dev: {
         deploy: true,
       },

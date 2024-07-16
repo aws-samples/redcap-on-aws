@@ -44,7 +44,7 @@ const rule = new aws_events.Rule(stack, 'redcap-cron', {
 
 ## WAFとIPフィルタリング
 
-WAFの設定によりREDCapアクセスを特定のIPのみにフィルタリングできます。しかし、Amazon EventBridgeが常に外部から<https://your_domain.com/cron.php>のURLにアクセスできるようにアクセス許可が必要です(EventBridgeのIPを特定はできません)。そのため、AWS WAFのルールを[WafRuleForCron.ts](../../stacks/Backend/WafRuleForCron.ts)のように実装しています。
+WAFの設定によりREDCapアクセスを特定のIPのみにフィルタリングできます。しかし、Amazon EventBridgeが常に外部から<https://your_domain.com/cron.php>のURLにアクセスできるようにアクセス許可が必要です(EventBridgeのIPを特定はできません)。そのため、AWS WAFのルールを[WafExtraRules.ts](../../stacks/Backend/WafExtraRules.ts)のように実装しています。
 
 実際、`cron.php`エンドポイントは、たとえIPフィルタリングを有効化していても常に公開されていますが、共有シークレットを介したEventBridgeアクセスのWAFルールにより保護されています。仮にインターネットのユーザーがこのエンドポイントを実行した場合、WAFがシークレットパラメータを検証し、リクエストを拒否します。また、この設定は、潜在的なDoS攻撃を防ぐ観点でも設定しています。
 

@@ -2,6 +2,14 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## v1.0.7
+
+- Docker ベースイメージを php8.2 にアップグレードしました
+- パッケージ sst 2.43.3 およびその他の依存関係をアップグレードしました
+- AWS WAF の `allowedCountries` を追加して、`stages.ts` で国別にアクセスを制限できるようにしました (例: `allowedCountries: ['JP']`)
+- `stage.ts` に、Amazon ECS Fargate、Amazon Aurora RDS、Amazon VPC ログ、AWS Lambda でのログの保持期間を一括で設定するための`generalLogRetention` を追加しました(例: `generalLogRetention: 'one_year'`)
+- `stages.ts` に Amazon SES からバウンス通知を受信するための`bounceNotificationEmail` 設定を追加しました
+
 ## v1.0.6
 
 - データベースは 0 個以上のリーダーを使用して展開できます。

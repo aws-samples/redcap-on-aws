@@ -11,11 +11,13 @@ import { Duration, RemovalPolicy, triggers } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 interface LambdaTriggerProps {
   handler: string;
   name: string;
   rebuild: boolean;
+  logRetention?: Lowercase<keyof typeof RetentionDays>;
   executeBefore?: Construct[];
   executeAfter?: Construct[];
 }
@@ -49,6 +51,7 @@ export class CodeBuildProject extends Construct {
     const buildJobFunc = new Function(this, `${props.name}-lambda-trigger`, {
       handler: props.handler,
       timeout: '15 minutes',
+      logRetention: props.logRetention || 'one_year',
       environment,
     });
 

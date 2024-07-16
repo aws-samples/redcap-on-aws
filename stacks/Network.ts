@@ -8,6 +8,9 @@ import { InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
 import { StackContext } from 'sst/constructs';
 import { Suppressions } from '../prototyping/cdkNag/Suppressions';
 import { NetworkVpc } from '../prototyping/constructs/NetworkVpc';
+import { get } from 'lodash';
+
+import * as stage from '../stages';
 
 export function Network({ stack, app }: StackContext) {
   const iface = InterfaceVpcEndpointAwsService;
@@ -18,9 +21,9 @@ export function Network({ stack, app }: StackContext) {
     isolatedSubnet: true,
     natSubnet: true,
     vpcEndpoints: [iface.SECRETS_MANAGER],
-    vpcEndpointDynamoDb: false,
     vpcEndpointS3: true,
     maxAzs: 2,
+    logRetention: get(stage, [stack.stage, 'generalLogRetention'], undefined),
   });
 
   networkVpc.vpc.publicSubnets.forEach((publicSubnet) => stack.exportValue(publicSubnet.subnetId));
