@@ -46,13 +46,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-cdk/aws-apprunner-alpha@npm:2.148.0-alpha.0":
-  version: 2.148.0-alpha.0
-  resolution: "@aws-cdk/aws-apprunner-alpha@npm:2.148.0-alpha.0"
+"@aws-cdk/aws-apprunner-alpha@npm:2.142.1-alpha.0":
+  version: 2.142.1-alpha.0
+  resolution: "@aws-cdk/aws-apprunner-alpha@npm:2.142.1-alpha.0"
   peerDependencies:
-    aws-cdk-lib: ^2.148.0
+    aws-cdk-lib: ^2.142.1
     constructs: ^10.0.0
-  checksum: 10c0/98e56f9034e45204368199c47fecdddfead43c2df5e28f3836a18ee69642574aae6dc5d8edbd3076b63f16fccb454ad57fa9d2e2a13674f54330f91e4f684bfc
+  checksum: 10c0/9b3ab294f3a52e87ba1a9e70ed080aa310d739631016d2282cfc666df0df445d4ba03981c6b123dedf87745b23c1a317b96f826cd29d763cb6dd7b2ccccbeace
   languageName: node
   linkType: hard
 
@@ -4139,7 +4139,7 @@ __metadata:
     "@types/aws-lambda": "npm:^8.10.140"
     "@types/node": "npm:^20.14.10"
     deasync: "npm:^0.1.30"
-    sst: "npm:2.43.3"
+    sst: "npm:2.43.6"
   languageName: unknown
   linkType: soft
 
@@ -8873,7 +8873,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "redcap-on-aws@workspace:."
   dependencies:
-    "@aws-cdk/aws-apprunner-alpha": "npm:2.148.0-alpha.0"
+    "@aws-cdk/aws-apprunner-alpha": "npm:2.142.1-alpha.0"
     "@tsconfig/node18": "npm:^18.2.4"
     "@types/lodash": "npm:^4.17.6"
     "@types/node": "npm:^20.14.10"
@@ -8888,7 +8888,7 @@ __metadata:
     hygen: "npm:^6.2.11"
     node-gyp: "npm:^9.4.1"
     prettier: "npm:^3.3.2"
-    sst: "npm:2.43.3"
+    sst: "npm:2.43.6"
     typescript: "npm:^5.1.6"
   languageName: unknown
   linkType: soft
@@ -9310,9 +9310,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sst@npm:2.43.3":
-  version: 2.43.3
-  resolution: "sst@npm:2.43.3"
+"sst@npm:2.43.6":
+  version: 2.43.6
+  resolution: "sst@npm:2.43.6"
   dependencies:
     "@aws-cdk/aws-lambda-python-alpha": "npm:2.142.1-alpha.0"
     "@aws-cdk/cloud-assembly-schema": "npm:2.142.1"
@@ -9388,7 +9388,7 @@ __metadata:
       optional: true
   bin:
     sst: cli/sst.js
-  checksum: 10c0/bd1db31be8047664ebcec2a414db6dcb3b359cd7807554554b1f65eb7b4854558b148cbff673b2de17d8e5e97433828ee5ab94d8752b97afc88141ada160b2c8
+  checksum: 10c0/36d54c8579ec749a971be1ea92ec64c1b4c798e9e5f8d372cb6b5bdd3760c18e47309d6d9522b0fa23142ec7b312d1204908cd9ee9885c86c03d7d873c308090
   languageName: node
   linkType: hard
 

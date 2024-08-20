@@ -13,13 +13,13 @@ RUN apt-get update -qq && \
     ca-certificates jq ghostscript \
     libzip-dev libpng-dev libjpeg-dev \
     libmagickwand-dev libxml2 libxml2-dev librsvg2-dev librsvg2-bin \
-    unattended-upgrades unzip curl \
+    unzip curl \
     default-mysql-client msmtp msmtp-mta libsasl2-modules \
     && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN pecl install imagick apcu \
     && docker-php-ext-enable imagick apcu \
-    && docker-php-ext-install gd zip mysqli
+    && docker-php-ext-install gd zip mysqli opcache
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"\
     && unzip -qq /tmp/awscliv2.zip -d /tmp/ \
