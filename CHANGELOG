@@ -2,6 +2,12 @@
 
 # CHANGELOG
 
+## v1.0.8
+
+- Added `opcache` for PHP
+- Package dependency updates
+- Docs: Update the architecture image with better names for the private and isolated subnets.
+
 ## v1.0.7
 
 - Docker base image upgraded to php8.2
