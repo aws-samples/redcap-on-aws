@@ -16,12 +16,26 @@ unzip -qq /tmp/redcapLanguages.zip -d /tmp/languages
 cp /tmp/languages/*.ini /var/www/html/languages/. 2>/dev/null
 
 ## Setup PHP variables
-echo "max_input_vars = 100000" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "upload_max_filesize = 1000M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "post_max_size = 1000M" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "session.cookie_secure = On" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "error_reporting  = E_ALL & ~E_DEPRECATED & ~E_STRICT" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
-echo "error_log = /dev/stdout" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
+cat <<EOF | tee /usr/local/etc/php/conf.d/redcap-php-overrides.ini >/dev/null
+max_input_vars=100000
+upload_max_filesize=1000M
+post_max_size=1000M
+session.cookie_secure=On
+error_reporting=E_ALL & ~E_DEPRECATED & ~E_STRICT
+error_log=/dev/stdout
+EOF
+
+## Setup opcache
+cat <<EOF | tee /usr/local/etc/php/conf.d/opcache.ini >/dev/null
+opcache.enable=1
+opcache.revalidate_freq=0
+opcache.validate_timestamps=0
+opcache.max_accelerated_files=10000
+opcache.memory_consumption=192
+opcache.max_wasted_percentage=10
+opcache.interned_strings_buffer=16
+EOF
+
 
 ### Set Timezone for REDCap
 echo "date.timezone = \${PHP_TIMEZONE}" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
