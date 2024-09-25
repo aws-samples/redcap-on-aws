@@ -2,6 +2,11 @@
 
 # CHANGELOG
 
+## v1.0.9
+
+- Fixed bug on multiple stage deployment related to the logGroupName for EC2 #79
+- Package dependency updates
+
 ## v1.0.8
 
 - Added `opcache` for PHP

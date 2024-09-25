@@ -145,9 +145,7 @@ export function EC2Server({ stack, app }: StackContext) {
   const terminateStateMachine = new StateMachine(stack, `deleteStackStateMachine`, {
     definitionBody: def,
     logs: {
-      destination: new LogGroup(stack, `deleteStackSfnLogGroup`, {
-        logGroupName: '/aws/vendedlogs/states/deleteStackSfnLogGroup',
-      }),
+      destination: new LogGroup(stack, `deleteStackSfnLogGroup`),
       level: LogLevel.ALL,
     },
     tracingEnabled: true,

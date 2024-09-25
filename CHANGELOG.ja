@@ -1,6 +1,10 @@
 JP | [EN](./CHANGELOG)
 
 # CHANGELOG
+## v1.0.9
+
+- EC2 の logGroupName に関連する複数ステージのデプロイメントのバグを修正しました #79 
+- パッケージ依存関係の更新
 
 ## v1.0.8
 
