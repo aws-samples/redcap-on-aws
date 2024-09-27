@@ -94,6 +94,7 @@ export class EcsFargate extends Construct {
           ...bucketProps(props.app),
         },
       },
+      cors: false,
     });
 
     NagSuppressions.addResourceSuppressions(albLogBucket?.cdk.bucket, [

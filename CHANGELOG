@@ -2,6 +2,11 @@
 
 # CHANGELOG
 
+## v1.0.10
+
+- Disable CORS configuration for all buckets. #68
+- Update the CDK removal policy for stages. `dev` stage/mode is `destroy` for all resources, `prod` stage is set to `retain`, cdk default for other stages. #66
+
 ## v1.0.9
 
 - Fixed bug on multiple stage deployment related to the logGroupName for EC2 #79

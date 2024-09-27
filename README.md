@@ -78,6 +78,20 @@ Make a copy of the provided sample and edit it to your needs:
 cp stages.sample.ts stages.ts
 ```
 
+#### 3.1 Pre-configured stages
+
+In the provided `stages.sample.ts` there are three pre-configured stages named `dev`, `stag` and `prod` to deploy REDCap. You are free to create extra stages with the name you prefer, but please note that the `dev` and `prod` stages have special CDK configuration regarding the deprovisioning of resources.
+
+1. If you deploy `dev` stage or if you use the sst mode `dev`, the removal policy is set to `destroy`.
+2. If you deploy `prod` stage the removal policy is set to `retain` to prevent accidental deletion.
+3. Other stages will follow the default CDK removal policy for the resource unless other policy is specified.
+
+To modified this behaviour please see the [sst.config.ts](./sst.config.ts)
+
+For more info please look at [sst-v2 Removal policy](https://docs.sst.dev/advanced/removal-policy) and [cdk-lib RemovalPolicy](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.RemovalPolicy.html).
+
+#### 3.2 Stage configuration
+
 Each property described below allows you to configure your deployment.
 
 | Property                 | Description                                                                                                                                                                                                                                           | Type              | Default                                   |

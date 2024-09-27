@@ -8,7 +8,7 @@ import * as stage from '../stages';
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Fn, RemovalPolicy, aws_secretsmanager } from 'aws-cdk-lib';
-import { assign, get, isEmpty, without } from 'lodash';
+import { assign, get, isEmpty } from 'lodash';
 
 // SST
 import { Bucket, StackContext, use } from 'sst/constructs';
@@ -118,6 +118,7 @@ export function Backend({ stack, app }: StackContext) {
         ...bucketProps(app),
       },
     },
+    cors: false,
   });
   const redcapApplicationBucket = new Bucket(stack, 'appBucket', {
     cdk: {
@@ -125,6 +126,7 @@ export function Backend({ stack, app }: StackContext) {
         ...bucketProps(app, redcapApplicationBucketLogs),
       },
     },
+    cors: false,
   });
 
   redcapApplicationBucket.cdk.bucket.grantReadWrite(redCapS3AccessUser.userGroup);
