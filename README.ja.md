@@ -76,6 +76,20 @@ yarn install
 cp stages.sample.ts stages.ts
 ```
 
+#### 3.1 事前構成されたステージ
+
+提供された `stages.sample.ts` には、REDCapをデプロイするための `dev`、`stag`、`prod` という3つの事前構成されたステージがあります。お好みの名前で追加のステージを作成することができますが、`dev` と `prod` ステージには、リソースの撤去に関する特別な CDK 構成があることに注意してください。
+
+1. `dev` ステージをデプロイする場合、または sst モードを `dev` にする場合、削除ポリシーは `destroy` に設定されます。
+2. `prod` ステージをデプロイする場合、誤って削除されないように、削除ポリシーは `retain` に設定されます。
+3. その他のステージでは、別のポリシーが指定されていない限り、リソースのデフォルトの CDK 削除ポリシーに従います。
+
+この動作を変更するには、[sst.config.ts](./sst.config.ts) を参照してください。
+
+詳細については、[sst-v2 Removal policy](https://docs.sst.dev/advanced/removal-policy) および [cdk-lib RemovalPolicy](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.RemovalPolicy.html) を参照してください。
+
+#### 3.2 ステージ構成
+
 各プロパティは以下の通りで、デプロイの設定が可能です。
 
 | プロパティ名             | 説明                                                                                                                                                                                                                                                             | Type              | Default                                               |
@@ -106,6 +120,7 @@ cp stages.sample.ts stages.ts
 | dbSnapshotId             | 新しいデータベース クラスターを作成するためのデータベース スナップショット                                                                                                                                                                                       | String            | `undefined`                                           |
 | generalLogRetention      | ECS Fargate、RDS、VPC ログのオプションの一般的なログ保持期間                                                                                                                                                                                                     | String            | `undefined`                                           |
 | bounceNotificationEmail      | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス
+
                                                                                                                                                     | String            | `undefined`                               |
 
 [1] `hostInRoute53` は必須の値です。既存のAmazon Route 53でホストされているゾーンを使用するには、ここにドメイン名を指定してください。 `domain` の設定値を使用して新しいホストゾーンを作成するには `true` を指定してください。Amazon Route 53を全く使用しない場合は `false` を指定してください。`hostInRoute53` を使用すると、このプロジェクトがドメインでAmazon SESを自動的に設定し、SSL接続用の証明書も作成できます。それ以外の場合は、SES、App Runner、証明書が必要なその他の接続を独自のDNSプロバイダーで手動で検証する必要があります。

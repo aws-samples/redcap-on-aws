@@ -40,10 +40,11 @@ export default {
     // Enable tags
     Tags.of(app).add('deployment', `${app.stage}-${app.region}`);
 
-    // Configure removal policy - prod env should be careful to prevent accidental deletion
-    if (app.stage !== 'prod') {
+    // Assets removal policy: for dev stage and mode is destroy, prod is retain
+    if (app.stage === 'dev' || app.mode === 'dev') {
       app.setDefaultRemovalPolicy('destroy');
-    }
+    } else if (app.stage === 'prod' && app.mode === 'deploy')
+      app.setDefaultRemovalPolicy('retain');
 
     /****** Stacks ******/
     if (app.stage === 'route53NS') {

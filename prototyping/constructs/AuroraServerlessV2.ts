@@ -106,6 +106,7 @@ export class AuroraServerlessV2 extends Construct {
       }
 
     const logRetention = props.logRetention || 'ONE_YEAR';
+
     let databaseProps: aws_rds.DatabaseClusterProps | aws_rds.DatabaseClusterFromSnapshotProps = {
       vpc: props.vpc,
       vpcSubnets: {
@@ -135,7 +136,7 @@ export class AuroraServerlessV2 extends Construct {
       backtrackWindow: Duration.hours(24),
       parameterGroup: this.parameterGroup,
       storageEncrypted: true,
-      removalPolicy: props.removalPolicy ? props.removalPolicy : RemovalPolicy.SNAPSHOT,
+      removalPolicy: props.removalPolicy
     };
 
     // Create Aurora Cluster
