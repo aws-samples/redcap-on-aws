@@ -5,7 +5,7 @@
 ## v1.0.11
 
 - EC2Server stack is always configured with a DELETE retention policy, independent of the stage and mode.
-- Disable public IP assigment for EC2 instance in the EC2Server stack.
+- Disable public IP assignment for EC2 instance in the EC2Server stack.
 - Upgrade packages sst 2.45.1
 
 ## v1.0.10
