@@ -98,6 +98,7 @@ export function EC2Server({ stack, app }: StackContext) {
     securityGroup: dbAllowedSg,
     ssmSessionPermissions: true,
     detailedMonitoring: true,
+    associatePublicIpAddress: false,
     blockDevices: [
       {
         deviceName: '/dev/sda1',
@@ -153,7 +154,6 @@ export function EC2Server({ stack, app }: StackContext) {
 
   const stateMachineExecHandler = new Function(stack, `stateMachineExecHandler`, {
     handler: 'packages/functions/src/stateMachineExec.handler',
-    runtime: 'nodejs18.x',
     environment: {
       SFN_ARN: terminateStateMachine.stateMachineArn,
     },

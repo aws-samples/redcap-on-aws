@@ -1,6 +1,6 @@
 {
   "name": "redcap-on-aws",
-  "version": "0.0.0",
+  "version": "1.0.11",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,20 +22,20 @@
     "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "aws-cdk-lib": "2.142.1",
+    "aws-cdk-lib": "2.171.1",
     "constructs": "10.3.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "hygen": "^6.2.11",
     "prettier": "^3.3.3",
-    "sst": "2.43.7",
+    "sst": "2.45.1",
     "typescript": "^5.1.6"
   },
   "workspaces": [
     "packages/*"
   ],
   "dependencies": {
-    "@aws-cdk/aws-apprunner-alpha": "2.142.1-alpha.0",
+    "@aws-cdk/aws-apprunner-alpha": "2.171.1-alpha.0",
     "cdk-nag": "^2.28.195",
     "csv-parse": "^5.5.6",
     "node-gyp": "^9.4.1"
