@@ -17,6 +17,7 @@ import { Database } from './stacks/Database';
 import { EC2Server } from './stacks/EC2Server';
 import { Network } from './stacks/Network';
 import { Route53NSRecords } from './stacks/Route53NSRecords';
+import { OverrideEc2ServerRemovalPolicy } from './prototyping/overrides/RemovalPolicy';
 import { get } from 'lodash';
 
 export default {
@@ -43,8 +44,7 @@ export default {
     // Assets removal policy: for dev stage and mode is destroy, prod is retain
     if (app.stage === 'dev' || app.mode === 'dev') {
       app.setDefaultRemovalPolicy('destroy');
-    } else if (app.stage === 'prod' && app.mode === 'deploy')
-      app.setDefaultRemovalPolicy('retain');
+    } else if (app.stage === 'prod' && app.mode === 'deploy') app.setDefaultRemovalPolicy('retain');
 
     /****** Stacks ******/
     if (app.stage === 'route53NS') {
@@ -54,7 +54,9 @@ export default {
       app.stack(BuildImage);
       app.stack(Database);
       app.stack(Backend);
-      if (ec2ServerStack) app.stack(EC2Server);
+      if (ec2ServerStack) {
+        Aspects.of(app.stack(EC2Server)).add(new OverrideEc2ServerRemovalPolicy());
+      }
     }
   },
 } satisfies SSTConfig;

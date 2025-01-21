@@ -4,7 +4,9 @@
     "**/.sst": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
+  "biome.enabled": false,
   "[shellscript]": {
-    "editor.defaultFormatter": "foxundermoon.shell-format"
-  }
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "eslint.enable": true
 }
