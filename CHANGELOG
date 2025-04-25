@@ -1,6 +1,37 @@
-[JA](./CHANGELOG.ja) | EN
+[JA](./CHANGELOG.ja.md) | EN
 
 # CHANGELOG
+
+## v1.1.0
+
+- Upgrade to Amazon Aurora engine 3_08_0 to support Aurora scaling to 0 ACUs
+- Upgrade packages sst 2.48.5
+- Minor code refactoring and format
+- Recommended NodeJS version >= v22.11.0 LTS
+
+### Upgrade procedure to v1.1.0
+
+1. Execute `yarn install` to upgrade packages
+2. Add to your `stage` in stages.ts file the new database configuration. Here is an example:
+
+   ```json
+   db: {
+    dbSnapshotId: undefined,
+    maxAllowedPacket: '4194304',
+    dbReaders: 1,
+    scaling: {
+     maxCapacityAcu: 2,
+     minCapacityAcu: 0,
+    },
+   },
+   ```
+
+   Note that `dbReaders` setting is now moved inside the `db` property.
+
+   Using `minCapacityAcu: 0` will allow the database to scale to 0 ACUs automatically after a period of inactivity. You can read more about in this [blog](https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/)
+
+3. Check you changes `yarn diff --stage <your_state>`
+4. Deploy to apply changes `yarn deploy --stage <your_state>`
 
 ## v1.0.11
 
@@ -65,7 +96,7 @@
 
 ### Upgrade procedure to v1.0.1
 
-This **ONLY** applies if you have deployed any previous version and you are using the automatically created AWS App Runner Custom Link Domain. e.g you have deployed with the stage settings `hostInRoute53: true,` and  `domain: '<your_redcap_domain>'` and you access your REDCap installation with your own domain name.
+This **ONLY** applies if you have deployed any previous version and you are using the automatically created AWS App Runner Custom Link Domain. e.g you have deployed with the stage settings `hostInRoute53: true,` and `domain: '<your_redcap_domain>'` and you access your REDCap installation with your own domain name.
 
 In this case, this project will have deployed an `A Record` in your Route 53 Hosted Zone that needs to be replaced and managed by CDK. The procedure is the following:
 
@@ -137,3 +168,7 @@ In this case, this project will have deployed an `A Record` in your Route 53 Hos
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.
+
+```
+
+```

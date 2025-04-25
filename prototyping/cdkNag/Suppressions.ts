@@ -25,26 +25,34 @@ import { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
 import { SimpleEmailService } from '../constructs/SimpleEmailService';
 import { Waf } from '../constructs/Waf';
 
+import * as stage from '../../stages';
+import { get } from 'lodash';
+
 export class Suppressions {
   static ECSSuppressions(service: EcsFargate) {
     const stack = Stack.of(service);
     try {
-      NagSuppressions.addStackSuppressions(stack, [
-        {
-          id: 'AwsSolutions-IAM4',
-          reason: 'Log retention default service role',
-        },
-        {
-          id: 'AwsSolutions-IAM5',
-          reason: 'Default exec role for aws fargate',
-        },
-        {
-          id: 'AwsSolutions-L1',
-          reason: 'SST lambda version',
-        },
-      ]),
-        true;
-    } catch (e) {}
+      NagSuppressions.addStackSuppressions(
+        stack,
+        [
+          {
+            id: 'AwsSolutions-IAM4',
+            reason: 'Log retention default service role',
+          },
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'Default exec role for AWS Fargate',
+          },
+          {
+            id: 'AwsSolutions-L1',
+            reason: 'SST lambda version',
+          },
+        ],
+        true,
+      );
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressions(
         service,
@@ -64,7 +72,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static SSTEmptyStackSuppressions(stack: Stack) {
@@ -79,7 +89,9 @@ export class Suppressions {
           reason: 'IAM role managed policy for deploying',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static EC2ServerSuppressions(
@@ -99,7 +111,9 @@ export class Suppressions {
           reason: 'SST lambda version',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressions(
         [ec2ServerInstance.role, ec2ServerInstance],
@@ -116,7 +130,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       const stack = Stack.of(terminateStateMachine);
       NagSuppressions.addResourceSuppressions(
@@ -136,7 +152,9 @@ export class Suppressions {
           reason: 'Need to use * because cannot get full stack ARN while deployment',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static Route53NS(zone: IHostedZone) {
@@ -152,7 +170,9 @@ export class Suppressions {
           reason: 'SST lambda version',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static SesSuppressions(ses: SimpleEmailService) {
@@ -162,7 +182,6 @@ export class Suppressions {
         stack,
         [
           `${stack.stackName}/ses-user-password/Resource`,
-          `${stack.stackName}/redcap-ses/user-policy/Resource`,
           `${stack.stackName}/get-credentials/ServiceRole/Resource`,
           `${stack.stackName}/get-credentials/ServiceRole/DefaultPolicy/Resource`,
           `${stack.stackName}/get-credentials/Resource`,
@@ -187,7 +206,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static AppRunnerSuppressions(service: AppRunner, app: App) {
@@ -196,7 +217,7 @@ export class Suppressions {
       NagSuppressions.addStackSuppressions(stack, [
         {
           id: 'AwsSolutions-IAM4',
-          reason: 'Managed policy for apprunner and ecr image pull',
+          reason: 'Managed policy for AppRunner and ecr image pull',
         },
         {
           id: 'AwsSolutions-IAM5',
@@ -207,7 +228,9 @@ export class Suppressions {
           reason: 'SST lambda version',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressionsByPath(
         stack,
@@ -223,33 +246,41 @@ export class Suppressions {
           },
         ],
       );
-    } catch (e) {}
-    try {
-      NagSuppressions.addResourceSuppressionsByPath(
-        stack,
-        [
-          `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-accessRole/Resource`,
-          `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-accessRole/DefaultPolicy/Resource`,
-          `${stack.stackName}/${app.stage}-${app.name}-apprunner-custom-domain/LambdaRole`,
-          `${stack.stackName}/${app.stage}-${app.name}-apprunner-custom-domain/AppRunnerCustomDomainProvider`,
-          `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-topic/Resource`,
-        ],
-        [
-          {
-            id: 'AwsSolutions-IAM4',
-            reason: 'Managed policy for apprunner and ecr image pull',
-          },
-          {
-            id: 'AwsSolutions-IAM5',
-            reason: 'Deployed app runner policy',
-          },
-          {
-            id: 'AwsSolutions-L1',
-            reason: 'SST lambda version',
-          },
-        ],
+    } catch {
+      /* empty */
+    }
+    const resources = [
+      `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-accessRole/Resource`,
+      `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-accessRole/DefaultPolicy/Resource`,
+      `${stack.stackName}/${app.stage}-${app.name}-service/apprunner-topic/Resource`,
+    ];
+
+    const domain = get(stage, [app.stage, 'domain'], undefined);
+
+    if (domain) {
+      resources.push(
+        `${stack.stackName}/${app.stage}-${app.name}-apprunner-custom-domain/AppRunnerCustomDomainProvider`,
+        `${stack.stackName}/${app.stage}-${app.name}-apprunner-custom-domain/LambdaRole`,
       );
-    } catch (e) {}
+    }
+    try {
+      NagSuppressions.addResourceSuppressionsByPath(stack, resources, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'Managed policy for AppRunner and ECR image pull',
+        },
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Deployed app runner policy',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'SST Lambda version',
+        },
+      ]);
+    } catch {
+      /* empty */
+    }
   }
 
   static WebWafSuppressions(waf: Waf) {
@@ -273,7 +304,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static NetworkVpcSuppressions(networkVpc: Construct) {
@@ -297,7 +330,9 @@ export class Suppressions {
           reason: 'TODO: SG created by by privatelink ',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static DBSecretSalt(secret: Secret) {
@@ -312,7 +347,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static RDSV2Suppressions(cluster: AuroraServerlessV2) {
@@ -335,7 +372,9 @@ export class Suppressions {
           },
         ],
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressionsByPath(
         stack,
@@ -358,7 +397,9 @@ export class Suppressions {
           },
         ],
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressions(
         cluster,
@@ -391,7 +432,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
     try {
       NagSuppressions.addResourceSuppressionsByPath(
         stack,
@@ -411,10 +454,12 @@ export class Suppressions {
           },
         ],
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
-  static BuildImageSuppressions(project: CodeBuildProject, app: App) {
+  static BuildImageSuppressions(project: CodeBuildProject) {
     const stack = Stack.of(project);
     try {
       NagSuppressions.addStackSuppressions(stack, [
@@ -435,7 +480,9 @@ export class Suppressions {
           reason: 'Xray and ec2 policies',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static BucketSuppressions(bucketDeploymentLambda: BucketDeployment) {
@@ -465,7 +512,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static SecurityDetectorSuppressions(detector: CfnDetector) {
@@ -489,7 +538,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static RedCapAwsAccessUserSuppressions(redCapAccessUser: Array<RedCapAwsAccessUser>) {
@@ -508,7 +559,9 @@ export class Suppressions {
         ],
         true,
       );
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 
   static SimpleEmailServiceSuppressions(snsTopic: ITopic) {
@@ -523,6 +576,8 @@ export class Suppressions {
           reason: 'SES bounce, no encryption',
         },
       ]);
-    } catch (e) {}
+    } catch {
+      /* empty */
+    }
   }
 }

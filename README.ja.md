@@ -4,8 +4,9 @@ JP | [EN](README.md)
 
 > すでにプロジェクトをデプロイ済みの場合は、アップグレード手順を確認してください。
 >
-> - **v1.0.0 から v1.0.1** (Mar 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja) を確認してください。
-> - **v0.9.0 から v1.0.0** (Feb 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja) を確認してください。
+> - **v1.0.11 から v1.1.0** (Abr 2025 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
+> - **v1.0.0 から v1.0.1** (Mar 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
+> - **v0.9.0 から v1.0.0** (Feb 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
 
 [REDCap](https://projectredcap.org/) は、オンラインアンケートやデータベースを構築および管理するための安全なウェブアプリケーションです。特に、調査研究や業務におけるオンラインおよびオフラインのデータキャプチャをサポートすることを目的としています。
 
@@ -54,7 +55,7 @@ JP | [EN](README.md)
 
 ### 1. 前提条件
 
-デプロイ実行するローカルマシンに Node.jsバージョン、v18.16.1以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
+デプロイ実行するローカルマシンに Node.jsバージョン、v22.11.0 LTS以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
 
 [yarn](https://yarnpkg.com/) >= 4.0.2の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
 
@@ -116,10 +117,9 @@ cp stages.sample.ts stages.ts
 | rebuildImage [4]         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean           | `false`                                               |
 | ec2ServerStack [5]       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object            | `undefined`                                           |
 | ecs [6]                  | Amazon ECS on AWS FargateをAWS App Runnerの代わりに使用するための設定                                                                                                                                                                                            | Object            | `undefined`                                           |
-| dbReaders                | データベース読み取り専用インスタンスの数                                                                                                                                                                                                                         | Number            | `undefined`                                           |
-| dbSnapshotId             | 新しいデータベース クラスターを作成するためのデータベース スナップショット                                                                                                                                                                                       | String            | `undefined`                                           |
+| db                       | Amazon Aurora RDS Serverless V2 の設定                                                                                                                                                                                                                           | Object            | `undefined`                                           |
 | generalLogRetention      | ECS Fargate、RDS、VPC ログのオプションの一般的なログ保持期間                                                                                                                                                                                                     | String            | `undefined`                                           |
-| bounceNotificationEmail      | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス
+| bounceNotificationEmail  | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス                                                                                                                                                                                        |
 
                                                                                                                                                     | String            | `undefined`                               |
 
@@ -514,7 +514,9 @@ const stag: RedCapConfig = {
 const テスト: RedCapConfig = {
    ...ベースオプション、
    // ...より多くのオプション
-   dbSnapshotId: 'redcap-dev', // スナップショット名。
+   db: {
+    dbSnapshotId: 'redcap-dev', // スナップショット名。
+  },
 };
 ```
 

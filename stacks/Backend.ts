@@ -74,7 +74,7 @@ export function Backend({ stack, app }: StackContext) {
   );
 
   // Route53 DNS and Amazon SES validation
-  let sesProps: SimpleEmailServiceProps = {
+  const sesProps: SimpleEmailServiceProps = {
     user: redCapSESAccessUser.user,
     group: redCapSESAccessUser.userGroup,
     transformCredentials: redCapSESAccessUser.secret,
@@ -91,7 +91,7 @@ export function Backend({ stack, app }: StackContext) {
 
   if (!domain && !email) throw new Error('No identify found to deploy Amazon SES');
 
-  let publicHostedZone = domainConfig.publicHostedZone;
+  const publicHostedZone = domainConfig.publicHostedZone;
 
   // SES configuration
   if (publicHostedZone) {

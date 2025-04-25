@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { aws_ec2 } from 'aws-cdk-lib';
 import {
   Instance,
@@ -33,7 +34,7 @@ import * as stage from '../stages';
 
 function generateEnvUserData(envVars: { [key: string]: string }, profiledPath: string): string {
   const envExports = Object.keys(envVars)
-    .map((key) =>
+    .map(key =>
       envVars[key].includes('--output json')
         ? `export ${key}=${envVars[key]}`
         : `export ${key}=\\"${envVars[key]}\\"`,

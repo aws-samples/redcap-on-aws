@@ -1,12 +1,10 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
   "search.exclude": {
     "**/.sst": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
+  "eslint.enable": true,
   "biome.enabled": false,
-  "[shellscript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "eslint.enable": true
 }

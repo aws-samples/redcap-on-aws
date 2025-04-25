@@ -174,7 +174,7 @@ export function BuildImage({ stack, app }: StackContext) {
     UpdateDeploymentCommand: `aws lambda invoke --function-name ${lambdaBuild} --region ${stack.region} --profile ${profile} deployLambdaResponse.json`,
   });
 
-  Suppressions.BuildImageSuppressions(codeBuild, app);
+  Suppressions.BuildImageSuppressions(codeBuild);
 
   return repository;
 }

@@ -2,6 +2,39 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## v1.1.0
+
+- Amazon Aurora エンジンのバージョンを 3_08_0 にアップグレードし、Aurora のスケーリングを 0 ACU までサポートする
+- パッケージ sst のバージョンを 2.48.5 にアップグレードする
+- 軽微なコードのリファクタリングと書式設定を行う
+- 推奨されるNodeJSのバージョンは、v22.11.0 LTS以上です。
+
+### v1.1.0へのアップグレード手順
+
+1. `yarn install` を実行してパッケージをアップグレードします。
+
+2. stages.tsファイルの`stage`に新しいデータベース設定を追加します。以下は例です:
+
+   ```json
+   db: {
+    dbSnapshotId: undefined,
+    maxAllowedPacket: '4194304',
+    dbReaders: 1,
+    scaling: {
+     maxCapacityAcu: 2,
+     minCapacityAcu: 0,
+    },
+   },
+   ```
+
+`dbReaders`設定はdbプロパティに移動されたことに注意してください。
+
+`minCapacityAcu: 0`を使用すると、非アクティブ期間後にデータベースが自動的に0 ACUにスケーリングされるようになります。この[ブログ](https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/)でさらに詳しく読むことができます。
+
+3. 変更を確認します: `yarn diff --stage <your_state>`
+
+4. 変更を適用するためにデプロイします: `yarn deploy --stage <your_state>`
+
 ## v1.0.11
 
 - EC2Serverスタックは、ステージやモードに関わらず、常に「DELETE」リテンションポリシーで構成されます。
@@ -13,10 +46,9 @@ JP | [EN](./CHANGELOG)
 - すべてのバケットに対してCORS設定を無効にする。 #68
 - ステージのCDK削除ポリシーを更新する。`dev`ステージ/モードでは、すべてのリソースが`destroy`に設定され、`prod`ステージは`retain`に設定され、その他のステージではCDKのデフォルト値が使用される。 #66
 
-
 ## v1.0.9
 
-- EC2 の logGroupName に関連する複数ステージのデプロイメントのバグを修正しました #79 
+- EC2 の logGroupName に関連する複数ステージのデプロイメントのバグを修正しました #79
 - パッケージ依存関係の更新
 
 ## v1.0.8
@@ -102,7 +134,6 @@ JP | [EN](./CHANGELOG)
 
 - dev ステージの Aurora Serverless デプロイ V1 は、現在 Aurora Serverless V2 に置き換えられています。 これはdevステージのみに適用されます。例: yarn dev --stage your_stage。 必要に応じて、完全なデータベースバックアップを実行し、新しいインスタンスでデータを復元してください。
 
-
 ### v1.0.0 へのアップグレード手順
 
 1. データ損失を防ぐために必要に応じてデータベースのバックアップを作成します。
@@ -126,11 +157,13 @@ JP | [EN](./CHANGELOG)
 - 80以外のポートでApache2が起動できるよう変更しました。
 
 ## v0.8.0
+
 - Dockerfileで、Apache2およびMTAの起動方法をリファクタリングしました。
 
 - `stages.ts`ファイルでphpタイムゾーンの構成を許可しました。
 
 ## v0.7.0
+
 - Aレコード(単一ドメインの場合)およびCNAME(サブドメインを持つドメインの場合)レコードでApp Runnerドメインをリンクできるようになりました。
 
 - `gen redcap config`から構成される`project_contact_email`のREDCap構成の初期値を設定しました。
@@ -140,11 +173,13 @@ JP | [EN](./CHANGELOG)
 - パッケージのアップグレードを行いました。
 
 ## v0.6.0
+
 - データベースパラメータグループで`max_allowed_packet`をデフォルトとして設定しました。
 
 - コードの代わりにルートパスを保護するためのカスタムWAFルールを追加しました。
 
 ## v0.5.0
+
 - REDCapのパフォーマンスを向上させるために、いくつかのパラメータグループをデフォルトとして設定しました。
 
 - REDCapのタイムゾーンをJSTに設定しました。
@@ -152,6 +187,7 @@ JP | [EN](./CHANGELOG)
 - ルートパスを保護するためのWAFカスタムルールを追加しました。
 
 ## v0.4.0
+
 - AWS App Runnerのオートスケーリング名を削除しました。自動生成されます。
 
-- NSレコードで返されたものに基づいて、同じまたは外部のAWSアカウントでNSレコードをリンクするオプションを追加しました。- 
+- NSレコードで返されたものに基づいて、同じまたは外部のAWSアカウントでNSレコードをリンクするオプションを追加しました。-

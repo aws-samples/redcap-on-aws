@@ -15,7 +15,7 @@ import { CallAwsService } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { App, Bucket, Service, ServiceDomainProps, ServiceProps, Stack } from 'sst/constructs';
 import { bucketProps } from '../overrides/BucketProps';
 import { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
-import { CfnSecurityGroup, Peer, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { CfnSecurityGroup, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
 import {
   ApplicationProtocol,
@@ -168,13 +168,12 @@ export class EcsFargate extends Construct {
       },
     });
 
-    // ALB security group
-    albSg.addEgressRule(
-      this.service.cdk?.fargateService?.connections.securityGroups[0]!,
-      Port.tcp(8080),
-    );
-
+    const ecsSg = this.service.cdk?.fargateService?.connections?.securityGroups[0];
     const albSgCfn = albSg.node.defaultChild as CfnSecurityGroup;
+
+    // ALB security group
+    if (ecsSg) albSg.addEgressRule(ecsSg, Port.tcp(8080));
+
     albSgCfn.addOverride('Properties.SecurityGroupIngress', [
       {
         CidrIp: '0.0.0.0/0',
@@ -191,12 +190,13 @@ export class EcsFargate extends Construct {
       `${props.app.stage}-redcap-alb-logs`,
     );
 
-    // Enable cluster insights for fargate
+    // Enable cluster insights for AWS Fargate
     if (props.containerInsights) {
       const cfnCluster = this.service.cdk?.cluster?.node.defaultChild as CfnCluster;
-      cfnCluster.addPropertyOverride('ClusterSettings', [
-        { Name: 'containerInsights', Value: 'enabled' },
-      ]);
+      if (cfnCluster)
+        cfnCluster.addPropertyOverride('ClusterSettings', [
+          { Name: 'containerInsights', Value: 'enabled' },
+        ]);
     }
 
     if (this.service.cdk?.applicationLoadBalancer) {
@@ -232,28 +232,32 @@ export class EcsFargate extends Construct {
       },
     });
 
-    const definitionBody = DefinitionBody.fromChainable(
-      new CallAwsService(this, `${id}-ecsUpdate`, {
-        service: 'ecs',
-        action: 'updateService',
-        iamResources: [this.service.cdk?.fargateService?.serviceArn!],
-        parameters: {
-          Service: this.service.cdk?.fargateService?.serviceName,
-          Cluster: this.service.cdk?.cluster?.clusterName,
-          ForceNewDeployment: true,
+    const serviceArn = this.service.cdk?.fargateService?.serviceArn;
+
+    if (serviceArn) {
+      const definitionBody = DefinitionBody.fromChainable(
+        new CallAwsService(this, `${id}-ecsUpdate`, {
+          service: 'ecs',
+          action: 'updateService',
+          iamResources: [serviceArn],
+          parameters: {
+            Service: this.service.cdk?.fargateService?.serviceName,
+            Cluster: this.service.cdk?.cluster?.clusterName,
+            ForceNewDeployment: true,
+          },
+        }),
+      );
+
+      const deployStateMachine = new StateMachine(this, `${id}-ecrStateMachine`, {
+        definitionBody,
+        logs: {
+          destination: new LogGroup(this, `${id}-sfnLogGroup`),
+          level: LogLevel.ALL,
         },
-      }),
-    );
+        tracingEnabled: true,
+      });
 
-    const deployStateMachine = new StateMachine(this, `${id}-ecrStateMachine`, {
-      definitionBody,
-      logs: {
-        destination: new LogGroup(this, `${id}-sfnLogGroup`),
-        level: LogLevel.ALL,
-      },
-      tracingEnabled: true,
-    });
-
-    rule.addTarget(new SfnStateMachine(deployStateMachine));
+      rule.addTarget(new SfnStateMachine(deployStateMachine));
+    }
   }
 }

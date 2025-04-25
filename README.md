@@ -4,6 +4,7 @@
 
 > If you have deployed this project before, please check these upgrade procedures. Otherwise, you can ignore this.
 >
+> - **UPDATE procedures from v1.0.11 to v1.1.0** (Abr 2025 release) check [CHANGELOG](./CHANGELOG) for instructions.
 > - **UPDATE procedures from v1.0.0 to v1.0.1** (Mar 2024 release) check [CHANGELOG](./CHANGELOG) for instructions.
 > - **UPDATE procedures from v0.9.0 to v1.0.0** (Feb 2024 release) check [CHANGELOG](./CHANGELOG) for instructions.
 
@@ -56,7 +57,7 @@ A registered domain name is highly recommended for this deployment. To see what 
 
 ### 1. Prerequisites
 
-You need to install in your machine Node.js version >= v18.16.1. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
+You need to install in your machine Node.js version >= v22.11.0 LTS. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
 
 It is recommended to use [yarn](https://yarnpkg.com/) >= 4.0.2, so after installing node, install it by
 
@@ -118,10 +119,9 @@ Each property described below allows you to configure your deployment.
 | rebuildImage [4]         | Whether to rebuild the REDCap Docker Image each time it is deployed                                                                                                                                                                                   | Boolean           | `false`                                   |
 | ec2ServerStack [5]       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object            | `undefined`                               |
 | ecs [6]                  | Configuration to use Amazon ECS on AWS Fargate instead of AWS App Runner                                                                                                                                                                              | Object            | `undefined`                               |
-| dbReaders                | Number of database read only instances                                                                                                                                                                                                                | Number            | `undefined`                               |
-| dbSnapshotId             | Database snapshot to create a new database cluster                                                                                                                                                                                                    | String            | `undefined`                               |
-| generalLogRetention      | Optional general log retention period for ECS Fargate, RDS and VPC logs                                                                                                                                                                              | String            | `undefined`                               |
-| bounceNotificationEmail      | The email address to receive notifications when an email sent from SES bounces logs                                                                                                                                                                              | String            | `undefined`                               |
+| db                       | Configuration for Amazon Aurora RDS Serverless V2                                                                                                                                                                                                     | Object            | `undefined`                               |
+| generalLogRetention      | Optional general log retention period for ECS Fargate, RDS and VPC logs                                                                                                                                                                               | String            | `undefined`                               |
+| bounceNotificationEmail  | The email address to receive notifications when an email sent from SES bounces logs                                                                                                                                                                   | String            | `undefined`                               |
 
 - [1] `hostInRoute53`: is a required value. To use an existing Hosted Zone in Amazon Route 53, provide the domain name here. Use `true` to create a new Hosted Zone with the configured `domain` value. Use `false` to not use Amazon Route 53 at all. Using `hostInRoute53` allows this project to automatically configure Amazon SES with the domain and also create certificates for SSL connections. Otherwise, validate SES, App Runner, or any connection that requires a certificate manually with your own DNS provider.
 
@@ -193,7 +193,7 @@ const prod: RedCapConfig = {
   ...
 ```
 
-This will use your exising zone to configure SES and create certificates. Be careful using this option. We also recommend to use this in a newly created zone without any apps or additional records in it.
+This will use your existing zone to configure SES and create certificates. Be careful using this option. We also recommend to use this in a newly created zone without any apps or additional records in it.
 
 #### 5.2 Use a registered domain in an external AWS account
 
@@ -227,7 +227,7 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
      region: 'ap-northeast-1', // <-- update to your region
      apps: [
        {
-         name: 'redcap', // <-- Record name for the NS entry will be redcap.redemo.site.
+         name: 'redcap', // <-- Record name for the NS entry will be redcap.acme.com
          nsRecords: [
            // <-- List of NS records from deployment output
            'ns-11111.awsdns-11.org',
@@ -264,9 +264,9 @@ This case is not yet fully supported. At the moment it can be achieved using man
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your domain AWS account.
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.3 External DNS provider
 
@@ -319,9 +319,9 @@ This case is not yet fully supported. At the moment it can be achieved using man
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your DNS provider.
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.4 If you do not own a registered domain
 
@@ -489,7 +489,7 @@ const stag: RedCapConfig = {
   phpTimezone: 'Asia/Tokyo',
   domain: 'redcap.mydomain.dev',
   redCapS3Path: 'redcap-bucket/redcap13.7.21.zip',
-  cronSecret: 'asecret',
+  cronSecret: 'your_secret',
   email: 'myemail@mydomain.dev',
   ecs: { // <-- ecs config.
     memory: '4 GB',
@@ -515,7 +515,9 @@ In your stages.ts add the parameter `dbSnapshotId` with the snapshot name as val
 const test: RedCapConfig = {
   ...baseOptions,
   // ...more options
-  dbSnapshotId: 'redcap-dev', // Snapshot name.
+  db: {
+    dbSnapshotId: 'redcap-dev', // Snapshot name.
+  },
 };
 ```
 

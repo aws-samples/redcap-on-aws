@@ -9,6 +9,8 @@ export interface ProtoConfigOptions extends ConfigOptions {
 }
 
 export interface RedCapConfig extends ProtoConfigOptions {
+  generalLogRetention?: ServiceProps['logRetention']; // Optional general log retention period for <ecs fargate, aurora rds, vpc>
+  bounceNotificationEmail?: string;
   phpTimezone?: string;
   redCapS3Path?: string; // if specified, target an s3 path
   redCapLocalVersion?: string; // if specified, refer the local package file
@@ -36,16 +38,16 @@ export interface RedCapConfig extends ProtoConfigOptions {
     cpu: ServiceProps['cpu'];
     scaling: ServiceProps['scaling'];
   };
-  // The number of additional aurora readers, by deafault 1 reader is added. Use 0 to use single writer/reader
-  dbReaders?: number;
-  dbSnapshotId?: string;
-  generalLogRetention?: ServiceProps['logRetention']; // Optional general log retention period for <ecs fargate, aurora rds, vpc>
-  bounceNotificationEmail?: string;
-}
-
-interface DomainAppConfig {
-  name: string;
-  nsRecords: Array<string>;
+  db?: {
+    // The number of additional aurora readers, by default, 1 reader is added. Use 0 to use single writer/reader
+    dbReaders?: number;
+    dbSnapshotId?: string;
+    maxAllowedPacket?: string;
+    scaling?: {
+      minCapacityAcu: number;
+      maxCapacityAcu: number;
+    };
+  };
 }
 
 export interface DomainAppsConfig extends ConfigOptions {
@@ -53,4 +55,9 @@ export interface DomainAppsConfig extends ConfigOptions {
   domain: string;
   profile: string;
   region: string;
+}
+
+interface DomainAppConfig {
+  name: string;
+  nsRecords: Array<string>;
 }

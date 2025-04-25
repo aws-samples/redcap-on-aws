@@ -26,7 +26,7 @@ export function Network({ stack, app }: StackContext) {
     logRetention: get(stage, [stack.stage, 'generalLogRetention'], undefined),
   });
 
-  networkVpc.vpc.publicSubnets.forEach((publicSubnet) => stack.exportValue(publicSubnet.subnetId));
+  networkVpc.vpc.publicSubnets.forEach(publicSubnet => stack.exportValue(publicSubnet.subnetId));
   Suppressions.NetworkVpcSuppressions(networkVpc);
   return { networkVpc };
 }

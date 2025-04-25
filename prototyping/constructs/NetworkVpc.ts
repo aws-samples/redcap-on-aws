@@ -123,7 +123,7 @@ export class NetworkVpc extends Construct {
     };
 
     // create VPC endpoints
-    props.vpcEndpoints?.forEach((vpcEndpoint) => {
+    props.vpcEndpoints?.forEach(vpcEndpoint => {
       this.endpoints[`${vpcEndpoint.shortName}`] = this.vpc.addInterfaceEndpoint(
         `${vpcEndpoint.shortName}-vep`,
         {

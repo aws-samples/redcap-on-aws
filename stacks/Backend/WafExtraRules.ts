@@ -74,7 +74,7 @@ export function getRedcapCronRule(searchString: string, priorityRule?: number) {
 export function getCountryLimitRule(allowedCountries?: string[], priorityRule?: number) {
   if (!allowedCountries || isEmpty(allowedCountries)) return undefined;
 
-  allowedCountries.forEach((country) => {
+  allowedCountries.forEach(country => {
     if (!country) throw new Error('Invalid country in list');
   });
 
