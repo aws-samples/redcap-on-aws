@@ -109,7 +109,8 @@ cp stages.sample.ts stages.ts
 | appRunnerConcurrency [3] | REDCap アプリケーションを動かす App Runner について、1 つのインスタンスが処理するリクエスト数の閾値を設定します。この値を超えると、インスタンスは自動で水平スケールします。                                                                                      | Number            | 10 (\*\*)                                             |
 | appRunnerMaxSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の上限を設定します。                                                                                                                                                                  | Number            | 2                                                     |
 | appRunnerMinSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の下限を設定します。                                                                                                                                                                  | Number            | 1                                                     |
-| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 'mysecret'                                            |
+| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 10桁のランダムな文字列                                |
+| cronMinutes              | 分単位の数値で、REDCapのcronのスケジュールを設定します。値が0の場合、Amazonのスケジューラが無効になります                                                                                                                                                        | Number            | 1                                                     |
 | cpu                      | インスタンスあたりの vCPU 数を指定します。                                                                                                                                                                                                                       | Cpu               | `Cpu.TWO_VCPU`                                        |
 | memory                   | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory            | `Memory.FOUR_GB`                                      |
 | phpTimezone              | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String            | `UTC`                                                 |
@@ -351,6 +352,23 @@ yarn deploy --stage <your_stage_name>
 デフォルトでは、Amazon SES は sandbox モードでデプロイされます。 REDCapの設定チェックでは、`<redcapemailtest@gmail.com>`にメールを送信しますが、これが原因で失敗します。AWS コンソールから production アクセスをリクエストできます。 詳細は [こちら](./docs/ja/ses.md)をご確認ください。
 
 デフォルトでは、`MAIL FROM domain` が `mail.<your_domain.com>` の形式であることを前提としています。 そうでない場合は、[Backend.ts](./stacks/Backend.ts) の `mailFromDomain` を `SimpleEmailService` コンストラクタに渡し、独自の形式を指定できます。
+
+### 8. データベースのスケールダウンとcronスケジューラの無効化
+
+バージョン v1.1.0 以降、コストを節減するために Amazon Aurora のスケーリング容量を 0 に設定できます。ただし、デフォルトで 1 分ごとに実行されるcronスケジューラを設定または無効化する必要があります。cronMinutes: 0 を使用してください。
+
+例えば、開発環境でコストを最小限に抑えるには、以下のように設定できます:
+
+```json
+db: {
+    dbReaders: 1,
+    scaling: {
+      maxCapacityAcu: 2,
+      minCapacityAcu: 0, // ACUを0まで縮小可能
+    },
+  },
+cronMinutes: 0, // Amazon EventBridgeスケジューラを無効化
+```
 
 ---
 

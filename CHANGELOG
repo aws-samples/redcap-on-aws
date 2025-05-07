@@ -4,15 +4,17 @@
 
 ## v1.1.0
 
-- Upgrade to Amazon Aurora engine 3_08_0 to support Aurora scaling to 0 ACUs
+- Upgrade to Amazon Aurora engine 3_08_0 with support to scale to 0 ACUs
 - Upgrade packages sst 2.48.5
 - Minor code refactoring and format
 - Recommended NodeJS version >= v22.11.0 LTS
+- New configuration settings: `db` for custom database options and `cronMinutes` to configure REDCap's scheduler in minutes.
+- `cronSecret` will now default to a random digit string.
 
 ### Upgrade procedure to v1.1.0
 
 1. Execute `yarn install` to upgrade packages
-2. Add to your `stage` in stages.ts file the new database configuration. Here is an example:
+2. If you are using a custom database configuration in `stage.db`, please update it to this new type, here is an example:
 
    ```json
    db: {
@@ -133,7 +135,7 @@ In this case, this project will have deployed an `A Record` in your Route 53 Hos
 
 5. Run `yarn deploy --stage <your_stage>`
 
-6. Remove the added configuration paramter `deployTag` from stages.ts.
+6. Remove the added configuration parameter `deployTag` from stages.ts.
 
 ## v0.9.0
 
@@ -168,7 +170,3 @@ In this case, this project will have deployed an `A Record` in your Route 53 Hos
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.
-
-```
-
-```

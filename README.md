@@ -87,7 +87,7 @@ In the provided `stages.sample.ts` there are three pre-configured stages named `
 2. If you deploy `prod` stage the removal policy is set to `retain` to prevent accidental deletion.
 3. Other stages will follow the default CDK removal policy for the resource unless other policy is specified.
 
-To modified this behaviour please see the [sst.config.ts](./sst.config.ts)
+To modified this behavior please see the [sst.config.ts](./sst.config.ts)
 
 For more info please look at [sst-v2 Removal policy](https://docs.sst.dev/advanced/removal-policy) and [cdk-lib RemovalPolicy](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.RemovalPolicy.html).
 
@@ -111,7 +111,8 @@ Each property described below allows you to configure your deployment.
 | appRunnerConcurrency [3] | The number of requests that a single REDCap instance can process. When the value is exceeded, it will trigger the auto-scaling.                                                                                                                       | Number            | 10                                        |
 | appRunnerMaxSize         | Sets the upper limit on the number of instance App Runner can scale.                                                                                                                                                                                  | Number            | 2                                         |
 | appRunnerMinSize         | Sets the minimum number of `warm` instances.                                                                                                                                                                                                          | Number            | 1                                         |
-| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php                                                                                                                                                                 | String            | 'mysecret'                                |
+| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php                                                                                                                                                                 | String            | Random 10 digit string                    |
+| cronMinutes              | Number in minutes that sets the schedule for REDCap's cron, a value of zero will disable the scheduler on Amazon EventBridge                                                                                                                          | Number            | 1                                         |
 | cpu                      | The number of vCpu assigned to each instance                                                                                                                                                                                                          | Cpu               | `Cpu.TWO_VCPU`                            |
 | memory                   | The amount of memory assigned to each instance                                                                                                                                                                                                        | Memory            | `Memory.FOUR_GB`                          |
 | phpTimezone              | Example: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                  | String            | `UTC`                                     |
@@ -334,7 +335,7 @@ More info:
 
 ### 6. Deploy the project
 
-Run deployment by entering the following command.
+Execute the deployment by entering the following command.
 
 ```sh
 yarn deploy --stage <your_stage_name>
@@ -351,6 +352,23 @@ Once the deployment is complete, you'll see output like this:
 By default, SES is deployed in sandbox mode, meaning that any email you send that is not a valid identity will fail. REDCap's configuration check, that sends an email to `<redcapemailtest@gmail.com>`, will fail due this. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
 
 The installation by default assumes your `MAIL FROM domain` to be in the form of `mail.<your_domain.com>`. If this is not the case, you can modify the [Backend.ts](./stacks/Backend.ts) file and the property `mailFromDomain` to the `SimpleEmailService` constructor to specify one.
+
+### 8. Database scale down and disabling the cron scheduler
+
+Starting from version v1.1.0, you can use Amazon Aurora scaling capacity to 0 for some cost savings. However, you will also need to configure or disable the cron scheduler with `cronMinutes: 0`, that by default executes every 1 minute.
+
+For example, a to minimize costs in a development environment, you could use:
+
+```json
+db: {
+    dbReaders: 1,
+    scaling: {
+      maxCapacityAcu: 2,
+      minCapacityAcu: 0, // Allow to scale down to 0 ACU
+    },
+  },
+cronMinutes: 0, // Disable the Amazon EventBridge scheduler
+```
 
 ---
 

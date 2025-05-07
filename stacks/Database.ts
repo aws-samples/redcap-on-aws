@@ -12,6 +12,7 @@ import { Network } from './Network';
 import { get } from 'lodash';
 
 import * as stage from '../stages';
+import { RedCapConfig } from '../prototyping';
 
 export function Database({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
@@ -21,13 +22,20 @@ export function Database({ stack, app }: StackContext) {
     allowAllOutbound: true,
   });
 
-  const readers = get(stage, [stack.stage, 'db', 'dbReaders'], undefined);
-  const scaling = get(stage, [stack.stage, 'db', 'scaling'], {
+  const dbConfig = get(stage, [stack.stage, 'db']) as RedCapConfig['db'];
+
+  if (!dbConfig)
+    console.warn(
+      'WARNING: db config is absent in stages.ts, using Amazon Aurora defaults settings',
+    );
+
+  const readers = dbConfig?.dbReaders ?? undefined;
+  const scaling = dbConfig?.scaling ?? {
     maxCapacityAcu: 2,
     minCapacityAcu: 0.5,
-  });
-  const maxAllowedPacket = get(stage, [stack.stage, 'db', 'maxAllowedPacket'], '4194304');
-  const snapshotIdentifier = get(stage, [stack.stage, 'db', 'dbSnapshotId'], undefined);
+  };
+  const maxAllowedPacket = dbConfig?.maxAllowedPacket ?? '4194304';
+  const snapshotIdentifier = dbConfig?.dbSnapshotId ?? undefined;
   const logRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
 
   const auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {

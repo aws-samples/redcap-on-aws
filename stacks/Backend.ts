@@ -8,7 +8,7 @@ import * as stage from '../stages';
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Fn, RemovalPolicy, aws_secretsmanager } from 'aws-cdk-lib';
-import { assign, get, isEmpty } from 'lodash';
+import { assign, get, isEmpty, random } from 'lodash';
 
 // SST
 import { Bucket, StackContext, use } from 'sst/constructs';
@@ -49,7 +49,7 @@ export function Backend({ stack, app }: StackContext) {
   const subdomain = get(stage, [stack.stage, 'subdomain']);
   const hostInRoute53: boolean | string = get(stage, [stack.stage, 'hostInRoute53'], true);
   const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
-  const cronSecret = get(stage, [stack.stage, 'cronSecret'], 'mysecret');
+  const cronSecret = get(stage, [stack.stage, 'cronSecret'], random(0, 10).toString());
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
   const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
@@ -58,6 +58,7 @@ export function Backend({ stack, app }: StackContext) {
   const port = get(stage, [stack.stage, 'port']);
   const tag = get(stage, [stack.stage, 'deployTag'], 'latest');
   const generalLogRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
+  const cronMinutes = get(stage, [stack.stage, 'cronMinutes'], undefined);
 
   // IAM user and group to access AWS S3 service (file system)
   const redCapS3AccessUser = new RedCapAwsAccessUser(stack, `${app.stage}-${app.name}-s3-access`, {
@@ -186,6 +187,7 @@ export function Backend({ stack, app }: StackContext) {
     logRetention: generalLogRetention,
     repository,
     searchString,
+    cronMinutes,
   });
 
   if (ecsConfig) {

@@ -16,6 +16,7 @@ import { ApiDestination } from 'aws-cdk-lib/aws-events-targets';
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { ServiceProps } from 'sst/constructs';
 import { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import { isNumber } from 'lodash';
 
 export class RedcapService {
   private common;
@@ -48,13 +49,13 @@ export class RedcapService {
       repository: Repository;
       environmentVariables: Record<string, string>;
       searchString: string;
+      cronMinutes?: number;
       logRetention?: ServiceProps['logRetention']; //Only for ECS, AppRunner has no logRetention setting
     },
   ) {
     this.common = common;
     this.app = app;
     this.stack = stack;
-
     this.connection = this.createEventConnection();
   }
 
@@ -63,7 +64,6 @@ export class RedcapService {
     this.common.secrets.dbSalt.grantRead(grantee);
     this.common.secrets.ses.sesUserCredentials.grantRead(grantee);
     this.common.secrets.redCapS3AccessUser.secret.grantRead(grantee);
-
     this.common.databaseCluster.grantConnect(grantee, 'redcap_user');
   }
 
@@ -91,10 +91,18 @@ export class RedcapService {
       description: `Call cron on REDCap deployment ${serviceType}`,
     });
 
-    new aws_events.Rule(this.stack, `${prefixId}-cron`, {
-      schedule: aws_events.Schedule.rate(Duration.minutes(1)),
-      targets: [new ApiDestination(destination)],
-    });
+    let schedule: aws_events.Schedule | undefined = aws_events.Schedule.rate(Duration.minutes(1));
+
+    if (isNumber(this.common.cronMinutes)) {
+      if (this.common.cronMinutes > 0)
+        schedule = aws_events.Schedule.rate(Duration.minutes(this.common.cronMinutes));
+      else schedule = undefined;
+    }
+    if (schedule)
+      new aws_events.Rule(this.stack, `${prefixId}-cron`, {
+        schedule,
+        targets: [new ApiDestination(destination)],
+      });
   }
 
   private createEventConnection() {

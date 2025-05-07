@@ -25,6 +25,7 @@ export interface RedCapConfig extends ProtoConfigOptions {
   cpu?: Cpu;
   memory?: Memory;
   cronSecret?: string; // protect cron.php endpoint with a secret parameter https://endpoint/cron.php?secret=<secret>
+  cronMinutes?: number; // cron execution in minutes, a value of zero means disabled
   port?: number;
   deployTag?: string; // forces a new AppRunner deployment and tags ECR docker image with this value
   rebuildImage?: boolean;
