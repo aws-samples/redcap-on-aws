@@ -18,8 +18,8 @@ import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { createHash } from 'crypto';
 
 type ScalingConfiguration = {
-  minCapacityAcu?: number;
-  maxCapacityAcu?: number;
+  minCapacityAcu: number;
+  maxCapacityAcu: number;
 };
 
 type AuroraProps = {
@@ -55,7 +55,6 @@ export class AuroraServerlessV2 extends Construct {
   public readonly aurora: aws_rds.DatabaseCluster;
   public readonly proxyRole: aws_iam.Role | undefined;
   public readonly proxy: aws_rds.DatabaseProxy | undefined;
-  private props: AuroraProps | undefined;
   private parameterGroup: aws_rds.ParameterGroup | undefined;
 
   vpc: IVpc;
@@ -66,11 +65,10 @@ export class AuroraServerlessV2 extends Construct {
     super(scope, id);
 
     this.vpc = props.vpc;
-    this.props = props;
 
     // Check whether isolated subnets which you chose or not
     if (isEmpty(props.vpc.isolatedSubnets)) {
-      throw new Error('You should speficy the isolated subnets in subnets');
+      throw new Error('You must specify the isolated subnets');
     }
 
     // Create parameter group if there's no parameter group in props
@@ -125,8 +123,8 @@ export class AuroraServerlessV2 extends Construct {
         caCertificate: aws_rds.CaCertificate.RDS_CA_RSA2048_G1,
       }),
       readers,
-      serverlessV2MinCapacity: props.scaling.minCapacityAcu || 0.5,
-      serverlessV2MaxCapacity: props.scaling.maxCapacityAcu || 2,
+      serverlessV2MinCapacity: props.scaling.minCapacityAcu,
+      serverlessV2MaxCapacity: props.scaling.maxCapacityAcu,
       backup: {
         retention: props.backupRetentionInDays
           ? Duration.days(props.backupRetentionInDays)
@@ -136,7 +134,7 @@ export class AuroraServerlessV2 extends Construct {
       backtrackWindow: Duration.hours(24),
       parameterGroup: this.parameterGroup,
       storageEncrypted: true,
-      removalPolicy: props.removalPolicy
+      removalPolicy: props.removalPolicy,
     };
 
     // Create Aurora Cluster
@@ -204,12 +202,10 @@ export class AuroraServerlessV2 extends Construct {
     }
   }
 
-  // Get engine name
-  // This function is to keep compatibility with RDSV1 construct in sst
   private getEngine(engine: RdsV2Engines['engine']) {
     if (engine === 'mysql8.0') {
       return aws_rds.DatabaseClusterEngine.auroraMysql({
-        version: aws_rds.AuroraMysqlEngineVersion.VER_3_04_0,
+        version: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0,
       });
     } else if (engine === 'postgresql13.10') {
       return aws_rds.DatabaseClusterEngine.auroraPostgres({
@@ -225,7 +221,7 @@ export class AuroraServerlessV2 extends Construct {
       });
     }
     throw new Error(
-      `The specified "engine" is not supported in this package. Only mysql8.0, postgresql13.10, postgresql14.7, and postgresql15.2 engines are currently supported.`,
+      `The specified "engine" is not supported in this package. Only mysql8.0 (3_08_0), postgresql13.10, postgresql14.7, and postgresql15.2 engines are currently supported.`,
     );
   }
 }

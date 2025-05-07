@@ -4,6 +4,7 @@
 
 > If you have deployed this project before, please check these upgrade procedures. Otherwise, you can ignore this.
 >
+> - **UPDATE procedures from v1.0.11 to v1.1.0** (Abr 2025 release) check [CHANGELOG](./CHANGELOG) for instructions.
 > - **UPDATE procedures from v1.0.0 to v1.0.1** (Mar 2024 release) check [CHANGELOG](./CHANGELOG) for instructions.
 > - **UPDATE procedures from v0.9.0 to v1.0.0** (Feb 2024 release) check [CHANGELOG](./CHANGELOG) for instructions.
 
@@ -56,7 +57,7 @@ A registered domain name is highly recommended for this deployment. To see what 
 
 ### 1. Prerequisites
 
-You need to install in your machine Node.js version >= v18.16.1. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
+You need to install in your machine Node.js version >= v22.11.0 LTS. You can install it via package manager <https://nodejs.org/en/download/package-manager>.
 
 It is recommended to use [yarn](https://yarnpkg.com/) >= 4.0.2, so after installing node, install it by
 
@@ -86,7 +87,7 @@ In the provided `stages.sample.ts` there are three pre-configured stages named `
 2. If you deploy `prod` stage the removal policy is set to `retain` to prevent accidental deletion.
 3. Other stages will follow the default CDK removal policy for the resource unless other policy is specified.
 
-To modified this behaviour please see the [sst.config.ts](./sst.config.ts)
+To modified this behavior please see the [sst.config.ts](./sst.config.ts)
 
 For more info please look at [sst-v2 Removal policy](https://docs.sst.dev/advanced/removal-policy) and [cdk-lib RemovalPolicy](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.RemovalPolicy.html).
 
@@ -110,7 +111,8 @@ Each property described below allows you to configure your deployment.
 | appRunnerConcurrency [3] | The number of requests that a single REDCap instance can process. When the value is exceeded, it will trigger the auto-scaling.                                                                                                                       | Number            | 10                                        |
 | appRunnerMaxSize         | Sets the upper limit on the number of instance App Runner can scale.                                                                                                                                                                                  | Number            | 2                                         |
 | appRunnerMinSize         | Sets the minimum number of `warm` instances.                                                                                                                                                                                                          | Number            | 1                                         |
-| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php                                                                                                                                                                 | String            | 'mysecret'                                |
+| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php                                                                                                                                                                 | String            | Random 10 digit string                    |
+| cronMinutes              | Number in minutes that sets the schedule for REDCap's cron, a value of zero will disable the scheduler on Amazon EventBridge                                                                                                                          | Number            | 1                                         |
 | cpu                      | The number of vCpu assigned to each instance                                                                                                                                                                                                          | Cpu               | `Cpu.TWO_VCPU`                            |
 | memory                   | The amount of memory assigned to each instance                                                                                                                                                                                                        | Memory            | `Memory.FOUR_GB`                          |
 | phpTimezone              | Example: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                  | String            | `UTC`                                     |
@@ -118,10 +120,9 @@ Each property described below allows you to configure your deployment.
 | rebuildImage [4]         | Whether to rebuild the REDCap Docker Image each time it is deployed                                                                                                                                                                                   | Boolean           | `false`                                   |
 | ec2ServerStack [5]       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object            | `undefined`                               |
 | ecs [6]                  | Configuration to use Amazon ECS on AWS Fargate instead of AWS App Runner                                                                                                                                                                              | Object            | `undefined`                               |
-| dbReaders                | Number of database read only instances                                                                                                                                                                                                                | Number            | `undefined`                               |
-| dbSnapshotId             | Database snapshot to create a new database cluster                                                                                                                                                                                                    | String            | `undefined`                               |
-| generalLogRetention      | Optional general log retention period for ECS Fargate, RDS and VPC logs                                                                                                                                                                              | String            | `undefined`                               |
-| bounceNotificationEmail      | The email address to receive notifications when an email sent from SES bounces logs                                                                                                                                                                              | String            | `undefined`                               |
+| db                       | Configuration for Amazon Aurora RDS Serverless V2                                                                                                                                                                                                     | Object            | `undefined`                               |
+| generalLogRetention      | Optional general log retention period for ECS Fargate, RDS and VPC logs                                                                                                                                                                               | String            | `undefined`                               |
+| bounceNotificationEmail  | The email address to receive notifications when an email sent from SES bounces logs                                                                                                                                                                   | String            | `undefined`                               |
 
 - [1] `hostInRoute53`: is a required value. To use an existing Hosted Zone in Amazon Route 53, provide the domain name here. Use `true` to create a new Hosted Zone with the configured `domain` value. Use `false` to not use Amazon Route 53 at all. Using `hostInRoute53` allows this project to automatically configure Amazon SES with the domain and also create certificates for SSL connections. Otherwise, validate SES, App Runner, or any connection that requires a certificate manually with your own DNS provider.
 
@@ -193,7 +194,7 @@ const prod: RedCapConfig = {
   ...
 ```
 
-This will use your exising zone to configure SES and create certificates. Be careful using this option. We also recommend to use this in a newly created zone without any apps or additional records in it.
+This will use your existing zone to configure SES and create certificates. Be careful using this option. We also recommend to use this in a newly created zone without any apps or additional records in it.
 
 #### 5.2 Use a registered domain in an external AWS account
 
@@ -227,7 +228,7 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
      region: 'ap-northeast-1', // <-- update to your region
      apps: [
        {
-         name: 'redcap', // <-- Record name for the NS entry will be redcap.redemo.site.
+         name: 'redcap', // <-- Record name for the NS entry will be redcap.acme.com
          nsRecords: [
            // <-- List of NS records from deployment output
            'ns-11111.awsdns-11.org',
@@ -264,9 +265,9 @@ This case is not yet fully supported. At the moment it can be achieved using man
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your domain AWS account.
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.3 External DNS provider
 
@@ -319,9 +320,9 @@ This case is not yet fully supported. At the moment it can be achieved using man
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your DNS provider.
 
-    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
-    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
-    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+   - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
+   - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
+   - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
 
 #### 5.4 If you do not own a registered domain
 
@@ -334,7 +335,7 @@ More info:
 
 ### 6. Deploy the project
 
-Run deployment by entering the following command.
+Execute the deployment by entering the following command.
 
 ```sh
 yarn deploy --stage <your_stage_name>
@@ -351,6 +352,23 @@ Once the deployment is complete, you'll see output like this:
 By default, SES is deployed in sandbox mode, meaning that any email you send that is not a valid identity will fail. REDCap's configuration check, that sends an email to `<redcapemailtest@gmail.com>`, will fail due this. You can request production access from the AWS console. More info [here](./docs/en/ses.md)
 
 The installation by default assumes your `MAIL FROM domain` to be in the form of `mail.<your_domain.com>`. If this is not the case, you can modify the [Backend.ts](./stacks/Backend.ts) file and the property `mailFromDomain` to the `SimpleEmailService` constructor to specify one.
+
+### 8. Database scale down and disabling the cron scheduler
+
+Starting from version v1.1.0, you can use Amazon Aurora scaling capacity to 0 for some cost savings. However, you will also need to configure or disable the cron scheduler with `cronMinutes: 0`, that by default executes every 1 minute.
+
+For example, a to minimize costs in a development environment, you could use:
+
+```json
+db: {
+    dbReaders: 1,
+    scaling: {
+      maxCapacityAcu: 2,
+      minCapacityAcu: 0, // Allow to scale down to 0 ACU
+    },
+  },
+cronMinutes: 0, // Disable the Amazon EventBridge scheduler
+```
 
 ---
 
@@ -489,7 +507,7 @@ const stag: RedCapConfig = {
   phpTimezone: 'Asia/Tokyo',
   domain: 'redcap.mydomain.dev',
   redCapS3Path: 'redcap-bucket/redcap13.7.21.zip',
-  cronSecret: 'asecret',
+  cronSecret: 'your_secret',
   email: 'myemail@mydomain.dev',
   ecs: { // <-- ecs config.
     memory: '4 GB',
@@ -515,7 +533,9 @@ In your stages.ts add the parameter `dbSnapshotId` with the snapshot name as val
 const test: RedCapConfig = {
   ...baseOptions,
   // ...more options
-  dbSnapshotId: 'redcap-dev', // Snapshot name.
+  db: {
+    dbSnapshotId: 'redcap-dev', // Snapshot name.
+  },
 };
 ```
 

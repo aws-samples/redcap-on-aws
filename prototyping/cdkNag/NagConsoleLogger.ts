@@ -10,10 +10,8 @@ import path from 'path';
 
 import {
   INagLogger,
-  NagLoggerComplianceData,
   NagLoggerErrorData,
   NagLoggerNonComplianceData,
-  NagLoggerNotApplicableData,
   NagLoggerSuppressedData,
   NagLoggerSuppressedErrorData,
 } from 'cdk-nag';
@@ -36,7 +34,7 @@ export class NagConsoleLogger implements INagLogger {
     this.logSuppressed = true;
   }
 
-  onCompliance(data: NagLoggerComplianceData): void {}
+  onCompliance(): void {}
   onNonCompliance(data: NagLoggerNonComplianceData): void {
     if (data.ruleLevel === 'Warning')
       console.log(
@@ -81,7 +79,7 @@ export class NagConsoleLogger implements INagLogger {
       );
     }
   }
-  onNotApplicable(data: NagLoggerNotApplicableData): void {}
+  onNotApplicable(): void {}
 
   // Logs to a console table the offenses found with RuleId and RuleInfo by category.
   nagFilesToConsoleTable(stage: string = '') {
@@ -96,8 +94,9 @@ export class NagConsoleLogger implements INagLogger {
       RuleInfo: '',
     };
 
-    files.forEach((file) => {
-      const offenses: any = [];
+    files.forEach(file => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const offenses: any[] = [];
 
       const csv = fs.readFileSync(`./${file}`);
 

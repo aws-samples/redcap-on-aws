@@ -16,9 +16,18 @@ const dev: RedCapConfig = {
   phpTimezone: 'Asia/Tokyo',
   redCapS3Path: 'redcap-binaries/redcap13.7.2.zip',
   cronSecret: 'mysecret',
+  cronMinutes: 1, // a value of 0 means disabled
   email: 'email@mydomain.com',
   port: 8080,
-  dbReaders: 0, // disable readers for dev envs
+  db: {
+    dbSnapshotId: undefined,
+    maxAllowedPacket: '4194304',
+    dbReaders: 0, // disable readers for dev envs
+    scaling: {
+      maxCapacityAcu: 2,
+      minCapacityAcu: 0,
+    },
+  },
   // Uncomment to use ECS as backend instead of appRunner
   // ecs: {
   //   memory: '4 GB',
@@ -43,6 +52,7 @@ const prod: RedCapConfig = {
   appRunnerMaxSize: 10,
   appRunnerMinSize: 2,
   cronSecret: 'prodsecret',
+  cronMinutes: 1,
   cpu: Cpu.FOUR_VCPU,
   memory: Memory.EIGHT_GB,
   ec2ServerStack: {
@@ -62,6 +72,7 @@ const stag: RedCapConfig = {
   appRunnerMinSize: 1,
   rebuildImage: false,
   cronSecret: 'stagsecret',
+  cronMinutes: 1,
   cpu: Cpu.FOUR_VCPU,
   memory: Memory.EIGHT_GB,
 };

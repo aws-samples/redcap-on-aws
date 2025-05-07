@@ -6,7 +6,6 @@
 
 import { Project, ProjectProps } from 'aws-cdk-lib/aws-codebuild';
 import { Function } from 'sst/constructs';
-
 import { Duration, RemovalPolicy, triggers } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';

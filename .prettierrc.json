@@ -1,17 +1,11 @@
 {
+    "$schema": "https://json.schemastore.org/prettierrc",
     "semi": true,
     "singleQuote": true,
+    "arrowParens": "avoid",
+    "useTabs": false,
+    "tabWidth": 2,
     "printWidth": 100,
-    "importOrder": [
-        "^aws-cdk-lib",
-        "^aws-cdk-lib/(.*)$",
-        "^construct",
-        "^[./]"
-    ],
-    "importOrderParserPlugins": [
-        "typescript",
-        "decorators-legacy"
-    ],
-    "importOrderSeparation": true,
-    "importOrderSortSpecifiers": true
+    "vueIndentScriptAndStyle": false,
+    "bracketSameLine": false
 }

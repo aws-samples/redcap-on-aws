@@ -4,8 +4,9 @@ JP | [EN](README.md)
 
 > すでにプロジェクトをデプロイ済みの場合は、アップグレード手順を確認してください。
 >
-> - **v1.0.0 から v1.0.1** (Mar 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja) を確認してください。
-> - **v0.9.0 から v1.0.0** (Feb 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja) を確認してください。
+> - **v1.0.11 から v1.1.0** (Abr 2025 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
+> - **v1.0.0 から v1.0.1** (Mar 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
+> - **v0.9.0 から v1.0.0** (Feb 2024 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
 
 [REDCap](https://projectredcap.org/) は、オンラインアンケートやデータベースを構築および管理するための安全なウェブアプリケーションです。特に、調査研究や業務におけるオンラインおよびオフラインのデータキャプチャをサポートすることを目的としています。
 
@@ -54,7 +55,7 @@ JP | [EN](README.md)
 
 ### 1. 前提条件
 
-デプロイ実行するローカルマシンに Node.jsバージョン、v18.16.1以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
+デプロイ実行するローカルマシンに Node.jsバージョン、v22.11.0 LTS以上のインストールが必要です。[こちら](https://nodejs.org/en/download/package-manager)のパッケージマネージャーを利用してインストール可能です。
 
 [yarn](https://yarnpkg.com/) >= 4.0.2の利用を推奨します。Node.jsをインストール後、以下のコマンドでインストール可能です。
 
@@ -108,7 +109,8 @@ cp stages.sample.ts stages.ts
 | appRunnerConcurrency [3] | REDCap アプリケーションを動かす App Runner について、1 つのインスタンスが処理するリクエスト数の閾値を設定します。この値を超えると、インスタンスは自動で水平スケールします。                                                                                      | Number            | 10 (\*\*)                                             |
 | appRunnerMaxSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の上限を設定します。                                                                                                                                                                  | Number            | 2                                                     |
 | appRunnerMinSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の下限を設定します。                                                                                                                                                                  | Number            | 1                                                     |
-| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 'mysecret'                                            |
+| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 10桁のランダムな文字列                                |
+| cronMinutes              | 分単位の数値で、REDCapのcronのスケジュールを設定します。値が0の場合、Amazonのスケジューラが無効になります                                                                                                                                                        | Number            | 1                                                     |
 | cpu                      | インスタンスあたりの vCPU 数を指定します。                                                                                                                                                                                                                       | Cpu               | `Cpu.TWO_VCPU`                                        |
 | memory                   | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory            | `Memory.FOUR_GB`                                      |
 | phpTimezone              | 例: 'Asia/Tokyo', <https://www.php.net/manual/en/timezones.php>                                                                                                                                                                                                  | String            | `UTC`                                                 |
@@ -116,10 +118,9 @@ cp stages.sample.ts stages.ts
 | rebuildImage [4]         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean           | `false`                                               |
 | ec2ServerStack [5]       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object            | `undefined`                                           |
 | ecs [6]                  | Amazon ECS on AWS FargateをAWS App Runnerの代わりに使用するための設定                                                                                                                                                                                            | Object            | `undefined`                                           |
-| dbReaders                | データベース読み取り専用インスタンスの数                                                                                                                                                                                                                         | Number            | `undefined`                                           |
-| dbSnapshotId             | 新しいデータベース クラスターを作成するためのデータベース スナップショット                                                                                                                                                                                       | String            | `undefined`                                           |
+| db                       | Amazon Aurora RDS Serverless V2 の設定                                                                                                                                                                                                                           | Object            | `undefined`                                           |
 | generalLogRetention      | ECS Fargate、RDS、VPC ログのオプションの一般的なログ保持期間                                                                                                                                                                                                     | String            | `undefined`                                           |
-| bounceNotificationEmail      | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス
+| bounceNotificationEmail  | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス                                                                                                                                                                                        |
 
                                                                                                                                                     | String            | `undefined`                               |
 
@@ -352,6 +353,23 @@ yarn deploy --stage <your_stage_name>
 
 デフォルトでは、`MAIL FROM domain` が `mail.<your_domain.com>` の形式であることを前提としています。 そうでない場合は、[Backend.ts](./stacks/Backend.ts) の `mailFromDomain` を `SimpleEmailService` コンストラクタに渡し、独自の形式を指定できます。
 
+### 8. データベースのスケールダウンとcronスケジューラの無効化
+
+バージョン v1.1.0 以降、コストを節減するために Amazon Aurora のスケーリング容量を 0 に設定できます。ただし、デフォルトで 1 分ごとに実行されるcronスケジューラを設定または無効化する必要があります。cronMinutes: 0 を使用してください。
+
+例えば、開発環境でコストを最小限に抑えるには、以下のように設定できます:
+
+```json
+db: {
+    dbReaders: 1,
+    scaling: {
+      maxCapacityAcu: 2,
+      minCapacityAcu: 0, // ACUを0まで縮小可能
+    },
+  },
+cronMinutes: 0, // Amazon EventBridgeスケジューラを無効化
+```
+
 ---
 
 ## REDCap バージョンの更新
@@ -514,7 +532,9 @@ const stag: RedCapConfig = {
 const テスト: RedCapConfig = {
    ...ベースオプション、
    // ...より多くのオプション
-   dbSnapshotId: 'redcap-dev', // スナップショット名。
+   db: {
+    dbSnapshotId: 'redcap-dev', // スナップショット名。
+  },
 };
 ```
 

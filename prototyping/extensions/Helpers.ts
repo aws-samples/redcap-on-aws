@@ -10,7 +10,8 @@ export class Helpers {
       const match = s.match(/redcap(\d+\.\d+\.\d+)\.zip/);
       return match ? match[1] : null;
     } catch (e) {
-      return null;
+      console.error(e);
+      throw e;
     }
   }
 }

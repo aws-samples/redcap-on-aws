@@ -23,7 +23,7 @@ export function Route53NSRecords({ stack }: StackContext) {
     return;
   }
 
-  let config: Route53NSRecordProps = {
+  const config: Route53NSRecordProps = {
     apps,
     domain,
   };
@@ -33,7 +33,7 @@ export function Route53NSRecords({ stack }: StackContext) {
   });
 
   if (config.domain && !isEmpty(config.apps)) {
-    config.apps.forEach((app) => {
+    config.apps.forEach(app => {
       new aws_route53.NsRecord(stack, `ns-${config.domain}-${app.name}`, {
         zone,
         values: app.nsRecords,

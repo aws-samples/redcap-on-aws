@@ -75,7 +75,7 @@ async function hasAccessKeys() {
   }
 }
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async () => {
   try {
     const hasKeys = await hasAccessKeys();
 
@@ -126,10 +126,7 @@ export const handler: Handler = async (event) => {
 };
 
 export const sign = (key: string[], message: string): string[] => {
-  const hmac = createHmac('sha256', Buffer.from(key.map((a) => a.charCodeAt(0)))).update(
-    message,
-  ) as any;
-
+  const hmac = createHmac('sha256', Buffer.from(key.map(a => a.charCodeAt(0)))).update(message);
   return hmac.digest('binary').toString().split('');
 };
 

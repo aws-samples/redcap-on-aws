@@ -42,8 +42,10 @@ JP | [EN](../en/ptp.md)
 ```ts
 parameterGroupParameters: {
         // Avoid the REDCap system warning. Please change to the required value
-        max_allowed_packet: '134217728',
+        max_allowed_packet: '1073741824',
         read_rnd_buffer_size: '262144',
         sort_buffer_size: '2097152',
 },
 ```
+
+別の方法として、`stages.ts`ファイルの`db`オブジェクトで`maxAllowedPacket: '1073741824'`を設定することができます。

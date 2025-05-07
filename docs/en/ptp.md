@@ -46,8 +46,10 @@ When you change the parameter group, please restart the DB to reflect the settin
 ```ts
 parameterGroupParameters: {
         // Avoid the REDCap system warning. Please change to the required value
-        max_allowed_packet: '134217728',
+        max_allowed_packet: '1073741824',
         read_rnd_buffer_size: '262144',
         sort_buffer_size: '2097152',
 },
 ```
+
+Alternatively, you can configure your `stages.ts` in the `db` object to set the `maxAllowedPacket: '1073741824'` to the

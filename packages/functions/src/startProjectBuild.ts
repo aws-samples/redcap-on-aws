@@ -66,7 +66,7 @@ export const handler: Handler = async () => {
         buildStartedId = buildCommandResponse.build?.id;
     } else {
       // Check if we can start the build
-      builds.forEach((build) => {
+      builds.forEach(build => {
         if (build.buildStatus === 'IN_PROGRESS') {
           canStartBuild = false;
           buildStartedId = build.id;
@@ -82,16 +82,16 @@ export const handler: Handler = async () => {
 
     if (buildStartedId) {
       while (buildFinished === false) {
-        await new Promise((r) => setTimeout(r, 10000));
+        await new Promise(r => setTimeout(r, 10000));
         const builds = await getBuilds(client);
 
-        const hasBuildJob = size(filter(builds, (b) => b.id === buildStartedId));
+        const hasBuildJob = size(filter(builds, b => b.id === buildStartedId));
 
         if (hasBuildJob <= 0) {
           return new Error('Build is no longer in scope');
         }
 
-        builds.forEach((build) => {
+        builds.forEach(build => {
           if (build.id === buildStartedId) {
             if (build.buildStatus === 'IN_PROGRESS') {
               buildFinished = false;
@@ -104,6 +104,7 @@ export const handler: Handler = async () => {
       }
     }
   } catch (e) {
-    return new Error('Lambda build had an error');
+    console.error('Lambda build had an error');
+    throw e;
   }
 };
