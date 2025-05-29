@@ -13,6 +13,7 @@ import { get } from 'lodash';
 
 import * as stage from '../stages';
 import { RedCapConfig } from '../prototyping';
+import moment from 'moment';
 
 export function Database({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
@@ -29,6 +30,20 @@ export function Database({ stack, app }: StackContext) {
       'WARNING: db config is absent in stages.ts, using Amazon Aurora defaults settings',
     );
 
+  // Maintenance window check
+  if (dbConfig?.preferredMaintenanceWindow) {
+    const window = dbConfig.preferredMaintenanceWindow.split('-');
+
+    if (
+      window.length !== 2 ||
+      !moment(window[0], 'ddd:HH:mm', true).isValid() ||
+      !moment(window[1], 'ddd:HH:mm', true).isValid()
+    )
+      throw new Error(
+        `Database preferredMaintenanceWindow configuration is invalid, Example: 'Sun:23:45-Mon:00:15'`,
+      );
+  }
+
   const readers = dbConfig?.dbReaders ?? undefined;
   const scaling = dbConfig?.scaling ?? {
     maxCapacityAcu: 2,
@@ -36,6 +51,7 @@ export function Database({ stack, app }: StackContext) {
   };
   const maxAllowedPacket = dbConfig?.maxAllowedPacket ?? '4194304';
   const snapshotIdentifier = dbConfig?.dbSnapshotId ?? undefined;
+  const preferredMaintenanceWindow = dbConfig?.preferredMaintenanceWindow;
   const logRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
 
   const auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
@@ -55,6 +71,7 @@ export function Database({ stack, app }: StackContext) {
     },
     readers,
     snapshotIdentifier,
+    preferredMaintenanceWindow,
   });
 
   stack.exportValue(auroraClusterV2.aurora.clusterResourceIdentifier);

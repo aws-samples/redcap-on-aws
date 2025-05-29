@@ -21,7 +21,8 @@ const dev: RedCapConfig = {
   port: 8080,
   db: {
     dbSnapshotId: undefined,
-    maxAllowedPacket: '4194304',
+    maxAllowedPacket: '1073741824',
+    preferredMaintenanceWindow: 'Sun:23:45-Mon:00:15',
     dbReaders: 0, // disable readers for dev envs
     scaling: {
       maxCapacityAcu: 2,
@@ -57,6 +58,10 @@ const prod: RedCapConfig = {
   memory: Memory.EIGHT_GB,
   ec2ServerStack: {
     ec2StackDuration: Duration.hours(3),
+  },
+  db: {
+    maxAllowedPacket: '1073741824',
+    preferredMaintenanceWindow: 'Sun:23:45-Mon:00:15',
   },
   bounceNotificationEmail: 'email+bounce@mydomain.com',
 };

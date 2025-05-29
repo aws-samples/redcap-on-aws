@@ -359,7 +359,7 @@ Starting from version v1.1.0, you can use Amazon Aurora scaling capacity to 0 fo
 
 For example, a to minimize costs in a development environment, you could use:
 
-```json
+```ts
 db: {
     dbReaders: 1,
     scaling: {

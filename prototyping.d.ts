@@ -1,5 +1,6 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Duration } from 'aws-cdk-lib';
+import { DatabaseClusterProps } from 'aws-cdk-lib/aws-rds';
 import { ServiceProps } from 'sst/constructs';
 import { ConfigOptions } from 'sst/project';
 
@@ -48,6 +49,7 @@ export interface RedCapConfig extends ProtoConfigOptions {
       minCapacityAcu: number;
       maxCapacityAcu: number;
     };
+    preferredMaintenanceWindow?: DatabaseClusterProps['preferredMaintenanceWindow'];
   };
 }
 
