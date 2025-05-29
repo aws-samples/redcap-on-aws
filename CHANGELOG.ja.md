@@ -2,6 +2,10 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## v1.1.1
+
+- Amazon Aurora の `preferredMaintenanceWindow` 設定を追加します。
+
 ## v1.1.0
 
 - Amazon Aurora エンジンのバージョン 3_08_0 にアップグレードし、0 ACUまで拡張できるようサポートを追加
@@ -17,7 +21,7 @@ JP | [EN](./CHANGELOG)
 
 2. `stage.db` でカスタムデータベース設定を使用している場合は、新しいタイプに更新してください。以下は例です:
 
-   ```json
+   ```ts
    db: {
     dbSnapshotId: undefined,
     maxAllowedPacket: '4194304',

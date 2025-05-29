@@ -2,6 +2,10 @@
 
 # CHANGELOG
 
+## v1.1.1
+
+- Add `preferredMaintenanceWindow` configuration for Amazon Aurora.
+
 ## v1.1.0
 
 - Upgrade to Amazon Aurora engine 3_08_0 with support to scale to 0 ACUs
@@ -16,7 +20,7 @@
 1. Execute `yarn install` to upgrade packages
 2. If you are using a custom database configuration in `stage.db`, please update it to this new type, here is an example:
 
-   ```json
+   ```ts
    db: {
     dbSnapshotId: undefined,
     maxAllowedPacket: '4194304',

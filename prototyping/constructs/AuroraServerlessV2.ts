@@ -39,6 +39,7 @@ type AuroraProps = {
   readers?: number;
   snapshotIdentifier?: string;
   logRetention?: Lowercase<keyof typeof RetentionDays>;
+  preferredMaintenanceWindow?: aws_rds.DatabaseClusterProps['preferredMaintenanceWindow'];
 };
 
 type RdsV2Engines = {
@@ -135,6 +136,7 @@ export class AuroraServerlessV2 extends Construct {
       parameterGroup: this.parameterGroup,
       storageEncrypted: true,
       removalPolicy: props.removalPolicy,
+      preferredMaintenanceWindow: props.preferredMaintenanceWindow,
     };
 
     // Create Aurora Cluster

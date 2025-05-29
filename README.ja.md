@@ -359,7 +359,7 @@ yarn deploy --stage <your_stage_name>
 
 例えば、開発環境でコストを最小限に抑えるには、以下のように設定できます:
 
-```json
+```ts
 db: {
     dbReaders: 1,
     scaling: {
