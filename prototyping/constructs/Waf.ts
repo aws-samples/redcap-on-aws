@@ -112,11 +112,23 @@ let wafRules: WafRule[] = [
           name: 'AWSManagedRulesCommonRuleSet',
           // Excluding generic RFI body rule for sns notifications
           // https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html
-          excludedRules: [
-            { name: 'GenericRFI_BODY' },
-            { name: 'SizeRestrictions_BODY' },
-            { name: 'CrossSiteScripting_BODY' },
-            { name: 'NoUserAgent_HEADER' },
+          ruleActionOverrides: [
+            {
+              actionToUse: { count: {} },
+              name: 'GenericRFI_BODY',
+            },
+            {
+              actionToUse: { count: {} },
+              name: 'SizeRestrictions_BODY',
+            },
+            {
+              actionToUse: { count: {} },
+              name: 'CrossSiteScripting_BODY',
+            },
+            {
+              actionToUse: { count: {} },
+              name: 'NoUserAgent_HEADER',
+            },
           ],
         },
       },

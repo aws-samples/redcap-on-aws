@@ -2,6 +2,11 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## v1.1.2
+
+- `Waf.ts`のWAFルールオーバーライドを`ruleActionOverrides`を使用するようにアップグレード
+- sstバージョン`v2.49.3`にアップグレード
+
 ## v1.1.1
 
 - Amazon Aurora の `preferredMaintenanceWindow` 設定を追加します。
