@@ -184,7 +184,3 @@ In this case, this project will have deployed an `A Record` in your Route 53 Hos
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.
-
-```
-
-```
