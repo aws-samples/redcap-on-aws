@@ -2,6 +2,11 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## v1.1.3
+
+- Windowsインスタンスへのデプロイを修正するSST `v2.49.6`関連パッケージのアップグレード
+- `AppRunnerCustomDomain.yaml` Python Lambdaを3.13にアップデート
+
 ## v1.1.2
 
 - `Waf.ts`のWAFルールオーバーライドを`ruleActionOverrides`を使用するようにアップグレード
