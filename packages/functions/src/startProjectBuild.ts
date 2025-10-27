@@ -34,9 +34,7 @@ async function getBuilds(client: CodeBuildClient) {
     ids.push(nextListBuildResponse.ids);
   }
 
-  const batchBuildCommand = new BatchGetBuildsCommand({
-    ids: listBuildResponse.ids,
-  });
+  const batchBuildCommand = new BatchGetBuildsCommand({ ids: listBuildResponse.ids });
 
   if (isEmpty(listBuildResponse.ids)) {
     return [];
