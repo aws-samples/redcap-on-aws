@@ -76,7 +76,7 @@ if [ ! -z "$READ_REPLICA_HOSTNAME" ]; then
     mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
         UPDATE IGNORE redcap_config SET value = '1' WHERE field_name = 'read_replica_enable';
     "
-    REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v") 
+    REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v")
     # Disable the lag check as this does not apply to Amazon RDS Aurora Serverless V2
     sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
 fi
@@ -91,7 +91,7 @@ if [ "$DB_S3_ACCESS_KEY" = "$S3_ACCESS_KEY" ]; then
 else
     # REDCap SQL Initialization Configuration
     REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.sql
-    
+
     if [ -f "$REDCAP_CONFIG_SQL" ]; then
         echo " - Using provided redcapConfig.sql for REDCap settings"
     else

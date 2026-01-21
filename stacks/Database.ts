@@ -4,16 +4,15 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { Duration, aws_ec2 } from 'aws-cdk-lib';
-import { StackContext, use } from 'sst/constructs';
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
-import { AuroraServerlessV2 } from '../prototyping/constructs/AuroraServerlessV2';
-import { Network } from './Network';
+import { aws_ec2, Duration } from 'aws-cdk-lib';
 import { get } from 'lodash';
-
-import * as stage from '../stages';
-import { RedCapConfig } from '../prototyping';
 import moment from 'moment';
+import { type StackContext, use } from 'sst/constructs';
+import type { RedCapConfig } from '../prototyping';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { AuroraServerlessV2 } from '../prototyping/constructs/AuroraServerlessV2';
+import * as stage from '../stages';
+import { Network } from './Network';
 
 export function Database({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);

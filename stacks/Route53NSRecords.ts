@@ -1,9 +1,9 @@
-import * as stage from '../stages';
+import { aws_route53 } from 'aws-cdk-lib';
 
 import { get, isEmpty, trim } from 'lodash';
-import { aws_route53 } from 'aws-cdk-lib';
-import { StackContext } from 'sst/constructs';
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
+import type { StackContext } from 'sst/constructs';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
+import * as stage from '../stages';
 
 interface AppRecords {
   name: string;
@@ -33,7 +33,7 @@ export function Route53NSRecords({ stack }: StackContext) {
   });
 
   if (config.domain && !isEmpty(config.apps)) {
-    config.apps.forEach(app => {
+    config.apps.forEach((app) => {
       new aws_route53.NsRecord(stack, `ns-${config.domain}-${app.name}`, {
         zone,
         values: app.nsRecords,

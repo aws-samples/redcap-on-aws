@@ -4,12 +4,10 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { concat, isEmpty, uniqBy } from 'lodash';
-
-import * as cdk from 'aws-cdk-lib';
+import type * as cdk from 'aws-cdk-lib';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
-
 import { Construct } from 'constructs';
+import { concat, isEmpty, uniqBy } from 'lodash';
 
 export interface WafRule {
   name: string;
@@ -268,7 +266,7 @@ export class WAF extends wafv2.CfnWebACL {
       },
       scope: distScope,
       name: `${id}-waf`,
-      rules: wafRules.map(wafRule => wafRule.rule),
+      rules: wafRules.map((wafRule) => wafRule.rule),
     });
   }
 }

@@ -1,6 +1,6 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { Duration } from 'aws-cdk-lib';
-import { DomainAppsConfig, ProtoConfigOptions, RedCapConfig } from './prototyping';
+import type { DomainAppsConfig, ProtoConfigOptions, RedCapConfig } from './prototyping';
 
 const baseOptions: ProtoConfigOptions = {
   name: 'REDCap',

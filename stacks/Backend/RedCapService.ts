@@ -1,22 +1,21 @@
-import { App, Stack } from 'sst/constructs';
-import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
-import { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
-import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
-import { AppRunner } from '../../prototyping/constructs/AppRunner';
-import { Duration, SecretValue, aws_ec2, aws_events } from 'aws-cdk-lib';
-import { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
-import { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
-import { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
-import { Waf, WebACLAssociation } from '../../prototyping/constructs/Waf';
-import { IGrantable } from 'aws-cdk-lib/aws-iam';
-import { CfnAutoScalingConfigurationProps } from 'aws-cdk-lib/aws-apprunner';
-import { Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
+import type { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
+import { aws_ec2, aws_events, Duration, SecretValue } from 'aws-cdk-lib';
+import type { CfnAutoScalingConfigurationProps } from 'aws-cdk-lib/aws-apprunner';
+import type { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
+import type { Repository } from 'aws-cdk-lib/aws-ecr';
+import { type Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
 import { ApiDestination } from 'aws-cdk-lib/aws-events-targets';
-import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
-import { ServiceProps } from 'sst/constructs';
-import { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import type { IGrantable } from 'aws-cdk-lib/aws-iam';
+import type { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
+import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import type { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { isNumber } from 'lodash';
+import type { App, ServiceProps, Stack } from 'sst/constructs';
+import { AppRunner } from '../../prototyping/constructs/AppRunner';
+import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
+import type { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
+import type { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
+import { type Waf, WebACLAssociation } from '../../prototyping/constructs/Waf';
 
 export class RedcapService {
   private common;

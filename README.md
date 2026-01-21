@@ -224,21 +224,21 @@ We assume the external AWS account has a Hosted Zone with the DNS registered lik
    ```ts
    const route53NS: DomainAppsConfig = {
      ...baseOptions,
-     profile: 'your_external_aws_profile',
-     region: 'ap-northeast-1', // <-- update to your region
+     profile: "your_external_aws_profile",
+     region: "ap-northeast-1", // <-- update to your region
      apps: [
        {
-         name: 'redcap', // <-- Record name for the NS entry will be redcap.acme.com
+         name: "redcap", // <-- Record name for the NS entry will be redcap.acme.com
          nsRecords: [
            // <-- List of NS records from deployment output
-           'ns-11111.awsdns-11.org',
-           'ns-22.awsdns-22.com',
-           'ns-33.awsdns-33.net',
-           'ns-4444.awsdns-44.co.uk',
+           "ns-11111.awsdns-11.org",
+           "ns-22.awsdns-22.com",
+           "ns-33.awsdns-33.net",
+           "ns-4444.awsdns-44.co.uk",
          ],
        },
      ],
-     domain: 'acme.com', // <-- Target external domain
+     domain: "acme.com", // <-- Target external domain
    };
    ```
 
@@ -264,7 +264,6 @@ This case is not yet fully supported. At the moment it can be achieved using man
 2. [Deploy the project.](#6-deploy-the-project)
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your domain AWS account.
-
    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
@@ -319,7 +318,6 @@ This case is not yet fully supported. At the moment it can be achieved using man
 2. [Deploy the project.](#6-deploy-the-project)
 
 3. Follow the steps to link a App Runner domain, configure SES domain identity and create an A record for your ECS ALB if required on your DNS provider.
-
    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
@@ -534,7 +532,7 @@ const test: RedCapConfig = {
   ...baseOptions,
   // ...more options
   db: {
-    dbSnapshotId: 'redcap-dev', // Snapshot name.
+    dbSnapshotId: "redcap-dev", // Snapshot name.
   },
 };
 ```

@@ -4,18 +4,15 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { isEmpty, isNumber } from 'lodash';
-
-import { Duration, RemovalPolicy, Stack, aws_ec2, aws_iam, aws_rds } from 'aws-cdk-lib';
-import { IVpc } from 'aws-cdk-lib/aws-ec2';
-
-import { Construct } from 'constructs';
-import { Config } from 'sst/constructs';
-import { IClusterInstance } from 'aws-cdk-lib/aws-rds';
-import { NagSuppressions } from 'cdk-nag';
+import { createHash } from 'node:crypto';
+import { type aws_ec2, aws_iam, aws_rds, Duration, type RemovalPolicy, Stack } from 'aws-cdk-lib';
+import type { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
-
-import { createHash } from 'crypto';
+import type { IClusterInstance } from 'aws-cdk-lib/aws-rds';
+import { NagSuppressions } from 'cdk-nag';
+import { Construct } from 'constructs';
+import { isEmpty, isNumber } from 'lodash';
+import { Config } from 'sst/constructs';
 
 type ScalingConfiguration = {
   minCapacityAcu: number;
@@ -106,7 +103,7 @@ export class AuroraServerlessV2 extends Construct {
 
     const logRetention = props.logRetention || 'ONE_YEAR';
 
-    let databaseProps: aws_rds.DatabaseClusterProps | aws_rds.DatabaseClusterFromSnapshotProps = {
+    const databaseProps: aws_rds.DatabaseClusterProps = {
       vpc: props.vpc,
       vpcSubnets: {
         subnets: props.vpc.isolatedSubnets,
@@ -143,19 +140,19 @@ export class AuroraServerlessV2 extends Construct {
     if (props.snapshotIdentifier) {
       console.info(`\nAurora serverless: Deploying from snapshot: ${props.snapshotIdentifier}\n`);
 
-      databaseProps = {
+      const databaseSnapshotProps = {
         ...databaseProps,
         credentials: undefined,
         snapshotIdentifier: props.snapshotIdentifier,
         snapshotCredentials: aws_rds.SnapshotCredentials.fromGeneratedSecret(
           props.dbUserName || 'dbadmin',
         ),
-      };
+      } as aws_rds.DatabaseClusterFromSnapshotProps;
 
       this.aurora = new aws_rds.DatabaseClusterFromSnapshot(
         this,
         `ServerlessAuroraDatabaseFromSnapshot-${createHash('sha1').update(props.snapshotIdentifier).digest('hex')}`,
-        databaseProps,
+        databaseSnapshotProps,
       );
 
       NagSuppressions.addResourceSuppressions(
@@ -208,18 +205,6 @@ export class AuroraServerlessV2 extends Construct {
     if (engine === 'mysql8.0') {
       return aws_rds.DatabaseClusterEngine.auroraMysql({
         version: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0,
-      });
-    } else if (engine === 'postgresql13.10') {
-      return aws_rds.DatabaseClusterEngine.auroraPostgres({
-        version: aws_rds.AuroraPostgresEngineVersion.VER_13_10,
-      });
-    } else if (engine === 'postgresql14.7') {
-      return aws_rds.DatabaseClusterEngine.auroraPostgres({
-        version: aws_rds.AuroraPostgresEngineVersion.VER_14_7,
-      });
-    } else if (engine === 'postgresql15.2') {
-      return aws_rds.DatabaseClusterEngine.auroraPostgres({
-        version: aws_rds.AuroraPostgresEngineVersion.VER_15_2,
       });
     }
     throw new Error(

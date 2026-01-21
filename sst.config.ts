@@ -4,21 +4,20 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-// Read stages from stages.ts -- use yarn sst deploy --stage <your_stage_variable>
-import * as stage from './stages';
-
 import { Aspects, Tags } from 'aws-cdk-lib';
 import { AwsSolutionsChecks } from 'cdk-nag';
-import { SSTConfig } from 'sst';
+import { get } from 'lodash';
+import type { SSTConfig } from 'sst';
 import { NagConsoleLogger } from './prototyping/cdkNag/NagConsoleLogger';
+import { OverrideEc2ServerRemovalPolicy } from './prototyping/overrides/RemovalPolicy';
 import { Backend } from './stacks/Backend';
 import { BuildImage } from './stacks/BuildImage';
 import { Database } from './stacks/Database';
 import { EC2Server } from './stacks/EC2Server';
 import { Network } from './stacks/Network';
 import { Route53NSRecords } from './stacks/Route53NSRecords';
-import { OverrideEc2ServerRemovalPolicy } from './prototyping/overrides/RemovalPolicy';
-import { get } from 'lodash';
+// Read stages from stages.ts -- use yarn sst deploy --stage <your_stage_variable>
+import * as stage from './stages';
 
 export default {
   config(_input) {

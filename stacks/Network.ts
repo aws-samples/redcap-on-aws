@@ -5,10 +5,10 @@
  */
 
 import { InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
-import { StackContext } from 'sst/constructs';
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
-import { NetworkVpc } from '../prototyping/constructs/NetworkVpc';
 import { get } from 'lodash';
+import type { StackContext } from 'sst/constructs';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { NetworkVpc } from '../prototyping/constructs/NetworkVpc';
 
 import * as stage from '../stages';
 
@@ -26,7 +26,10 @@ export function Network({ stack, app }: StackContext) {
     logRetention: get(stage, [stack.stage, 'generalLogRetention'], undefined),
   });
 
-  networkVpc.vpc.publicSubnets.forEach(publicSubnet => stack.exportValue(publicSubnet.subnetId));
+  networkVpc.vpc.publicSubnets.forEach((publicSubnet) => {
+    stack.exportValue(publicSubnet.subnetId);
+  });
+
   Suppressions.NetworkVpcSuppressions(networkVpc);
   return { networkVpc };
 }

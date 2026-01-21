@@ -1,8 +1,8 @@
-import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
-import { Duration } from 'aws-cdk-lib';
-import { DatabaseClusterProps } from 'aws-cdk-lib/aws-rds';
-import { ServiceProps } from 'sst/constructs';
-import { ConfigOptions } from 'sst/project';
+import type { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
+import type { Duration } from 'aws-cdk-lib';
+import type { DatabaseClusterProps } from 'aws-cdk-lib/aws-rds';
+import type { ServiceProps } from 'sst/constructs';
+import type { ConfigOptions } from 'sst/project';
 
 export interface ProtoConfigOptions extends ConfigOptions {
   allowedIps?: string[];

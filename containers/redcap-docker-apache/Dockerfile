@@ -26,11 +26,11 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/aws
     && /tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin \
     && rm /tmp/awscliv2.zip && rm -rf /tmp/aws
 
-# Composer PHP SDK
+# Composer PHP SDK (conditionally installed in setup_app.sh based on REDCap version)
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
-RUN mkdir -p /usr/local/share/redcap/aws && composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+RUN mkdir -p /usr/local/share/redcap/aws
 
-# RDS certificate 
+# RDS certificate
 RUN curl "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" -o "/usr/local/share/redcap/global-bundle.pem"
 
 # Fix ImageMagick policy for REDCap
@@ -53,7 +53,7 @@ COPY scripts/ /etc/redcap-entry/
 RUN chown www-data -R /etc/redcap-entry && chmod a+x /etc/redcap-entry/*.sh && /etc/redcap-entry/setup_app.sh
 RUN touch /etc/msmtprc && chown www-data /etc/msmtprc
 
-# Run apache as www-data 
+# Run apache as www-data
 USER www-data
 
 # Redcap database setup script

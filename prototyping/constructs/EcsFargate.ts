@@ -4,28 +4,39 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { Duration, aws_ec2, aws_iam } from 'aws-cdk-lib';
+import { type aws_ec2, type aws_iam, Duration } from 'aws-cdk-lib';
+import {
+  Certificate,
+  CertificateValidation,
+  type ICertificate,
+} from 'aws-cdk-lib/aws-certificatemanager';
+import { type CfnSecurityGroup, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { ContainerImage, Secret, CfnCluster } from 'aws-cdk-lib/aws-ecs';
+import { type CfnCluster, ContainerImage, type Secret } from 'aws-cdk-lib/aws-ecs';
+import {
+  ApplicationProtocol,
+  type CfnListener,
+  SslPolicy,
+} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Rule } from 'aws-cdk-lib/aws-events';
 import { SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
+import type { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
+import { ARecord, type IPublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { DefinitionBody, LogLevel, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { CallAwsService } from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import { App, Bucket, Service, ServiceDomainProps, ServiceProps, Stack } from 'sst/constructs';
-import { bucketProps } from '../overrides/BucketProps';
-import { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
-import { CfnSecurityGroup, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
-import {
-  ApplicationProtocol,
-  CfnListener,
-  SslPolicy,
-} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { ARecord, IPublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
-import { Construct } from 'constructs';
 import { NagSuppressions } from 'cdk-nag';
+import { Construct } from 'constructs';
+import {
+  type App,
+  Bucket,
+  Service,
+  type ServiceDomainProps,
+  type ServiceProps,
+  type Stack,
+} from 'sst/constructs';
+import { bucketProps } from '../overrides/BucketProps';
 
 export interface EcsFargateCertificate {
   fromArn?: string;
@@ -69,7 +80,7 @@ export class EcsFargate extends Construct {
   constructor(scope: Stack, id: string, props: EcsFargateProps) {
     super(scope, id);
 
-    let certificate;
+    let certificate: ICertificate | undefined;
 
     if (props.certificate) {
       if (props.certificate.fromDns && props.publicHostedZone)

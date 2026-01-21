@@ -1,6 +1,10 @@
-import { IPublicHostedZone, PublicHostedZone, ZoneDelegationRecord } from 'aws-cdk-lib/aws-route53';
+import {
+  type IPublicHostedZone,
+  PublicHostedZone,
+  ZoneDelegationRecord,
+} from 'aws-cdk-lib/aws-route53';
 import { isString } from 'lodash';
-import { App, Stack } from 'sst/constructs';
+import type { App, Stack } from 'sst/constructs';
 
 export interface DomainProps {
   domain: string;
@@ -77,7 +81,7 @@ export class DomainConfiguration {
       this.props.stack,
       `${this.props.app.stage}-${this.props.app.name}-delegation-records`,
       {
-        nameServers: newHZ.hostedZoneNameServers!,
+        nameServers: newHZ.hostedZoneNameServers ? newHZ.hostedZoneNameServers : [],
         zone: rootHz,
         deleteExisting: true,
         recordName: `${this.props.subdomain}.${this.props.domain}`,
