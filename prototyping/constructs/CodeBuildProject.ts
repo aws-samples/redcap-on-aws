@@ -4,13 +4,13 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { Project, ProjectProps } from 'aws-cdk-lib/aws-codebuild';
-import { Function } from 'sst/constructs';
 import { Duration, RemovalPolicy, triggers } from 'aws-cdk-lib';
+import { Project, type ProjectProps } from 'aws-cdk-lib/aws-codebuild';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
+import type { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
-import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { Function as sstFunction } from 'sst/constructs';
 
 interface LambdaTriggerProps {
   handler: string;
@@ -47,7 +47,7 @@ export class CodeBuildProject extends Construct {
       TIMESTAMP: props.rebuild ? Date.now().toString() : 'NA',
     };
 
-    const buildJobFunc = new Function(this, `${props.name}-lambda-trigger`, {
+    const buildJobFunc = new sstFunction(this, `${props.name}-lambda-trigger`, {
       handler: props.handler,
       timeout: '15 minutes',
       logRetention: props.logRetention || 'one_year',

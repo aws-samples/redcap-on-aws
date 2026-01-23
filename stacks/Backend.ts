@@ -4,34 +4,29 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import * as stage from '../stages';
-
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
-import { Fn, RemovalPolicy, aws_secretsmanager } from 'aws-cdk-lib';
+import { aws_secretsmanager, Fn, RemovalPolicy } from 'aws-cdk-lib';
 import { assign, get, isEmpty, random } from 'lodash';
-
 // SST
-import { Bucket, StackContext, use } from 'sst/constructs';
-
-// Stack dependency
-import { BuildImage } from './BuildImage';
-import { Database } from './Database';
-import { Network } from './Network';
-
+import { Bucket, type StackContext, use } from 'sst/constructs';
+// Nag suppressions
+import Suppressions from '../prototyping/cdkNag/Suppressions';
 // Construct and other assets
 import { RedCapAwsAccessUser } from '../prototyping/constructs/RedCapAwsAccessUser';
 import {
   SimpleEmailService,
-  SimpleEmailServiceProps,
+  type SimpleEmailServiceProps,
 } from '../prototyping/constructs/SimpleEmailService';
 import { Waf } from '../prototyping/constructs/Waf';
-import { getRedcapCronRule, getCountryLimitRule } from './Backend/WafExtraRules';
-
-// Nag suppressions
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
 import { bucketProps } from '../prototyping/overrides/BucketProps';
+import * as stage from '../stages';
 import { DomainConfiguration } from './Backend/DomainConfiguration';
 import { RedcapService } from './Backend/RedCapService';
+import { getCountryLimitRule, getRedcapCronRule } from './Backend/WafExtraRules';
+// Stack dependency
+import { BuildImage } from './BuildImage';
+import { Database } from './Database';
+import { Network } from './Network';
 
 const { createHmac } = await import('node:crypto');
 
@@ -230,7 +225,7 @@ export function Backend({ stack, app }: StackContext) {
   Suppressions.SesSuppressions(ses);
   Suppressions.WebWafSuppressions(waf);
   Suppressions.RedCapAwsAccessUserSuppressions([redCapS3AccessUser, redCapSESAccessUser]);
-  Suppressions.DBSecretSalt(dbSalt);
+  Suppressions.DBSecretSaltSuppressions(dbSalt);
 
   if (service.appRunnerService) Suppressions.AppRunnerSuppressions(service.appRunnerService, app);
   if (service.ecsService) Suppressions.ECSSuppressions(service.ecsService);

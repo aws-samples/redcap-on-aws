@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   DomainName:
     Type: String
@@ -43,7 +43,7 @@ Resources:
       Handler: index.handler
       MemorySize: 128
       Timeout: 900
-      Role: !GetAtt 'LambdaRole.Arn'
+      Role: !GetAtt "LambdaRole.Arn"
       Runtime: python3.13
       Code:
         ZipFile: |
@@ -232,7 +232,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -243,7 +243,7 @@ Resources:
       Policies:
         - PolicyName: AssociateCustomDomainsPermission
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -251,11 +251,11 @@ Resources:
                   - apprunner:DisassociateCustomDomain
                   - apprunner:DescribeCustomDomains
                 Resource:
-                  - '*'
+                  - "*"
 
         - PolicyName: WriteToLogGroupPermission
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -263,4 +263,4 @@ Resources:
                   - logs:PutLogEvents
                   - logs:CreateLogGroup
                 Resource:
-                  - '*'
+                  - "*"

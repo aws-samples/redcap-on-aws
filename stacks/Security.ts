@@ -6,8 +6,8 @@
 
 import { CfnDetector } from 'aws-cdk-lib/aws-guardduty';
 
-import { StackContext } from 'sst/constructs';
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
+import type { StackContext } from 'sst/constructs';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
 
 export function Security({ stack }: StackContext) {
   const detector = new CfnDetector(stack, `guard-duty`, {

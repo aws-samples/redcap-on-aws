@@ -4,15 +4,15 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { RemovalPolicy, aws_ec2 } from 'aws-cdk-lib';
+import { aws_ec2, RemovalPolicy } from 'aws-cdk-lib';
 import {
   FlowLogDestination,
   FlowLogTrafficType,
-  InterfaceVpcEndpointAwsService,
+  type InterfaceVpcEndpointAwsService,
   IpAddresses,
   SubnetType,
   Vpc,
-  VpcProps,
+  type VpcProps,
 } from 'aws-cdk-lib/aws-ec2';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
@@ -82,7 +82,7 @@ export class NetworkVpc extends Construct {
     }
 
     // Create VPC - Private and public subnets
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: nat gateway mod
     const vpcTempProps: any = {
       ipAddresses: IpAddresses.cidr(props.cidr),
       vpcName: `${id}-vpc`,
@@ -123,7 +123,7 @@ export class NetworkVpc extends Construct {
     };
 
     // create VPC endpoints
-    props.vpcEndpoints?.forEach(vpcEndpoint => {
+    props.vpcEndpoints?.forEach((vpcEndpoint) => {
       this.endpoints[`${vpcEndpoint.shortName}`] = this.vpc.addInterfaceEndpoint(
         `${vpcEndpoint.shortName}-vep`,
         {

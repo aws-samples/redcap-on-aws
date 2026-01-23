@@ -4,9 +4,6 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { get, last, split, toLower } from 'lodash';
-import { StackContext, use } from 'sst/constructs';
-
 import { RemovalPolicy } from 'aws-cdk-lib';
 import {
   BuildSpec,
@@ -18,15 +15,14 @@ import {
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
-
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
-import { CodeBuildProject } from '../prototyping/constructs/CodeBuildProject';
-
 import { Asset } from 'aws-cdk-lib/aws-s3-assets';
+import { get, last, split, toLower } from 'lodash';
+import { type StackContext, use } from 'sst/constructs';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { CodeBuildProject } from '../prototyping/constructs/CodeBuildProject';
 import { Helpers } from '../prototyping/extensions/Helpers';
-import { Network } from './Network';
-
 import * as stage from '../stages';
+import { Network } from './Network';
 
 export function BuildImage({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
@@ -42,26 +38,28 @@ export function BuildImage({ stack, app }: StackContext) {
   const generalLogRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
 
   // Use a remote S3 location to deploy redcap
-  let redCapS3Path = get(stage, [stack.stage, 'redCapS3Path']);
-  let redcapTag = get(stage, [stack.stage, 'deployTag'], Helpers.extractRedCapTag(redCapS3Path));
+  const redCapS3PathInput = get(stage, [stack.stage, 'redCapS3Path']);
 
+  // Optionally force to rebuild image
   const rebuild = get(stage, [stack.stage, 'rebuildImage'], false);
 
   // Validation check
-  if (redCapS3Path && redCapLocalVersion) {
+  if (redCapS3PathInput && redCapLocalVersion) {
     throw new Error(
-      'You must define only one REDCap install source, redCapLocalVersion (redcap<version>.zip) or an redCapS3Path (bucket_name/path/redcap<version>.zip)',
+      'You must define only one REDCap install source, examples: `redCapLocalVersion: redcap13.7.2` or an redCapS3Path: `s3_bucket_name/folder/redcap<version>.zip`',
     );
-  } else if (!redCapS3Path && !redCapLocalVersion) {
+  } else if (!redCapS3PathInput && !redCapLocalVersion) {
     throw new Error(
-      'No REDCap install source found, define redCapLocalVersion or redCapS3Path in your stage file',
+      'No REDCap install source found, please define either redCapLocalVersion or redCapS3Path in your stage file',
     );
   }
+
+  let redCapS3Path: string;
+  let redcapTag: string | null;
 
   if (redCapLocalVersion) {
     const redcapPackage = new Asset(stack, `${app.stage}-${app.name}-redcapPackage`, {
       path: `packages/REDCap/releases/${redCapLocalVersion}.zip`,
-      exclude: ['.DS_Store'],
     });
 
     redcapTag = get(
@@ -72,7 +70,10 @@ export function BuildImage({ stack, app }: StackContext) {
 
     redCapS3Path = redcapPackage.s3ObjectUrl;
   } else {
-    redCapS3Path = `s3://${redCapS3Path}`;
+    const s3PathInput = redCapS3PathInput as string;
+    // Extract version tag from the S3 path
+    redcapTag = get(stage, [stack.stage, 'deployTag'], Helpers.extractRedCapTag(s3PathInput));
+    redCapS3Path = s3PathInput.startsWith('s3://') ? s3PathInput : `s3://${s3PathInput}`;
   }
 
   const redcapS3Arn = `arn:aws:s3:::${last(split(redCapS3Path, 's3://'))}`;
@@ -119,7 +120,7 @@ export function BuildImage({ stack, app }: StackContext) {
         value: repository.repositoryUri,
       },
       IMAGE_TAG: {
-        value: redcapTag!,
+        value: redcapTag,
       },
       REDCAP_S3_URI: {
         value: redCapS3Path,
@@ -164,7 +165,7 @@ export function BuildImage({ stack, app }: StackContext) {
   const lambdaBuild = codeBuild.addLambdaTrigger({
     handler: 'packages/functions/src/startProjectBuild.handler',
     name: 'redcap-build',
-    rebuild: rebuild,
+    rebuild,
     logRetention: generalLogRetention,
     executeAfter: [codeBuild],
     executeBefore: [],

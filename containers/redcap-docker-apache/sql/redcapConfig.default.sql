@@ -10,5 +10,5 @@ UPDATE redcap_config SET value = 'https://mydomain.com' WHERE field_name = 'redc
 UPDATE redcap_config SET value = 'table' WHERE field_name = 'auth_meth_global';
 
 -- REDCAP USERS
-INSERT IGNORE INTO redcap_auth (username, password, legacy_hash, temp_pwd) VALUES ('site_admin', MD5('changeme'), '1', '1'); 
+INSERT IGNORE INTO redcap_auth (username, password, legacy_hash, temp_pwd) VALUES ('site_admin', MD5('changeme'), '1', '1');
 UPDATE redcap_user_information SET super_user = '0' WHERE username = 'site_admin';

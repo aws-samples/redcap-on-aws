@@ -4,41 +4,40 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import * as ecr from 'aws-cdk-lib/aws-ecr';
-
 import {
   Cpu,
-  ImageConfiguration,
+  type ImageConfiguration,
   Memory,
   Service,
   Source,
   VpcConnector,
 } from '@aws-cdk/aws-apprunner-alpha';
 import {
-  RemovalPolicy,
-  aws_ec2,
+  type aws_ec2,
   aws_events,
   aws_events_targets,
   aws_iam,
   aws_sns,
   cloudformation_include,
+  RemovalPolicy,
 } from 'aws-cdk-lib';
 import {
   CfnAutoScalingConfiguration,
-  CfnAutoScalingConfigurationProps,
-  CfnService,
+  type CfnAutoScalingConfigurationProps,
+  type CfnService,
 } from 'aws-cdk-lib/aws-apprunner';
-import { Construct } from 'constructs';
-import { getAppRunnerHostedZone } from '../../stacks/Backend/AppRunnerHostedZones';
-import { App, Stack } from 'sst/constructs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import {
-  AliasRecordTargetConfig,
-  IAliasRecordTarget,
-  IPublicHostedZone,
+  type AliasRecordTargetConfig,
+  type IAliasRecordTarget,
+  type IPublicHostedZone,
   RecordSet,
   RecordTarget,
   RecordType,
 } from 'aws-cdk-lib/aws-route53';
+import { Construct } from 'constructs';
+import type { App, Stack } from 'sst/constructs';
+import { getAppRunnerHostedZone } from '../../stacks/Backend/AppRunnerHostedZones';
 
 export interface AppRunnerProps {
   app: App;
@@ -83,7 +82,7 @@ export class AppRunner extends Construct {
     super(scope, id);
 
     // Create VPC Connector
-    let vpcConnector;
+    let vpcConnector: VpcConnector | undefined;
 
     if (props.network) {
       vpcConnector = new VpcConnector(this, 'vpc-connector', {
@@ -94,7 +93,7 @@ export class AppRunner extends Construct {
     }
 
     // Create access role if there's no access role in props
-    let accessRole;
+    let accessRole: aws_iam.Role | undefined;
     if (props.accessRole) accessRole = props.accessRole;
     else {
       accessRole = new aws_iam.Role(this, `apprunner-accessRole`, {

@@ -22,19 +22,18 @@ import { CallAwsService } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { Trigger } from 'aws-cdk-lib/triggers';
 
 import { get } from 'lodash';
-import { Function, StackContext, use } from 'sst/constructs';
+import { type StackContext, Function as sstFunction, use } from 'sst/constructs';
 
-import { Suppressions } from '../prototyping/cdkNag/Suppressions';
+import Suppressions from '../prototyping/cdkNag/Suppressions';
+import * as stage from '../stages';
 import { Backend } from './Backend';
 import { BuildImage } from './BuildImage';
 import { Database } from './Database';
 import { Network } from './Network';
 
-import * as stage from '../stages';
-
 function generateEnvUserData(envVars: { [key: string]: string }, profiledPath: string): string {
   const envExports = Object.keys(envVars)
-    .map(key =>
+    .map((key) =>
       envVars[key].includes('--output json')
         ? `export ${key}=${envVars[key]}`
         : `export ${key}=\\"${envVars[key]}\\"`,
@@ -67,14 +66,14 @@ export function EC2Server({ stack, app }: StackContext) {
   const dockerEnv = `-e AWS_REGION='${app.region}'\
   -e USE_CERT='1' \
   -e USE_IAM_DB_AUTH='true' \
-  -e DB_SECRET_ID=\$DB_SECRET_ID \
-  -e DB_SALT_SECRET_ID=\$DB_SALT_SECRET_ID \
-  -e DB_SECRET_NAME=\$DB_SECRET_NAME \
-  -e S3_BUCKET=\$S3_BUCKET \
-  -e S3_SECRET_ID=\$S3_SECRET_ID \
-  -e SES_CREDENTIALS_SECRET_ID=\$SES_CREDENTIALS_SECRET_ID \
-  -e PHP_TIMEZONE=\$PHP_TIMEZONE \
-  -e SMTP_EMAIL=\$SMTP_EMAIL`;
+  -e DB_SECRET_ID=$DB_SECRET_ID \
+  -e DB_SALT_SECRET_ID=$DB_SALT_SECRET_ID \
+  -e DB_SECRET_NAME=$DB_SECRET_NAME \
+  -e S3_BUCKET=$S3_BUCKET \
+  -e S3_SECRET_ID=$S3_SECRET_ID \
+  -e SES_CREDENTIALS_SECRET_ID=$SES_CREDENTIALS_SECRET_ID \
+  -e PHP_TIMEZONE=$PHP_TIMEZONE \
+  -e SMTP_EMAIL=$SMTP_EMAIL`;
 
   userData.addCommands(
     'sudo dnf update -y',
@@ -153,7 +152,7 @@ export function EC2Server({ stack, app }: StackContext) {
     tracingEnabled: true,
   });
 
-  const stateMachineExecHandler = new Function(stack, `stateMachineExecHandler`, {
+  const stateMachineExecHandler = new sstFunction(stack, `stateMachineExecHandler`, {
     handler: 'packages/functions/src/stateMachineExec.handler',
     environment: {
       SFN_ARN: terminateStateMachine.stateMachineArn,

@@ -4,17 +4,16 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import chalk from 'chalk';
-import * as fs from 'fs';
-import path from 'path';
-
-import {
+import * as fs from 'node:fs';
+import path from 'node:path';
+import type {
   INagLogger,
   NagLoggerErrorData,
   NagLoggerNonComplianceData,
   NagLoggerSuppressedData,
   NagLoggerSuppressedErrorData,
 } from 'cdk-nag';
+import chalk from 'chalk';
 import { parse } from 'csv-parse/sync';
 import { filter, size } from 'lodash';
 
@@ -94,8 +93,8 @@ export class NagConsoleLogger implements INagLogger {
       RuleInfo: '',
     };
 
-    files.forEach(file => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    files.forEach((file) => {
+      // biome-ignore lint/suspicious/noExplicitAny: CDK nag offenses
       const offenses: any[] = [];
 
       const csv = fs.readFileSync(`./${file}`);

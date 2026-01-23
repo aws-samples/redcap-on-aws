@@ -4,9 +4,9 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { Duration, RemovalPolicy, aws_iam, aws_secretsmanager, triggers } from 'aws-cdk-lib';
+import { aws_iam, aws_secretsmanager, Duration, RemovalPolicy, triggers } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import {
   ConfigurationSet,
   EmailIdentity,
@@ -18,8 +18,8 @@ import { Topic } from 'aws-cdk-lib/aws-sns';
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 
 import { Construct } from 'constructs';
-import { Function } from 'sst/constructs';
-import { Suppressions } from '../cdkNag/Suppressions';
+import { Function as sstFunction } from 'sst/constructs';
+import Suppressions from '../cdkNag/Suppressions';
 
 export interface SimpleEmailServiceProps {
   group?: aws_iam.Group;
@@ -44,8 +44,8 @@ export class SimpleEmailService extends Construct {
   constructor(scope: Construct, id: string, props: SimpleEmailServiceProps) {
     super(scope, id);
 
-    let identity;
-    let mailFromDomain;
+    let identity: Identity | undefined;
+    let mailFromDomain: string | undefined;
 
     // check props
     if (props.publicHostedZone && props.domain) {
@@ -56,7 +56,7 @@ export class SimpleEmailService extends Construct {
       throw new Error('SES can be configured with one public hosted zone, domain or email');
     }
 
-    let configSet: ConfigurationSet | undefined = undefined;
+    let configSet: ConfigurationSet | undefined;
 
     if (props.bounceNotificationEmail) {
       const bounceTopic = new Topic(this, 'BounceTopic', {
@@ -121,7 +121,7 @@ export class SimpleEmailService extends Construct {
     });
 
     // create lambda function to get SES credential
-    const getCredentialsFunction = new Function(scope, 'get-credentials', {
+    const getCredentialsFunction = new sstFunction(scope, 'get-credentials', {
       environment: {
         SES_USERNAME: user.userName || 'redcap-smtp-user',
         SES_USER_PASSWORD_ARN: this.sesUserCredentials.secretArn,

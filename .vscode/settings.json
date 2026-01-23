@@ -5,6 +5,6 @@
     "**/.sst": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "eslint.enable": true,
-  "biome.enabled": false,
+  "eslint.enable": false,
+  "biome.enabled": true
 }

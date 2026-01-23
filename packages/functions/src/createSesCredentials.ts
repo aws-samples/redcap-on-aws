@@ -4,8 +4,10 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
+import { Buffer } from 'node:buffer';
+import { createHmac } from 'node:crypto';
 import {
-  AccessKey,
+  type AccessKey,
   CreateAccessKeyCommand,
   IAMClient,
   ListAccessKeysCommand,
@@ -15,9 +17,7 @@ import {
   SecretsManagerClient,
   UpdateSecretCommand,
 } from '@aws-sdk/client-secrets-manager';
-import { Handler } from 'aws-lambda';
-import { Buffer } from 'buffer';
-import { createHmac } from 'crypto';
+import type { Handler } from 'aws-lambda';
 import { get, size } from 'lodash';
 
 const region = process.env.AWS_REGION;
@@ -126,7 +126,7 @@ export const handler: Handler = async () => {
 };
 
 export const sign = (key: string[], message: string): string[] => {
-  const hmac = createHmac('sha256', Buffer.from(key.map(a => a.charCodeAt(0)))).update(message);
+  const hmac = createHmac('sha256', Buffer.from(key.map((a) => a.charCodeAt(0)))).update(message);
   return hmac.digest('binary').toString().split('');
 };
 
@@ -148,7 +148,9 @@ export const calculateSesSmtpPassword = (secretAccessKey: string, region: string
 
   const signatureAndVersion = version.slice(); // copy of array
 
-  signature.forEach((a: string) => signatureAndVersion.push(a.charCodeAt(0)));
+  signature.forEach((key) => {
+    signatureAndVersion.push(key.charCodeAt(0));
+  });
 
   return Buffer.from(signatureAndVersion).toString('base64');
 };

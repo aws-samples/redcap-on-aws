@@ -5,31 +5,28 @@
  */
 
 import { Stack } from 'aws-cdk-lib';
+import type { Instance } from 'aws-cdk-lib/aws-ec2';
+import type { CfnDetector } from 'aws-cdk-lib/aws-guardduty';
+import type { IHostedZone } from 'aws-cdk-lib/aws-route53';
+import type { BucketDeployment } from 'aws-cdk-lib/aws-s3-deployment';
+import type { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
+import type { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { NagSuppressions } from 'cdk-nag';
-import { Construct } from 'constructs';
-import { App, Function } from 'sst/constructs';
-
-import { CfnDetector } from 'aws-cdk-lib/aws-guardduty';
-import { BucketDeployment } from 'aws-cdk-lib/aws-s3-deployment';
-import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
-
-import { Instance } from 'aws-cdk-lib/aws-ec2';
-import { IHostedZone } from 'aws-cdk-lib/aws-route53';
-import { ITopic } from 'aws-cdk-lib/aws-sns';
-import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { AppRunner } from '../constructs/AppRunner';
-import { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
-import { CodeBuildProject } from '../constructs/CodeBuildProject';
-import { EcsFargate } from '../constructs/EcsFargate';
-import { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
-import { SimpleEmailService } from '../constructs/SimpleEmailService';
-import { Waf } from '../constructs/Waf';
-
-import * as stage from '../../stages';
+import type { Construct } from 'constructs';
 import { get } from 'lodash';
+import type { App, Function as SSTFunctionType } from 'sst/constructs';
+import * as stage from '../../stages';
+import type { AppRunner } from '../constructs/AppRunner';
+import type { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
+import type { CodeBuildProject } from '../constructs/CodeBuildProject';
+import type { EcsFargate } from '../constructs/EcsFargate';
+import type { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
+import type { SimpleEmailService } from '../constructs/SimpleEmailService';
+import type { Waf } from '../constructs/Waf';
 
-export class Suppressions {
-  static ECSSuppressions(service: EcsFargate) {
+const Suppressions = {
+  ECSSuppressions(service: EcsFargate) {
     const stack = Stack.of(service);
     try {
       NagSuppressions.addStackSuppressions(
@@ -75,9 +72,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static SSTEmptyStackSuppressions(stack: Stack) {
+  SSTEmptyStackSuppressions(stack: Stack) {
     try {
       NagSuppressions.addStackSuppressions(stack, [
         {
@@ -92,12 +89,12 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static EC2ServerSuppressions(
+  EC2ServerSuppressions(
     ec2ServerInstance: Instance,
     terminateStateMachine: StateMachine,
-    stateMachineExecHandler: Function,
+    stateMachineExecHandler: SSTFunctionType,
   ) {
     const stack = Stack.of(ec2ServerInstance);
     try {
@@ -155,9 +152,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static Route53NS(zone: IHostedZone) {
+  Route53NS(zone: IHostedZone) {
     const stack = Stack.of(zone);
     try {
       NagSuppressions.addStackSuppressions(stack, [
@@ -173,9 +170,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static SesSuppressions(ses: SimpleEmailService) {
+  SesSuppressions(ses: SimpleEmailService) {
     try {
       const stack = Stack.of(ses);
       NagSuppressions.addResourceSuppressionsByPath(
@@ -209,9 +206,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static AppRunnerSuppressions(service: AppRunner, app: App) {
+  AppRunnerSuppressions(service: AppRunner, app: App) {
     const stack = Stack.of(service);
     try {
       NagSuppressions.addStackSuppressions(stack, [
@@ -281,9 +278,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static WebWafSuppressions(waf: Waf) {
+  WebWafSuppressions(waf: Waf) {
     try {
       const stack = Stack.of(waf);
       NagSuppressions.addResourceSuppressionsByPath(
@@ -307,9 +304,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static NetworkVpcSuppressions(networkVpc: Construct) {
+  NetworkVpcSuppressions(networkVpc: Construct) {
     try {
       NagSuppressions.addStackSuppressions(Stack.of(networkVpc), [
         {
@@ -333,9 +330,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static DBSecretSalt(secret: Secret) {
+  DBSecretSaltSuppressions(secret: Secret) {
     try {
       NagSuppressions.addResourceSuppressions(
         secret,
@@ -350,9 +347,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static RDSV2Suppressions(cluster: AuroraServerlessV2) {
+  RDSV2Suppressions(cluster: AuroraServerlessV2) {
     const stack = Stack.of(cluster);
     try {
       NagSuppressions.addResourceSuppressionsByPath(
@@ -457,9 +454,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static BuildImageSuppressions(project: CodeBuildProject) {
+  BuildImageSuppressions(project: CodeBuildProject) {
     const stack = Stack.of(project);
     try {
       NagSuppressions.addStackSuppressions(stack, [
@@ -483,9 +480,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static BucketSuppressions(bucketDeploymentLambda: BucketDeployment) {
+  BucketSuppressions(bucketDeploymentLambda: BucketDeployment) {
     const stack = Stack.of(bucketDeploymentLambda);
     try {
       NagSuppressions.addResourceSuppressions(
@@ -515,9 +512,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static SecurityDetectorSuppressions(detector: CfnDetector) {
+  SecurityDetectorSuppressions(detector: CfnDetector) {
     try {
       const stack = Stack.of(detector);
       NagSuppressions.addResourceSuppressionsByPath(
@@ -541,9 +538,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static RedCapAwsAccessUserSuppressions(redCapAccessUser: Array<RedCapAwsAccessUser>) {
+  RedCapAwsAccessUserSuppressions(redCapAccessUser: Array<RedCapAwsAccessUser>) {
     try {
       NagSuppressions.addResourceSuppressions(
         redCapAccessUser,
@@ -562,9 +559,9 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
+  },
 
-  static SimpleEmailServiceSuppressions(snsTopic: ITopic) {
+  SimpleEmailServiceSuppressions(snsTopic: ITopic) {
     try {
       NagSuppressions.addResourceSuppressions(snsTopic, [
         {
@@ -579,5 +576,7 @@ export class Suppressions {
     } catch {
       /* empty */
     }
-  }
-}
+  },
+};
+
+export default Suppressions;

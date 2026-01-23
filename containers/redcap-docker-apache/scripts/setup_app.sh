@@ -4,11 +4,24 @@
 # SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
 # Licensed under the Amazon Software License  http://aws.amazon.com/asl/
 
+set -e
+
 ## REDCap package setup
 aws s3 cp $REDCAP_S3_URI /tmp/redcapPackage.zip
 unzip -qq /tmp/redcapPackage.zip -d /tmp/
 cp -rp /tmp/redcap/* /var/www/html/ && rm -rf /tmp/redcap
 chown -R www-data:www-data /var/www/html
+
+## Check if REDCap bundles AWS SDK, if not install via Composer
+REDCAP_VERSION_DIR=$(ls -d /var/www/html/redcap_v* 2>/dev/null | sort -V | tail -n 1)
+if [ -n "$REDCAP_VERSION_DIR" ] && [ -f "$REDCAP_VERSION_DIR/Libraries/vendor/autoload.php" ]; then
+    echo "REDCap bundles its own AWS SDK at $REDCAP_VERSION_DIR/Libraries/vendor/autoload.php"
+    echo "Skipping separate AWS SDK installation to avoid version conflicts"
+else
+    echo "REDCap does not bundle AWS SDK, installing via Composer"
+    mkdir -p /usr/local/share/redcap/aws
+    composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+fi
 
 ## REDCap languages
 aws s3 cp $LANG_S3_URI /tmp/redcapLanguages.zip
@@ -41,81 +54,112 @@ EOF
 echo "date.timezone = \${PHP_TIMEZONE}" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
 
 # PHP database configuration: iam auth base
-cat <<EOF | tee /usr/local/share/redcap/redcap_connect_iam.php >/dev/null
+cat <<'EOF' | tee /usr/local/share/redcap/redcap_connect_iam.php >/dev/null
 <?php
-require '/usr/local/share/redcap/aws/vendor/autoload.php';
+// Detect REDCap version and AWS SDK path
+$redcapVersion = '';
+$dirs = glob('/var/www/html/redcap_v*', GLOB_ONLYDIR);
+if (!empty($dirs)) {
+    usort($dirs, 'version_compare');
+    $redcapVersion = basename(end($dirs));
+}
+
+// Try REDCap's bundled AWS SDK first, then fallback to our version
+if ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
+    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
+} elseif (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
+    require_once "/usr/local/share/redcap/aws/vendor/autoload.php";
+} else {
+    throw new Exception("AWS SDK not found. Checked REDCap bundled SDK and /usr/local/share/redcap/aws/vendor/autoload.php");
+}
+
 use Aws\Credentials\CredentialProvider;
 
-\$log_all_errors = FALSE;
+$log_all_errors = FALSE;
 
 // REQUIRED VARIABLES
-\$hostname   = getenv('RDS_HOSTNAME');
-\$db         = getenv('RDS_DBNAME');
-\$port       = getenv('RDS_PORT');
-\$username   = "redcap_user";
-\$password   = getenv('RDS_PASSWORD'); 
-\$region     = getenv('AWS_REGION');
-\$salt       = getenv('DB_SALT_ALPHA');
-\$db_ssl_key     = NULL;
-\$db_ssl_cert    = NULL;
-\$db_ssl_ca      = "/usr/local/share/redcap/global-bundle.pem";
-\$db_ssl_capath  = NULL;
-\$db_ssl_cipher  = NULL;
-\$db_ssl_verify_server_cert = true;
+$hostname   = getenv('RDS_HOSTNAME');
+$db         = getenv('RDS_DBNAME');
+$port       = getenv('RDS_PORT');
+$username   = "redcap_user";
+$password   = getenv('RDS_PASSWORD');
+$region     = getenv('AWS_REGION');
+$salt       = getenv('DB_SALT_ALPHA');
+$db_ssl_key     = NULL;
+$db_ssl_cert    = NULL;
+$db_ssl_ca      = "/usr/local/share/redcap/global-bundle.pem";
+$db_ssl_capath  = NULL;
+$db_ssl_cipher  = NULL;
+$db_ssl_verify_server_cert = true;
 
 try {
-    \$provider = CredentialProvider::defaultProvider();
-    \$RdsAuthGenerator = new Aws\Rds\AuthTokenGenerator(\$provider);
-    \$password = \$RdsAuthGenerator->createToken(\$hostname . ":{\$port}", \$region, \$username);
-} catch (AwsException \$e) {}
+    $provider = CredentialProvider::defaultProvider();
+    $RdsAuthGenerator = new Aws\Rds\AuthTokenGenerator($provider);
+    $password = $RdsAuthGenerator->createToken($hostname . ":{$port}", $region, $username);
+} catch (AwsException $e) {}
 
 EOF
 
 # PHP database configuration: standard auth with single user secret rotation
-cat <<EOF | tee /usr/local/share/redcap/redcap_connect_base.php >/dev/null
+cat <<'EOF' | tee /usr/local/share/redcap/redcap_connect_base.php >/dev/null
 <?php
-require '/usr/local/share/redcap/aws/vendor/autoload.php';
+// Detect REDCap version and AWS SDK path
+$redcapVersion = '';
+$dirs = glob('/var/www/html/redcap_v*', GLOB_ONLYDIR);
+if (!empty($dirs)) {
+    usort($dirs, 'version_compare');
+    $redcapVersion = basename(end($dirs));
+}
+
+// Try REDCap's bundled AWS SDK first, then fallback to our version
+if ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
+    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
+} elseif (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
+    require_once "/usr/local/share/redcap/aws/vendor/autoload.php";
+} else {
+    throw new Exception("AWS SDK not found. Checked REDCap bundled SDK and /usr/local/share/redcap/aws/vendor/autoload.php");
+}
 
 use Aws\SecretsManager\SecretsManagerClient;
 use Aws\Exception\AwsException;
 
-\$log_all_errors = FALSE;
+$log_all_errors = FALSE;
 
-\$hostname   = getenv('RDS_HOSTNAME');
-\$db         = getenv('RDS_DBNAME');
-\$username   = getenv('RDS_USERNAME');
-\$password   = getenv('RDS_PASSWORD'); 
-\$salt       = getenv('DB_SALT_ALPHA');
+$hostname   = getenv('RDS_HOSTNAME');
+$db         = getenv('RDS_DBNAME');
+$username   = getenv('RDS_USERNAME');
+$password   = getenv('RDS_PASSWORD');
+$salt       = getenv('DB_SALT_ALPHA');
 
 try {
-    \$client = new SecretsManagerClient([
+    $client = new SecretsManagerClient([
         'region' => getenv('AWS_REGION'),
     ]);
 
-    \$result = \$client->getSecretValue([
+    $result = $client->getSecretValue([
         'SecretId' => getenv('DB_SECRET_NAME'),
     ]);
 
-    if (isset(\$result['SecretString'])) {
-        \$secret = \$result['SecretString'];
+    if (isset($result['SecretString'])) {
+        $secret = $result['SecretString'];
     } else {
-        \$secret = base64_decode(\$result['SecretBinary']);
+        $secret = base64_decode($result['SecretBinary']);
     }
-    \$secretArray = json_decode(\$secret, true);
-    \$password   = \$secretArray['password'];
-    
-} catch (AwsException \$e) {}        
+    $secretArray = json_decode($secret, true);
+    $password   = $secretArray['password'];
+
+} catch (AwsException $e) {}
 
 EOF
 
 # PHP database configuration: replica config
-cat <<EOF | tee /usr/local/share/redcap/redcap_connect_replica.php >/dev/null
+cat <<'EOF' | tee /usr/local/share/redcap/redcap_connect_replica.php >/dev/null
 <?php
 // REPLICA
-\$read_replica_hostname = getenv('READ_REPLICA_HOSTNAME');
-\$read_replica_db       = \$db;
-\$read_replica_username = \$username;
-\$read_replica_password = \$password;
+$read_replica_hostname = getenv('READ_REPLICA_HOSTNAME');
+$read_replica_db       = $db;
+$read_replica_username = $username;
+$read_replica_password = $password;
 EOF
 
 ## Configure redcap folders

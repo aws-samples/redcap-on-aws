@@ -228,21 +228,21 @@ const prod: RedCapConfig = {
    ```ts
    const route53NS: DomainAppsConfig = {
      ...baseOptions,
-     profile: 'your_external_aws_profile', // <-- ドメインを保有するアカウントのプロファイル
-     region: 'ap-northeast-1', // <-- リージョンを更新
+     profile: "your_external_aws_profile", // <-- ドメインを保有するアカウントのプロファイル
+     region: "ap-northeast-1", // <-- リージョンを更新
      apps: [
        {
-         name: 'redcap', // <-- NSエントリのレコード名はredcap.redemo.site
+         name: "redcap", // <-- NSエントリのレコード名はredcap.redemo.site
          nsRecords: [
            // <-- デプロイ出力からのNSレコードリスト
-           'ns-11111.awsdns-11.org',
-           'ns-22.awsdns-22.com',
-           'ns-33.awsdns-33.net',
-           'ns-4444.awsdns-44.co.uk',
+           "ns-11111.awsdns-11.org",
+           "ns-22.awsdns-22.com",
+           "ns-33.awsdns-33.net",
+           "ns-4444.awsdns-44.co.uk",
          ],
        },
      ],
-     domain: 'acme.com', // <-- ターゲットとなる外部ドメイン
+     domain: "acme.com", // <-- ターゲットとなる外部ドメイン
    };
    ```
 
@@ -268,7 +268,6 @@ const prod: RedCapConfig = {
 2. [プロジェクトをデプロイします](#6-デプロイの実行)
 
 3. App Runnerドメインのリンク、SESドメインIDの設定、必要に応じてECS ALBのAレコードの作成をドメインのAWSアカウントで行ってください。
-
    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
@@ -323,7 +322,6 @@ const prod: RedCapConfig = {
 2. [プロジェクトをデプロイします](#6-デプロイの実行)
 
 3. App Runnerドメインのリンク、SESドメインIDの設定、必要に応じてECS ALBのAレコードの作成をDNSプロバイダーで行ってください。
-
    - [Amazon SES creating identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
    - [App Runner custom domains](https://docs.aws.amazon.com/apprunner/latest/dg/manage-custom-domains.html)
    - [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)

@@ -4,8 +4,8 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { SecretValue, aws_iam } from 'aws-cdk-lib';
-import { AccessKey, Group, User } from 'aws-cdk-lib/aws-iam';
+import { aws_iam, SecretValue } from 'aws-cdk-lib';
+import { AccessKey, type Group, type User } from 'aws-cdk-lib/aws-iam';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 

@@ -4,8 +4,8 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-export class Helpers {
-  static extractRedCapTag(s: string): string | null {
+export const Helpers = {
+  extractRedCapTag(s: string): string | null {
     try {
       const match = s.match(/redcap(\d+\.\d+\.\d+)\.zip/);
       return match ? match[1] : null;
@@ -13,5 +13,5 @@ export class Helpers {
       console.error(e);
       throw e;
     }
-  }
-}
+  },
+};

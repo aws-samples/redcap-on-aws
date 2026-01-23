@@ -5,9 +5,14 @@
  */
 
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
-import { BlockPublicAccess, BucketEncryption, BucketProps, StorageClass } from 'aws-cdk-lib/aws-s3';
-import { App, Bucket } from 'sst/constructs';
+import {
+  BlockPublicAccess,
+  BucketEncryption,
+  type BucketProps,
+  StorageClass,
+} from 'aws-cdk-lib/aws-s3';
 import { NagSuppressions } from 'cdk-nag';
+import type { App, Bucket } from 'sst/constructs';
 
 export function bucketProps(app?: App, logBucket?: Bucket): BucketProps {
   const isProd = app?.stage === 'prod';

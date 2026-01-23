@@ -5,7 +5,7 @@
  */
 
 import { isEmpty } from 'lodash';
-import { WafRule } from '../../prototyping/constructs/Waf';
+import type { WafRule } from '../../prototyping/constructs/Waf';
 
 // get waf rule for REDCap cron job
 export function getRedcapCronRule(searchString: string, priorityRule?: number) {
@@ -74,7 +74,7 @@ export function getRedcapCronRule(searchString: string, priorityRule?: number) {
 export function getCountryLimitRule(allowedCountries?: string[], priorityRule?: number) {
   if (!allowedCountries || isEmpty(allowedCountries)) return undefined;
 
-  allowedCountries.forEach(country => {
+  allowedCountries.forEach((country) => {
     if (!country) throw new Error('Invalid country in list');
   });
 
