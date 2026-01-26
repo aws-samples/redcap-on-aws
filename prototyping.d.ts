@@ -50,6 +50,10 @@ export interface RedCapConfig extends ProtoConfigOptions {
       maxCapacityAcu: number;
     };
     preferredMaintenanceWindow?: DatabaseClusterProps['preferredMaintenanceWindow'];
+    engineVersion?: aws_rds.AuroraMysqlEngineVersion;
+  };
+  externalResources?: {
+    wafWebAcl?: string;
   };
 }
 

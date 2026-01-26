@@ -527,14 +527,19 @@ const stag: RedCapConfig = {
 `stages.ts` に、値としてスナップショット名を指定したパラメーター `dbSnapshotId` を追加し、デプロイします。
 
 ```ts
-const テスト: RedCapConfig = {
+import { aws_rds, Duration } from 'aws-cdk-lib';
+
+const dev: RedCapConfig = {
    ...ベースオプション、
    // ...より多くのオプション
    db: {
     dbSnapshotId: 'redcap-dev', // スナップショット名。
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0, // スナップショットのエンジンバージョンと一致または互換性がある必要があります
   },
 };
 ```
+
+**重要:** スナップショットから復元する場合、スナップショットの作成時に使用されたエンジンバージョンと一致または互換性のある `engineVersion` パラメータを指定する必要があります。スナップショットが異なる Aurora MySQL バージョンで作成された場合、デプロイエラーを回避するために、そのバージョンを明示的に指定する必要があります。
 
 これにより、新しいデータベース クラスターが作成され、既存のデータベース クラスターが削除されます。
 

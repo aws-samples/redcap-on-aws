@@ -29,7 +29,7 @@
       }
     },
     "TypeScript": {
-      "language_servers": ["typescript-language-server"],
+      "language_servers": ["typescript-language-server", "biome"],
       "formatter": { "language_server": { "name": "biome" } },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
@@ -70,8 +70,7 @@
   "lsp": {
     "biome": {
       "settings": {
-        "require_config_file": true,
-        "config_path": "./biome.json"
+        "require_config_file": false
       }
     }
   }

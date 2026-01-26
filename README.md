@@ -528,14 +528,19 @@ const stag: RedCapConfig = {
 In your stages.ts add the parameter `dbSnapshotId` with the snapshot name as value and deploy.
 
 ```ts
-const test: RedCapConfig = {
+import { aws_rds, Duration } from "aws-cdk-lib";
+
+const dev: RedCapConfig = {
   ...baseOptions,
   // ...more options
   db: {
     dbSnapshotId: "redcap-dev", // Snapshot name.
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0, // Must match or be compatible with snapshot's engine version
   },
 };
 ```
+
+**Important:** When restoring from a snapshot, you must specify the `engineVersion` parameter that matches or is compatible with the engine version used when the snapshot was created. If the snapshot was created with a different Aurora MySQL version, you need to specify that version explicitly to avoid deployment errors.
 
 This will create a new database cluster and delete the existing one.
 

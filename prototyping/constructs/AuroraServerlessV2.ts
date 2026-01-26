@@ -19,8 +19,13 @@ type ScalingConfiguration = {
   maxCapacityAcu: number;
 };
 
+type RdsV2Engines = {
+  engine: 'mysql8.0';
+};
+
 type AuroraProps = {
   engine: RdsV2Engines['engine'];
+  engineVersion: aws_rds.AuroraMysqlEngineVersion;
   vpc: aws_ec2.IVpc;
   scaling: ScalingConfiguration;
   migrations?: string;
@@ -37,10 +42,6 @@ type AuroraProps = {
   snapshotIdentifier?: string;
   logRetention?: Lowercase<keyof typeof RetentionDays>;
   preferredMaintenanceWindow?: aws_rds.DatabaseClusterProps['preferredMaintenanceWindow'];
-};
-
-type RdsV2Engines = {
-  engine: 'mysql8.0' | 'postgresql13.10' | 'postgresql14.7' | 'postgresql15.2';
 };
 
 /**
@@ -72,7 +73,7 @@ export class AuroraServerlessV2 extends Construct {
     // Create parameter group if there's no parameter group in props
     if (props.parameterGroupParameters) {
       this.parameterGroup = new aws_rds.ParameterGroup(this, 'AuroraV2ParameterGroup', {
-        engine: this.getEngine(props.engine),
+        engine: this.getEngineWithVersion(props.engine, props.engineVersion),
         parameters: props.parameterGroupParameters,
       });
     }
@@ -108,9 +109,8 @@ export class AuroraServerlessV2 extends Construct {
       vpcSubnets: {
         subnets: props.vpc.isolatedSubnets,
       },
-      engine: this.getEngine(props.engine),
-      cloudwatchLogsExports:
-        props.engine === 'mysql8.0' ? ['error', 'general', 'slowquery', 'audit'] : ['postgresql'], // Export all available MySQL-based logs
+      engine: this.getEngineWithVersion(props.engine, props.engineVersion),
+      cloudwatchLogsExports: ['error', 'general', 'slowquery', 'audit'],
       defaultDatabaseName: props.defaultDatabaseName || 'sampleDB',
       cloudwatchLogsRetention:
         RetentionDays[logRetention.toUpperCase() as keyof typeof RetentionDays],
@@ -201,14 +201,17 @@ export class AuroraServerlessV2 extends Construct {
     }
   }
 
-  private getEngine(engine: RdsV2Engines['engine']) {
+  private getEngineWithVersion(
+    engine: RdsV2Engines['engine'],
+    version: aws_rds.AuroraMysqlEngineVersion,
+  ) {
     if (engine === 'mysql8.0') {
       return aws_rds.DatabaseClusterEngine.auroraMysql({
-        version: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0,
+        version,
       });
     }
     throw new Error(
-      `The specified "engine" is not supported in this package. Only mysql8.0 (3_08_0), postgresql13.10, postgresql14.7, and postgresql15.2 engines are currently supported.`,
+      `The specified database engine is not supported. Only mysql8.0 is currently supported.`,
     );
   }
 }

@@ -4,6 +4,36 @@ JP | [EN](../en/waf.md)
 
 AWS WAFは一般的な攻撃からウェブアプリケーションを保護するウェブアプリケーションファイアウォールで、セキュリティルールを利用してトラフィックを保護します。これはデプロイした全ての環境で有効化されます。
 
+## 外部WAF WebACLの使用
+
+新しいWAFを作成する代わりに、既存のAWS WAF WebACLを使用できます。これは、集中管理されたWAFがある場合や、複数のアプリケーション間でWAFルールを共有する必要がある場合に便利です。
+
+外部WAF WebACLを使用するには、`stages.ts`ファイルで既存のWebACLのARNを`externalResources.wafWebAcl`パラメータに設定します：
+
+```ts
+const dev: RedCapConfig = {
+  ...baseOptions,
+  // ... その他の設定
+  externalResources: {
+    wafWebAcl:
+      "arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/my-webacl/a1b2c3d4-5678-90ab-cdef-EXAMPLE11111",
+  },
+};
+```
+
+**重要な注意事項：**
+
+- `externalResources.wafWebAcl`を使用する場合、`allowedIps`と`allowedCountries`パラメータは**無視されます**
+- すべてのWAFルール（IPフィルタリング、レート制限など）は、外部WebACLで直接設定する必要があります
+- 外部WebACLは、REDCapデプロイメントと同じリージョンにある必要があります
+- WebACLがセキュリティ要件に適したルールで設定されていることを確認してください
+
+`externalResources.wafWebAcl`が指定されていない場合、デプロイメントは以下で説明するデフォルトルールと、設定された`allowedIps`および`allowedCountries`の設定を持つ新しいWAF WebACLを作成します。
+
+## 内部WAF設定
+
+外部WAF WebACLを使用しない場合、デプロイメントは以下の設定で新しいWAFを作成します：
+
 ### IPフィルタリング
 
 セキュリティ強化のため、特定のIPリスト(例えば、キャンパスのCIDR)からのみアクセス可能といった、REDCapアプリケーションへのアクセス制限の設定を推奨します。`stages.ts`ファイルの `allowedIps`に以下のように設定することで、一つ以上のCIDRアドレスを追加できます。
