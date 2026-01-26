@@ -9,7 +9,18 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!bun.lock", "!**/sst-env.d.ts", "!sst-env.d.ts", "!**/components.d.ts"]
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.json",
+      "**/*.d.ts",
+      "!bun.lock",
+      "!**/sst-env.d.ts",
+      "!sst-env.d.ts",
+      "!**/components.d.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

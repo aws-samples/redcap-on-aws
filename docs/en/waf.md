@@ -4,6 +4,36 @@
 
 AWS WAF is a web application firewall that protect your applications from common web exploits and uses security rules to protect your traffic. This is enabled in every environment you deploy.
 
+## Using an External WAF WebACL
+
+You can use an existing AWS WAF WebACL instead of creating a new one. This is useful when you have a centrally managed WAF or need to share WAF rules across multiple applications.
+
+To use an external WAF WebACL, configure the `externalResources.wafWebAcl` parameter in your `stages.ts` file with the ARN of your existing WebACL:
+
+```ts
+const dev: RedCapConfig = {
+  ...baseOptions,
+  // ... other configuration
+  externalResources: {
+    wafWebAcl:
+      "arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/my-webacl/a1b2c3d4-5678-90ab-cdef-EXAMPLE11111",
+  },
+};
+```
+
+**Important Notes:**
+
+- When using `externalResources.wafWebAcl`, the `allowedIps` and `allowedCountries` parameters will be **ignored**
+- You must configure all WAF rules (including IP filtering, rate limiting, etc.) directly in your external WebACL
+- The external WebACL must be in the same region as your REDCap deployment
+- Ensure the WebACL is configured with appropriate rules for your security requirements
+
+If `externalResources.wafWebAcl` is not specified, the deployment will create a new WAF WebACL with the default rules described below, along with any configured `allowedIps` and `allowedCountries` settings.
+
+## Internal WAF Configuration
+
+When not using an external WAF WebACL, the deployment creates a new WAF with the following configurations:
+
 ### IP filtering
 
 To improve your security posture, we recommend limiting the access to your REDCap application from a list of knows IPs (e.g. our campus CIDR) with AWS WAF. To add one or more CIDR addresses configure the `allowedIps` parameter in the `stages.ts` file.

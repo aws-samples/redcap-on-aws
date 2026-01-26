@@ -2,6 +2,13 @@
 
 # CHANGELOG
 
+## 1.2.0
+
+- Remove eslint and prettier in favor of Biome
+- Fixed the use of php aws-sdk, by default, REDCap's packed version will be used with a fallback if not found.
+- WAF Web ACL can now be configured as an external ARN. Passing the ARN in `externalResources.wafWebAcl` will associate the resource to the Web ACL.
+- Add `db.engineVersion` configuration option to manage Amazon Aurora versions with backups and snapshots.
+
 ## v1.1.3
 
 - Upgrade packages, related to SST `v2.49.6` that fixes deployment on Windows instances
@@ -184,3 +191,7 @@ In this case, this project will have deployed an `A Record` in your Route 53 Hos
 
 - Remove AWS App Runner autoscaling name, will be auto-generated
 - Add option to link NS records with same or external AWS account based on NS records returned by the deploy.
+
+```
+
+```

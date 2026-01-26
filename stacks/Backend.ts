@@ -158,7 +158,7 @@ export function Backend({ stack, app }: StackContext) {
     PHP_TIMEZONE: phpTimezone || 'UTC',
   };
 
-  if (auroraClusterV2 && auroraClusterV2.aurora.clusterReadEndpoint.hostname) {
+  if (auroraClusterV2?.aurora.clusterReadEndpoint.hostname) {
     assign(environmentVariables, {
       READ_REPLICA_HOSTNAME: auroraClusterV2.aurora.clusterReadEndpoint.hostname,
     });
@@ -210,7 +210,7 @@ export function Backend({ stack, app }: StackContext) {
     });
   }
   // Additional outputs
-  if (publicHostedZone && publicHostedZone.hostedZoneNameServers)
+  if (publicHostedZone?.hostedZoneNameServers)
     stack.addOutputs({
       NameServers: Fn.join(',', publicHostedZone.hostedZoneNameServers),
     });

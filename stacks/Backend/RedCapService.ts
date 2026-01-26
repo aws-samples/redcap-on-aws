@@ -9,13 +9,14 @@ import type { IGrantable } from 'aws-cdk-lib/aws-iam';
 import type { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
 import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import type { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
-import { isNumber } from 'lodash';
+import { get, isNumber } from 'lodash';
 import type { App, ServiceProps, Stack } from 'sst/constructs';
 import { AppRunner } from '../../prototyping/constructs/AppRunner';
 import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
 import { type Waf, WebACLAssociation } from '../../prototyping/constructs/Waf';
+import * as stage from '../../stages';
 
 export class RedcapService {
   private common;
@@ -70,7 +71,11 @@ export class RedcapService {
     let id = 'apprunner-redcap';
     if (serviceType === 'ecs-redcap') id = 'ecs-redcap';
     new WebACLAssociation(this.stack, id, {
-      webAclArn: this.common.waf.waf.attrArn,
+      webAclArn: get(
+        stage,
+        [this.app.stage, 'externalResources', 'wafWebAcl'],
+        this.common.waf.waf.attrArn,
+      ),
       resourceArn,
     });
   }

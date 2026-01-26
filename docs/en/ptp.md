@@ -23,7 +23,6 @@
 6. SST is an open source project and they improve it by collecting anonymous data of your machine information (not AWS related). However you can disable it: <https://docs.sst.dev/anonymous-telemetry>
 
 7. Keep SST up to date. To upgrade SST and CDK execute the following:
-
    1. `yarn sst update <version> --stage <your_stage>` any stage will work
 
    2. `yarn install`
@@ -52,4 +51,37 @@ parameterGroupParameters: {
 },
 ```
 
-Alternatively, you can configure your `stages.ts` in the `db` object to set the `maxAllowedPacket: '1073741824'` to the
+Alternatively, you can configure your `stages.ts` in the `db` object to set the `maxAllowedPacket: '1073741824'`.
+
+## Database Configuration Options
+
+The `db` object in your `stages.ts` file supports the following configuration options:
+
+- **`engineVersion`** (optional): Specify the Aurora MySQL engine version. Default is `AuroraMysqlEngineVersion.VER_3_08_0`. Example:
+
+  ```ts
+  import { aws_rds } from 'aws-cdk-lib';
+
+  db: {
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
+    // ... other options
+  }
+  ```
+
+- **`maxAllowedPacket`** (optional): Maximum packet size for MySQL queries. Default is `'4194304'`. Recommended for production: `'1073741824'`.
+
+- **`dbSnapshotId`** (optional): Snapshot identifier to restore the database from an existing snapshot.
+
+- **`preferredMaintenanceWindow`** (optional): Maintenance window in format `'ddd:HH:mm-ddd:HH:mm'`. Example: `'Sun:23:45-Mon:00:15'`.
+
+- **`dbReaders`** (optional): Number of Aurora read replica instances. Default is based on stage configuration.
+
+- **`scaling`** (optional): Aurora Serverless V2 scaling configuration:
+  ```ts
+  scaling: {
+    minCapacityAcu: 0.5,
+    maxCapacityAcu: 2,
+  }
+  ```
+
+For complete examples, refer to [stages.sample.ts](../../stages.sample.ts).

@@ -9,50 +9,6 @@ import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import { concat, isEmpty, uniqBy } from 'lodash';
 
-export interface WafRule {
-  name: string;
-  rule: wafv2.CfnWebACL.RuleProperty;
-}
-
-export class Waf extends Construct {
-  public readonly waf: wafv2.CfnWebACL;
-  constructor(
-    scope: Construct,
-    id: string,
-    props: {
-      useCloudFront?: boolean;
-      webACLResourceArn?: string;
-      extraRules?: Array<WafRule>;
-      allowedIps: Array<string>;
-    },
-  ) {
-    super(scope, id);
-
-    let ipset = null;
-    const distScope = props.useCloudFront ? 'CLOUDFRONT' : 'REGIONAL';
-
-    if (!isEmpty(props.allowedIps)) {
-      ipset = new wafv2.CfnIPSet(this, `${id}-ipset`, {
-        addresses: props.allowedIps,
-        ipAddressVersion: 'IPV4',
-        scope: distScope,
-        description: 'Webapp allowed IPV4',
-        name: `${id}-webapp-ip-list`,
-      });
-    }
-
-    this.waf = new WAF(this, `${id}-WAFv2`, ipset, distScope, props.extraRules);
-
-    if (!props.useCloudFront && props.webACLResourceArn) {
-      // Create an association, not needed for cloudfront
-      new WebACLAssociation(this, `${id}-acl-Association`, {
-        resourceArn: props.webACLResourceArn,
-        webAclArn: this.waf.attrArn,
-      });
-    }
-  }
-}
-
 let wafRules: WafRule[] = [
   // Rate Filter
   {
@@ -184,7 +140,60 @@ let wafRules: WafRule[] = [
   },
 ];
 
-export class WAF extends wafv2.CfnWebACL {
+export interface WafRule {
+  name: string;
+  rule: wafv2.CfnWebACL.RuleProperty;
+}
+
+export class Waf extends Construct {
+  public readonly waf: wafv2.CfnWebACL;
+  constructor(
+    scope: Construct,
+    id: string,
+    props: {
+      useCloudFront?: boolean;
+      webACLResourceArn?: string;
+      extraRules?: Array<WafRule>;
+      allowedIps: Array<string>;
+    },
+  ) {
+    super(scope, id);
+
+    let ipset = null;
+    const distScope = props.useCloudFront ? 'CLOUDFRONT' : 'REGIONAL';
+
+    if (!isEmpty(props.allowedIps)) {
+      ipset = new wafv2.CfnIPSet(this, `${id}-ipset`, {
+        addresses: props.allowedIps,
+        ipAddressVersion: 'IPV4',
+        scope: distScope,
+        description: 'Webapp allowed IPV4',
+        name: `${id}-webapp-ip-list`,
+      });
+    }
+
+    this.waf = new WAF(this, `${id}-WAFv2`, ipset, distScope, props.extraRules);
+
+    if (!props.useCloudFront && props.webACLResourceArn) {
+      // Create an association, not needed for cloudfront
+      new WebACLAssociation(this, `${id}-acl-Association`, {
+        resourceArn: props.webACLResourceArn,
+        webAclArn: this.waf.attrArn,
+      });
+    }
+  }
+}
+
+export class WebACLAssociation extends wafv2.CfnWebACLAssociation {
+  constructor(scope: Construct, id: string, props: wafv2.CfnWebACLAssociationProps) {
+    super(scope, id, {
+      resourceArn: props.resourceArn,
+      webAclArn: props.webAclArn,
+    });
+  }
+}
+
+class WAF extends wafv2.CfnWebACL {
   constructor(
     scope: Construct,
     id: string,
@@ -267,15 +276,6 @@ export class WAF extends wafv2.CfnWebACL {
       scope: distScope,
       name: `${id}-waf`,
       rules: wafRules.map((wafRule) => wafRule.rule),
-    });
-  }
-}
-
-export class WebACLAssociation extends wafv2.CfnWebACLAssociation {
-  constructor(scope: Construct, id: string, props: wafv2.CfnWebACLAssociationProps) {
-    super(scope, id, {
-      resourceArn: props.resourceArn,
-      webAclArn: props.webAclArn,
     });
   }
 }

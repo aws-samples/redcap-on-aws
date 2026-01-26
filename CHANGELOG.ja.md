@@ -2,6 +2,13 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.2.0
+
+- Biomeをサポートするためにeslintとprettierを削除
+- php aws-sdkの使用を修正。デフォルトでREDCapにパッケージ化されたバージョンが使用され、見つからない場合はフォールバックされます。
+- WAF Web ACLを外部ARNとして設定できるようになりました。`externalResources.wafWebAcl`にARNを渡すと、リソースがWeb ACLに関連付けられます。
+- `db.engineVersion`設定オプションを追加し、バックアップとスナップショットを使用してAmazon Auroraのバージョンを管理できるようにしました。
+
 ## v1.1.3
 
 - Windowsインスタンスへのデプロイを修正するSST `v2.49.6`関連パッケージのアップグレード

@@ -5,6 +5,7 @@
  */
 
 import { aws_ec2, Duration } from 'aws-cdk-lib';
+import { AuroraMysqlEngineVersion } from 'aws-cdk-lib/aws-rds';
 import { get } from 'lodash';
 import moment from 'moment';
 import { type StackContext, use } from 'sst/constructs';
@@ -55,6 +56,7 @@ export function Database({ stack, app }: StackContext) {
 
   const auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
     engine: 'mysql8.0',
+    engineVersion: dbConfig?.engineVersion ?? AuroraMysqlEngineVersion.VER_3_08_0,
     defaultDatabaseName: 'redcap',
     dbUserName: 'dbadmin',
     vpc: networkVpc.vpc,

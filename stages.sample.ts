@@ -1,5 +1,5 @@
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
-import { Duration } from 'aws-cdk-lib';
+import { aws_rds, Duration } from 'aws-cdk-lib';
 import type { DomainAppsConfig, ProtoConfigOptions, RedCapConfig } from './prototyping';
 
 const baseOptions: ProtoConfigOptions = {
@@ -23,6 +23,7 @@ const dev: RedCapConfig = {
     dbSnapshotId: undefined,
     maxAllowedPacket: '1073741824',
     preferredMaintenanceWindow: 'Sun:23:45-Mon:00:15',
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
     dbReaders: 0, // disable readers for dev envs
     scaling: {
       maxCapacityAcu: 2,

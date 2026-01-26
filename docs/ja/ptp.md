@@ -19,7 +19,6 @@ JP | [EN](../en/ptp.md)
 6. SSTはオープンソースプロジェクトであり、改善のためにマシン情報 (AWS とは無関係に) の匿名データを収集します。 ただし、次の手順で無効にできます。<https://docs.sst.dev/anonymous-telemetry>
 
 7. SST を最新バージョンに保ちましょう。 SST と CDK をアップグレードするには、以下を実行します。
-
    1. `yarn sst update <version> --stage <your_stage>` ステージ名は何でも構いません。
 
    2. `yarn install`
@@ -49,3 +48,36 @@ parameterGroupParameters: {
 ```
 
 別の方法として、`stages.ts`ファイルの`db`オブジェクトで`maxAllowedPacket: '1073741824'`を設定することができます。
+
+## データベース設定オプション
+
+`stages.ts`ファイルの`db`オブジェクトは、以下の設定オプションをサポートしています：
+
+- **`engineVersion`** (オプション): Aurora MySQL エンジンのバージョンを指定します。デフォルトは `AuroraMysqlEngineVersion.VER_3_08_0` です。例：
+
+  ```ts
+  import { aws_rds } from 'aws-cdk-lib';
+
+  db: {
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
+    // ... その他のオプション
+  }
+  ```
+
+- **`maxAllowedPacket`** (オプション): MySQL クエリの最大パケットサイズ。デフォルトは `'4194304'` です。本番環境では `'1073741824'` を推奨します。
+
+- **`dbSnapshotId`** (オプション): 既存のスナップショットからデータベースを復元するためのスナップショット識別子。
+
+- **`preferredMaintenanceWindow`** (オプション): メンテナンスウィンドウを `'ddd:HH:mm-ddd:HH:mm'` 形式で指定します。例： `'Sun:23:45-Mon:00:15'`
+
+- **`dbReaders`** (オプション): Aurora リードレプリカインスタンスの数。デフォルトはステージ設定に基づきます。
+
+- **`scaling`** (オプション): Aurora Serverless V2 スケーリング設定：
+  ```ts
+  scaling: {
+    minCapacityAcu: 0.5,
+    maxCapacityAcu: 2,
+  }
+  ```
+
+完全な設定例については、[stages.sample.ts](../../stages.sample.ts) を参照してください。
