@@ -7,20 +7,38 @@
 set -e
 
 ## REDCap package setup
+echo "Downloading REDCap from: $REDCAP_S3_URI"
 aws s3 cp $REDCAP_S3_URI /tmp/redcapPackage.zip
+
+echo "Extracting REDCap package..."
 unzip -qq /tmp/redcapPackage.zip -d /tmp/
+
+echo "Contents of /tmp after extraction:"
+ls -la /tmp/
+
+echo "Contents of /tmp/redcap (if exists):"
+ls -la /tmp/redcap/ || echo "  /tmp/redcap does not exist"
+
+echo "Copying REDCap files to /var/www/html/..."
 cp -rp /tmp/redcap/* /var/www/html/ && rm -rf /tmp/redcap
+
+echo "Contents of /var/www/html after copy:"
+ls -la /var/www/html/
+
+echo "REDCap version directories found:"
+ls -d /var/www/html/redcap_v* 2>/dev/null || echo "  No redcap_v* directories found!"
+
 chown -R www-data:www-data /var/www/html
 
 ## Check if REDCap bundles AWS SDK, if not install via Composer
 REDCAP_VERSION_DIR=$(ls -d /var/www/html/redcap_v* 2>/dev/null | sort -V | tail -n 1)
 if [ -n "$REDCAP_VERSION_DIR" ] && [ -f "$REDCAP_VERSION_DIR/Libraries/vendor/autoload.php" ]; then
-    echo "REDCap bundles its own AWS SDK at $REDCAP_VERSION_DIR/Libraries/vendor/autoload.php"
-    echo "Skipping separate AWS SDK installation to avoid version conflicts"
+  echo "REDCap bundles its own AWS SDK at $REDCAP_VERSION_DIR/Libraries/vendor/autoload.php"
+  echo "Skipping separate AWS SDK installation to avoid version conflicts"
 else
-    echo "REDCap does not bundle AWS SDK, installing via Composer"
-    mkdir -p /usr/local/share/redcap/aws
-    composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+  echo "REDCap does not bundle AWS SDK, installing via Composer"
+  mkdir -p /usr/local/share/redcap/aws
+  composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
 fi
 
 ## REDCap languages
@@ -48,7 +66,6 @@ opcache.memory_consumption=192
 opcache.max_wasted_percentage=10
 opcache.interned_strings_buffer=16
 EOF
-
 
 ### Set Timezone for REDCap
 echo "date.timezone = \${PHP_TIMEZONE}" >>/usr/local/etc/php/conf.d/redcap-php-overrides.ini
