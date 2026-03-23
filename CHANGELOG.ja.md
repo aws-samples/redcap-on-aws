@@ -2,6 +2,10 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.2.1
+
+- バージョン情報を含むREDCap URLを現在のインストールにリダイレクトできるようにしました。
+
 ## 1.2.0
 
 - Biomeをサポートするためにeslintとprettierを削除

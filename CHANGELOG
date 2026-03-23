@@ -2,6 +2,10 @@
 
 # CHANGELOG
 
+## 1.2.1
+
+- Allow REDCap URLs containing versioning to redirect to the current installation.
+
 ## 1.2.0
 
 - Remove eslint and prettier in favor of Biome
