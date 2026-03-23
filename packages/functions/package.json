@@ -7,8 +7,8 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.145",
-    "@types/node": "^20.14.10",
+    "@types/aws-lambda": "^8.10.161",
+    "@types/node": "^20.19.37",
     "sst": "2.49.6"
   },
   "dependencies": {
@@ -16,6 +16,6 @@
     "@aws-sdk/client-iam": "^3.658.0",
     "@aws-sdk/client-secrets-manager": "^3.658.0",
     "@aws-sdk/client-sfn": "^3.658.0",
-    "deasync": "^0.1.30"
+    "deasync": "^0.1.31"
   }
 }

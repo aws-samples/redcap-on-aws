@@ -27,25 +27,25 @@ export S3_SECRET_ACCESS_KEY="$(echo $S3_SECRET | jq -r .SecretAccessKey)"
 export DB_SALT_ALPHA=$(echo -n "$DB_SALT" | sha256sum | cut -d' ' -f1)
 
 if [ "$USE_IAM_DB_AUTH" = 'true' ]; then
-    echo "- Using IAM auth"
-    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
+  echo "- Using IAM auth"
+  mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
         CREATE USER IF NOT EXISTS 'redcap_user'@'%' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS';
         ALTER USER IF EXISTS 'redcap_user'@'%' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS';
         GRANT ALL PRIVILEGES ON \`${RDS_DBNAME}\`.* TO 'redcap_user'@'%';
         GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'redcap_user'@'%';
         FLUSH PRIVILEGES;
     "
-    echo "include '/usr/local/share/redcap/redcap_connect_iam.php';" >>/var/www/html/database.php
+  echo "include '/usr/local/share/redcap/redcap_connect_iam.php';" >>/var/www/html/database.php
 else
-    echo "- Using base auth"
-    echo "include '/usr/local/share/redcap/redcap_connect_base.php';" >>/var/www/html/database.php
+  echo "- Using base auth"
+  echo "include '/usr/local/share/redcap/redcap_connect_base.php';" >>/var/www/html/database.php
 fi
 
 # EMAIL Setting for REDCap
 if [ -z "$SES_USERNAME" ]; then
-    echo "Credentials not set, smtp will not be configured"
+  echo "Credentials not set, smtp will not be configured"
 else
-    cat <<EOF >/etc/msmtprc
+  cat <<EOF >/etc/msmtprc
 defaults
 tls on
 tls_starttls on
@@ -64,21 +64,21 @@ fi
 
 # REDCap initial DB SETUP
 if [ -f "/var/www/html/install.php" ]; then
-    echo " - Executing install.php"
-    cd /var/www/html
-    php -r '$_GET["auto"]=1; $_GET["sql"]=1 ; $_SERVER["REQUEST_METHOD"] = "POST"; $_SERVER["PHP_SELF"]= "install.php"; require_once("install.php");'
+  echo " - Executing install.php"
+  cd /var/www/html
+  php -r '$_GET["auto"]=1; $_GET["sql"]=1 ; $_SERVER["REQUEST_METHOD"] = "POST"; $_SERVER["PHP_SELF"]= "install.php"; require_once("install.php");'
 fi
 
 # REDCap replica config for Aurora serverless V2
 if [ ! -z "$READ_REPLICA_HOSTNAME" ]; then
-    echo "- Using replica"
-    echo "include '/usr/local/share/redcap/redcap_connect_replica.php';" >>/var/www/html/database.php
-    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
+  echo "- Using replica"
+  echo "include '/usr/local/share/redcap/redcap_connect_replica.php';" >>/var/www/html/database.php
+  mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D ${RDS_DBNAME} --password=${RDS_PASSWORD} -e "
         UPDATE IGNORE redcap_config SET value = '1' WHERE field_name = 'read_replica_enable';
     "
-    REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v")
-    # Disable the lag check as this does not apply to Amazon RDS Aurora Serverless V2
-    sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
+  REDCAP_VERSION=$(ls /var/www/html/ -1 | grep -E "^redcap_v")
+  # Disable the lag check as this does not apply to Amazon RDS Aurora Serverless V2
+  sed -i 's/$bypassReadReplicaLagCheck=false)/$bypassReadReplicaLagCheck=true)/g' /var/www/html/$REDCAP_VERSION/Config/init_functions.php
 fi
 
 DB_S3_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PASSWORD} -se "select value from redcap_config where field_name='amazon_s3_key'")
@@ -87,26 +87,26 @@ DB_S3_ACCESS_KEY=$(mysql redcap -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -p${RDS_PA
 # DB_S3_ACCESS_KEY='key'
 
 if [ "$DB_S3_ACCESS_KEY" = "$S3_ACCESS_KEY" ]; then
-    echo '- REDCap initial settings already configured, skipping'
+  echo '- REDCap initial settings already configured, skipping'
 else
-    # REDCap SQL Initialization Configuration
-    REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.sql
+  # REDCap SQL Initialization Configuration
+  REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.sql
 
-    if [ -f "$REDCAP_CONFIG_SQL" ]; then
-        echo " - Using provided redcapConfig.sql for REDCap settings"
-    else
-        echo " - Using default REDCap DB settings"
-        REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.default.sql
-    fi
+  if [ -f "$REDCAP_CONFIG_SQL" ]; then
+    echo " - Using provided redcapConfig.sql for REDCap settings"
+  else
+    echo " - Using default REDCap DB settings"
+    REDCAP_CONFIG_SQL=/etc/redcap-entry/redcapConfig.default.sql
+  fi
 
-    echo ' - Configuring REDCap DB settings...'
-    ESCAPED_S3_SECRET_ACCESS_KEY=$(printf '%s\n' "$S3_SECRET_ACCESS_KEY" | sed -e 's/[\/&]/\\&/g')
-    sed -i "s/APPLICATION_BUCKET_NAME/$S3_BUCKET/g" $REDCAP_CONFIG_SQL
-    sed -i "s/REDCAP_IAM_USER_ACCESS_KEY/$S3_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
-    sed -i "s/REDCAP_IAM_USER_SECRET/$ESCAPED_S3_SECRET_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
-    sed -i "s/REGION/$AWS_REGION/g" $REDCAP_CONFIG_SQL
-    mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D redcap --password=${RDS_PASSWORD} <$REDCAP_CONFIG_SQL
-    echo ' - Done'
+  echo ' - Configuring REDCap DB settings...'
+  ESCAPED_S3_SECRET_ACCESS_KEY=$(printf '%s\n' "$S3_SECRET_ACCESS_KEY" | sed -e 's/[\/&]/\\&/g')
+  sed -i "s/APPLICATION_BUCKET_NAME/$S3_BUCKET/g" $REDCAP_CONFIG_SQL
+  sed -i "s/REDCAP_IAM_USER_ACCESS_KEY/$S3_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
+  sed -i "s/REDCAP_IAM_USER_SECRET/$ESCAPED_S3_SECRET_ACCESS_KEY/g" $REDCAP_CONFIG_SQL
+  sed -i "s/REGION/$AWS_REGION/g" $REDCAP_CONFIG_SQL
+  mysql -h ${RDS_HOSTNAME} -u ${RDS_USERNAME} -D redcap --password=${RDS_PASSWORD} <$REDCAP_CONFIG_SQL
+  echo ' - Done'
 fi
 
 exec "$@"
