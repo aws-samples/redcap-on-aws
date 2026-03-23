@@ -3862,18 +3862,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@biomejs/biome@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/biome@npm:2.3.11"
+"@biomejs/biome@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/biome@npm:2.4.8"
   dependencies:
-    "@biomejs/cli-darwin-arm64": "npm:2.3.11"
-    "@biomejs/cli-darwin-x64": "npm:2.3.11"
-    "@biomejs/cli-linux-arm64": "npm:2.3.11"
-    "@biomejs/cli-linux-arm64-musl": "npm:2.3.11"
-    "@biomejs/cli-linux-x64": "npm:2.3.11"
-    "@biomejs/cli-linux-x64-musl": "npm:2.3.11"
-    "@biomejs/cli-win32-arm64": "npm:2.3.11"
-    "@biomejs/cli-win32-x64": "npm:2.3.11"
+    "@biomejs/cli-darwin-arm64": "npm:2.4.8"
+    "@biomejs/cli-darwin-x64": "npm:2.4.8"
+    "@biomejs/cli-linux-arm64": "npm:2.4.8"
+    "@biomejs/cli-linux-arm64-musl": "npm:2.4.8"
+    "@biomejs/cli-linux-x64": "npm:2.4.8"
+    "@biomejs/cli-linux-x64-musl": "npm:2.4.8"
+    "@biomejs/cli-win32-arm64": "npm:2.4.8"
+    "@biomejs/cli-win32-x64": "npm:2.4.8"
   dependenciesMeta:
     "@biomejs/cli-darwin-arm64":
       optional: true
@@ -3893,62 +3893,62 @@ __metadata:
       optional: true
   bin:
     biome: bin/biome
-  checksum: 10c0/b9764070c3d1583466a8861d37dc480c18103f7bb52115db0f265a38e6343d69792c9beea094e0b3db0905cb365b9a82ad2a0f3f05b7f04873a8f9b444263140
+  checksum: 10c0/aa77037ee9e49d3ee8d3efcbe11750a84a3536f9ef05457c77ce34dfb5f06da23630cd701ef98b06abf7c691b64ebebcde9fbfb32abadf6b55bdc825ee600662
   languageName: node
   linkType: hard
 
-"@biomejs/cli-darwin-arm64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-darwin-arm64@npm:2.3.11"
+"@biomejs/cli-darwin-arm64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-darwin-arm64@npm:2.4.8"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@biomejs/cli-darwin-x64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-darwin-x64@npm:2.3.11"
+"@biomejs/cli-darwin-x64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-darwin-x64@npm:2.4.8"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@biomejs/cli-linux-arm64-musl@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-linux-arm64-musl@npm:2.3.11"
+"@biomejs/cli-linux-arm64-musl@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-linux-arm64-musl@npm:2.4.8"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@biomejs/cli-linux-arm64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-linux-arm64@npm:2.3.11"
+"@biomejs/cli-linux-arm64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-linux-arm64@npm:2.4.8"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@biomejs/cli-linux-x64-musl@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-linux-x64-musl@npm:2.3.11"
+"@biomejs/cli-linux-x64-musl@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-linux-x64-musl@npm:2.4.8"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@biomejs/cli-linux-x64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-linux-x64@npm:2.3.11"
+"@biomejs/cli-linux-x64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-linux-x64@npm:2.4.8"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@biomejs/cli-win32-arm64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-win32-arm64@npm:2.3.11"
+"@biomejs/cli-win32-arm64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-win32-arm64@npm:2.4.8"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@biomejs/cli-win32-x64@npm:2.3.11":
-  version: 2.3.11
-  resolution: "@biomejs/cli-win32-x64@npm:2.3.11"
+"@biomejs/cli-win32-x64@npm:2.4.8":
+  version: 2.4.8
+  resolution: "@biomejs/cli-win32-x64@npm:2.4.8"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -6355,9 +6355,9 @@ __metadata:
     "@aws-sdk/client-iam": "npm:^3.658.0"
     "@aws-sdk/client-secrets-manager": "npm:^3.658.0"
     "@aws-sdk/client-sfn": "npm:^3.658.0"
-    "@types/aws-lambda": "npm:^8.10.145"
-    "@types/node": "npm:^20.14.10"
-    deasync: "npm:^0.1.30"
+    "@types/aws-lambda": "npm:^8.10.161"
+    "@types/node": "npm:^20.19.37"
+    deasync: "npm:^0.1.31"
     sst: "npm:2.49.6"
   languageName: unknown
   linkType: soft
@@ -6378,24 +6378,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/node22@npm:22.0.2":
-  version: 22.0.2
-  resolution: "@tsconfig/node22@npm:22.0.2"
-  checksum: 10c0/c75e6b9ea86ec2a384adefac0e2f16a6c08202ae5cf6c8c745944396a6931ffb38e742809491c1882d1868c2af1c33744193701779674bfb1e05f6a130045a18
+"@tsconfig/node22@npm:22.0.5":
+  version: 22.0.5
+  resolution: "@tsconfig/node22@npm:22.0.5"
+  checksum: 10c0/c64b1d51e1556da9212463799f5096289d2cc8561eaed10cd0a0a36c25790b4c6bed30c0f846afccf8da75b5750326fa281216a908c2b67ead7b55adaf3eda22
   languageName: node
   linkType: hard
 
-"@types/aws-lambda@npm:^8.10.145":
-  version: 8.10.149
-  resolution: "@types/aws-lambda@npm:8.10.149"
-  checksum: 10c0/9ef41214a1b69fa30d89cab575429793f1ccc49cfe3a7aa75228aef31a202bb6d2c306a5b33def61ef29e0d0a1a324412bf6a4fa5a615e61117685584a394047
+"@types/aws-lambda@npm:^8.10.161":
+  version: 8.10.161
+  resolution: "@types/aws-lambda@npm:8.10.161"
+  checksum: 10c0/5a779901bb29a1989fe0ef30e4a515522af8fc66c237e0eedc954ab650651920540196b4629df25068c130a05a2a6142f661db7e26c7fbacc17ce11338367eb1
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:^4.17.9":
-  version: 4.17.16
-  resolution: "@types/lodash@npm:4.17.16"
-  checksum: 10c0/cf017901b8ab1d7aabc86d5189d9288f4f99f19a75caf020c0e2c77b8d4cead4db0d0b842d009b029339f92399f49f34377dd7c2721053388f251778b4c23534
+"@types/lodash@npm:^4.17.24":
+  version: 4.17.24
+  resolution: "@types/lodash@npm:4.17.24"
+  checksum: 10c0/b72f60d4daacdad1fa643edb3faba204c02a01eb1ac00a83ff73496a6d236fc55e459c06106e8ced42277dba932d087d8fc090f8de4ef590d3f91e6d6f7ce85a
   languageName: node
   linkType: hard
 
@@ -6415,12 +6415,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.14.10":
-  version: 20.17.31
-  resolution: "@types/node@npm:20.17.31"
+"@types/node@npm:^20.19.37":
+  version: 20.19.37
+  resolution: "@types/node@npm:20.19.37"
   dependencies:
-    undici-types: "npm:~6.19.2"
-  checksum: 10c0/ab6fb60a7957bef39a9fcd3b9fbd8ea2f4a51d7b8522b0fd56e11b9fbbd3ff6cbd361e3bd510cdf9bbef54956332374c6646e28cce8ae597244623a0659153d0
+    undici-types: "npm:~6.21.0"
+  checksum: 10c0/8420353aee776ae5c1e9720058949909a0e908fa2af85501e9db2645bb9f9acd7d767890f8aaee34d375e6f8b5f550a9a169e908d2d8cf7d5daf63dce64092a0
   languageName: node
   linkType: hard
 
@@ -7599,20 +7599,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csv-parse@npm:^5.5.6":
+"csv-parse@npm:^5.6.0":
   version: 5.6.0
   resolution: "csv-parse@npm:5.6.0"
   checksum: 10c0/52f5e6c45359902e0c8e57fc2eeed41366dc6b6d283b495b538dd50c8e8510413d6f924096ea056319cbbb8ed26e111c3a3485d7985c021bcf5abaa9e92425c7
   languageName: node
   linkType: hard
 
-"deasync@npm:^0.1.30":
-  version: 0.1.30
-  resolution: "deasync@npm:0.1.30"
+"deasync@npm:^0.1.31":
+  version: 0.1.31
+  resolution: "deasync@npm:0.1.31"
   dependencies:
     bindings: "npm:^1.5.0"
     node-addon-api: "npm:^1.7.1"
-  checksum: 10c0/5bf6fab59695c706960793328da19d07afcc200cdcf64de85e7d15eb8ed237768a51e0331af995a07b8673ac004e9d5c690daa747dc3100895201b2fff5911c4
+  checksum: 10c0/e002010dc55048a611d35994f45cc36097aeddd147a650cfc1d96e8b251619971ce8b2692939f2da718d2ca26740337a88c7ee5493f43eb1fc773a52cc055794
   languageName: node
   linkType: hard
 
@@ -8557,7 +8557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^15.14.0":
+"globals@npm:^15.15.0":
   version: 15.15.0
   resolution: "globals@npm:15.15.0"
   checksum: 10c0/f9ae80996392ca71316495a39bec88ac43ae3525a438b5626cd9d5ce9d5500d0a98a266409605f8cd7241c7acf57c354a48111ea02a767ba4f374b806d6861fe
@@ -10590,15 +10590,15 @@ __metadata:
   resolution: "redcap-on-aws@workspace:."
   dependencies:
     "@aws-cdk/aws-apprunner-alpha": "npm:2.201.0-alpha.0"
-    "@biomejs/biome": "npm:2.3.11"
-    "@tsconfig/node22": "npm:22.0.2"
-    "@types/lodash": "npm:^4.17.9"
-    "@types/node": "npm:^20.14.10"
+    "@biomejs/biome": "npm:2.4.8"
+    "@tsconfig/node22": "npm:22.0.5"
+    "@types/lodash": "npm:^4.17.24"
+    "@types/node": "npm:^20.19.37"
     aws-cdk-lib: "npm:2.201.0"
     cdk-nag: "npm:^2.28.195"
     constructs: "npm:10.3.0"
-    csv-parse: "npm:^5.5.6"
-    globals: "npm:^15.14.0"
+    csv-parse: "npm:^5.6.0"
+    globals: "npm:^15.15.0"
     hygen: "npm:^6.2.11"
     moment: "npm:^2.30.1"
     node-gyp: "npm:^9.4.1"
@@ -11435,13 +11435,6 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 10c0/39117e346ff8ebd87ae1510b3a77d5d92dae5a89bde588c747d25da5c146603a99c8ee588c7ef80faaf123d89ed46f6dbd918d534d641083177d5fac38b8a1cb
-  languageName: node
-  linkType: hard
-
-"undici-types@npm:~6.19.2":
-  version: 6.19.8
-  resolution: "undici-types@npm:6.19.8"
-  checksum: 10c0/078afa5990fba110f6824823ace86073b4638f1d5112ee26e790155f481f2a868cc3e0615505b6f4282bdf74a3d8caad715fd809e870c2bb0704e3ea6082f344
   languageName: node
   linkType: hard
 
