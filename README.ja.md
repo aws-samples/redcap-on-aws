@@ -2,6 +2,14 @@ JP | [EN](README.md)
 
 # REDCap deployment on AWS with serverless services
 
+テスト済みのREDCapバージョン:
+
+- redcap14.1.5
+- redcap15.8.0
+- redcap16.1.5
+
+> REDCapの他のマイナーバージョンもデプロイ可能です。デプロイできない場合は、issueで報告してください。
+
 > すでにプロジェクトをデプロイ済みの場合は、アップグレード手順を確認してください。
 >
 > - **v1.0.11 から v1.1.0** (Abr 2025 release)　へのアップグレード手順は [CHANGELOG](./CHANGELOG.ja.md) を確認してください。
@@ -534,7 +542,7 @@ const dev: RedCapConfig = {
    // ...より多くのオプション
    db: {
     dbSnapshotId: 'redcap-dev', // スナップショット名。
-    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0, // スナップショットのエンジンバージョンと一致または互換性がある必要があります
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_10_0, // スナップショットのエンジンバージョンと一致または互換性がある必要があります、あるいはAuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.10.3', '8.0')
   },
 };
 ```

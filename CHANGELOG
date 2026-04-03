@@ -2,6 +2,12 @@
 
 # CHANGELOG
 
+## 1.2.2
+
+- Bug fixes regarding php and aws-sdk for REDCap versions 16. The included aws-sdk in REDCap is now modified from the default instalation from compose and RDS library is not present. The setup script will now match REDCap SDK version and install the same to avoid version mismatch issues.
+- Package upgrade of sst v2 to v2.49.8
+- Update RDS database version default to AuroraMysqlEngineVersion.VER_3_10_0. For existing installations, your Aurora database might be automatically upgraded to VER_3_10_3, in which case you should remove from your `stages.ts` the engineVersion parameter to allow the update.
+
 ## 1.2.1
 
 - Allow REDCap URLs containing versioning to redirect to the current installation.

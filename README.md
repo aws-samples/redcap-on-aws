@@ -2,6 +2,14 @@
 
 # REDCap deployment on AWS with serverless services
 
+REDCap versions tested:
+
+- redcap14.1.5
+- redcap15.8.0
+- redcap16.1.5
+
+> Other Minor versions of REDCap should still deploy, if not please report it in a issue.
+
 > If you have deployed this project before, please check these upgrade procedures. Otherwise, you can ignore this.
 >
 > - **UPDATE procedures from v1.0.11 to v1.1.0** (Abr 2025 release) check [CHANGELOG](./CHANGELOG) for instructions.
@@ -535,7 +543,7 @@ const dev: RedCapConfig = {
   // ...more options
   db: {
     dbSnapshotId: "redcap-dev", // Snapshot name.
-    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_0, // Must match or be compatible with snapshot's engine version
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_10_0, // Must match or be compatible with snapshot's engine version, alternatively AuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.10.3', '8.0')
   },
 };
 ```

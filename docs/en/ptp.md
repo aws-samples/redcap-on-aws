@@ -57,13 +57,13 @@ Alternatively, you can configure your `stages.ts` in the `db` object to set the 
 
 The `db` object in your `stages.ts` file supports the following configuration options:
 
-- **`engineVersion`** (optional): Specify the Aurora MySQL engine version. Default is `AuroraMysqlEngineVersion.VER_3_08_0`. Example:
+- **`engineVersion`** (optional): Specify the Aurora MySQL engine version. Default is `AuroraMysqlEngineVersion.VER_3_10_0`. Example:
 
   ```ts
   import { aws_rds } from 'aws-cdk-lib';
 
   db: {
-    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_10_0,
     // ... other options
   }
   ```

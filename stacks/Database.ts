@@ -56,7 +56,7 @@ export function Database({ stack, app }: StackContext) {
 
   const auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
     engine: 'mysql8.0',
-    engineVersion: dbConfig?.engineVersion ?? AuroraMysqlEngineVersion.VER_3_08_0,
+    engineVersion: dbConfig?.engineVersion ?? AuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.10.3', '8.0'),
     defaultDatabaseName: 'redcap',
     dbUserName: 'dbadmin',
     vpc: networkVpc.vpc,

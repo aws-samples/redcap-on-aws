@@ -53,13 +53,13 @@ parameterGroupParameters: {
 
 `stages.ts`ファイルの`db`オブジェクトは、以下の設定オプションをサポートしています：
 
-- **`engineVersion`** (オプション): Aurora MySQL エンジンのバージョンを指定します。デフォルトは `AuroraMysqlEngineVersion.VER_3_08_0` です。例：
+- **`engineVersion`** (オプション): Aurora MySQL エンジンのバージョンを指定します。デフォルトは `AuroraMysqlEngineVersion.VER_3_10_0` です。例：
 
   ```ts
   import { aws_rds } from 'aws-cdk-lib';
 
   db: {
-    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_10_0,
     // ... その他のオプション
   }
   ```
