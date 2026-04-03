@@ -30,15 +30,61 @@ ls -d /var/www/html/redcap_v* 2>/dev/null || echo "  No redcap_v* directories fo
 
 chown -R www-data:www-data /var/www/html
 
-## Check if REDCap bundles AWS SDK, if not install via Composer
+## Check if REDCap bundles AWS SDK and verify RDS components for IAM auth
 REDCAP_VERSION_DIR=$(ls -d /var/www/html/redcap_v* 2>/dev/null | sort -V | tail -n 1)
+
+if [ -z "$REDCAP_VERSION_DIR" ]; then
+  echo "WARNING: No REDCap version directory found (expected redcap_v* pattern)"
+  echo "This may indicate a problem with the REDCap package extraction."
+fi
+
+INSTALL_COMPOSER_SDK=false
+AWS_SDK_VERSION=""
+
 if [ -n "$REDCAP_VERSION_DIR" ] && [ -f "$REDCAP_VERSION_DIR/Libraries/vendor/autoload.php" ]; then
-  echo "REDCap bundles its own AWS SDK at $REDCAP_VERSION_DIR/Libraries/vendor/autoload.php"
-  echo "Skipping separate AWS SDK installation to avoid version conflicts"
+  echo "REDCap bundles AWS SDK at $REDCAP_VERSION_DIR/Libraries/vendor/autoload.php"
+
+  # Detect REDCap's AWS SDK version
+  if [ -f "$REDCAP_VERSION_DIR/Libraries/vendor/aws/aws-sdk-php/src/Sdk.php" ]; then
+    # Try single quotes first
+    AWS_SDK_VERSION=$(grep -oP "const VERSION = '\K[^']+" "$REDCAP_VERSION_DIR/Libraries/vendor/aws/aws-sdk-php/src/Sdk.php" 2>/dev/null || echo "")
+    # Fallback to double quotes
+    if [ -z "$AWS_SDK_VERSION" ]; then
+      AWS_SDK_VERSION=$(grep -oP 'const VERSION = "\K[^"]+' "$REDCAP_VERSION_DIR/Libraries/vendor/aws/aws-sdk-php/src/Sdk.php" 2>/dev/null || echo "")
+    fi
+    if [ -n "$AWS_SDK_VERSION" ]; then
+      echo "REDCap's AWS SDK version: $AWS_SDK_VERSION"
+    fi
+  fi
+
+  # Check if RDS components are available (needed for IAM auth and to ensure complete AWS SDK)
+  if [ -f "$REDCAP_VERSION_DIR/Libraries/vendor/aws/aws-sdk-php/src/Rds/AuthTokenGenerator.php" ]; then
+    echo "RDS components found in REDCap's bundled AWS SDK"
+    echo "Skipping separate AWS SDK installation to avoid version conflicts"
+  else
+    echo "WARNING: RDS components missing in REDCap's bundled AWS SDK"
+    echo "Installing matching complete AWS SDK via Composer for IAM database authentication support"
+    INSTALL_COMPOSER_SDK=true
+  fi
 else
   echo "REDCap does not bundle AWS SDK, installing via Composer"
+  INSTALL_COMPOSER_SDK=true
+fi
+
+if [ "$INSTALL_COMPOSER_SDK" = true ]; then
   mkdir -p /usr/local/share/redcap/aws
-  composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+
+  # Install matching AWS SDK version if detected, otherwise use latest
+  if [ -n "$AWS_SDK_VERSION" ]; then
+    echo "Installing AWS SDK version $AWS_SDK_VERSION to match REDCap's version"
+    if ! composer require aws/aws-sdk-php:$AWS_SDK_VERSION --working-dir=/usr/local/share/redcap/aws 2>&1; then
+      echo "WARNING: Could not install AWS SDK version $AWS_SDK_VERSION, installing latest instead"
+      composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+    fi
+  else
+    echo "Installing latest AWS SDK version"
+    composer require aws/aws-sdk-php --working-dir=/usr/local/share/redcap/aws
+  fi
 fi
 
 ## REDCap languages
@@ -81,20 +127,32 @@ if (!empty($dirs)) {
     $redcapVersion = basename(end($dirs));
 }
 
-// Try REDCap's bundled AWS SDK first, then fallback to our version
-if ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
-    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
-} elseif (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
+// For IAM auth, use Composer SDK if available (has complete RDS support matching REDCap's version)
+// Otherwise fallback to REDCap's bundled SDK
+if (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
     require_once "/usr/local/share/redcap/aws/vendor/autoload.php";
+} elseif ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
+    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
 } else {
-    throw new Exception("AWS SDK not found. Checked REDCap bundled SDK and /usr/local/share/redcap/aws/vendor/autoload.php");
+    throw new Exception("AWS SDK not found. Checked Composer SDK and REDCap bundled SDK");
 }
 
 use Aws\Credentials\CredentialProvider;
 
 $log_all_errors = FALSE;
 
-// REQUIRED VARIABLES
+// REQUIRED VARIABLES - Validate before use
+$required_vars = ['RDS_HOSTNAME', 'RDS_DBNAME', 'RDS_PORT', 'RDS_PASSWORD', 'AWS_REGION', 'DB_SALT_ALPHA'];
+$missing_vars = [];
+foreach ($required_vars as $var) {
+    if (getenv($var) === false || getenv($var) === '') {
+        $missing_vars[] = $var;
+    }
+}
+if (!empty($missing_vars)) {
+    throw new Exception("Missing required environment variables for IAM auth: " . implode(', ', $missing_vars));
+}
+
 $hostname   = getenv('RDS_HOSTNAME');
 $db         = getenv('RDS_DBNAME');
 $port       = getenv('RDS_PORT');
@@ -113,7 +171,10 @@ try {
     $provider = CredentialProvider::defaultProvider();
     $RdsAuthGenerator = new Aws\Rds\AuthTokenGenerator($provider);
     $password = $RdsAuthGenerator->createToken($hostname . ":{$port}", $region, $username);
-} catch (AwsException $e) {}
+} catch (AwsException $e) {
+    error_log("AWS IAM Token Generation Error: " . $e->getMessage());
+    // Continue with fallback password from RDS_PASSWORD environment variable
+}
 
 EOF
 
@@ -128,19 +189,32 @@ if (!empty($dirs)) {
     $redcapVersion = basename(end($dirs));
 }
 
-// Try REDCap's bundled AWS SDK first, then fallback to our version
-if ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
-    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
-} elseif (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
+// For Secrets Manager, use Composer SDK if available (matching version with complete components)
+// Otherwise fallback to REDCap's bundled SDK
+if (file_exists("/usr/local/share/redcap/aws/vendor/autoload.php")) {
     require_once "/usr/local/share/redcap/aws/vendor/autoload.php";
+} elseif ($redcapVersion && file_exists("/var/www/html/$redcapVersion/Libraries/vendor/autoload.php")) {
+    require_once "/var/www/html/$redcapVersion/Libraries/vendor/autoload.php";
 } else {
-    throw new Exception("AWS SDK not found. Checked REDCap bundled SDK and /usr/local/share/redcap/aws/vendor/autoload.php");
+    throw new Exception("AWS SDK not found. Checked Composer SDK and REDCap bundled SDK");
 }
 
 use Aws\SecretsManager\SecretsManagerClient;
 use Aws\Exception\AwsException;
 
 $log_all_errors = FALSE;
+
+// Validate required environment variables
+$required_vars = ['RDS_HOSTNAME', 'RDS_DBNAME', 'RDS_USERNAME', 'RDS_PASSWORD', 'DB_SALT_ALPHA', 'AWS_REGION', 'DB_SECRET_NAME'];
+$missing_vars = [];
+foreach ($required_vars as $var) {
+    if (getenv($var) === false || getenv($var) === '') {
+        $missing_vars[] = $var;
+    }
+}
+if (!empty($missing_vars)) {
+    throw new Exception("Missing required environment variables for standard auth: " . implode(', ', $missing_vars));
+}
 
 $hostname   = getenv('RDS_HOSTNAME');
 $db         = getenv('RDS_DBNAME');
@@ -165,7 +239,10 @@ try {
     $secretArray = json_decode($secret, true);
     $password   = $secretArray['password'];
 
-} catch (AwsException $e) {}
+} catch (AwsException $e) {
+    error_log("AWS Secrets Manager Error: " . $e->getMessage());
+    // Continue with fallback password from RDS_PASSWORD environment variable
+}
 
 EOF
 

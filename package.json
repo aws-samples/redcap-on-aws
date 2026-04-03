@@ -21,18 +21,18 @@
     "@tsconfig/node22": "22.0.5",
     "@types/lodash": "^4.17.24",
     "@types/node": "^20.19.37",
-    "aws-cdk-lib": "2.201.0",
+    "aws-cdk-lib": "2.224.0",
     "constructs": "10.3.0",
     "globals": "^15.15.0",
     "hygen": "^6.2.11",
-    "sst": "2.49.6",
+    "sst": "2.49.8",
     "typescript": "^5.1.6"
   },
   "workspaces": [
     "packages/*"
   ],
   "dependencies": {
-    "@aws-cdk/aws-apprunner-alpha": "2.201.0-alpha.0",
+    "@aws-cdk/aws-apprunner-alpha": "2.224.0-alpha.0",
     "cdk-nag": "^2.28.195",
     "csv-parse": "^5.6.0",
     "moment": "^2.30.1",

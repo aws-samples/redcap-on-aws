@@ -23,7 +23,7 @@ const dev: RedCapConfig = {
     dbSnapshotId: undefined,
     maxAllowedPacket: '1073741824',
     preferredMaintenanceWindow: 'Sun:23:45-Mon:00:15',
-    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_08_1,
+    engineVersion: aws_rds.AuroraMysqlEngineVersion.VER_3_10_0,
     dbReaders: 0, // disable readers for dev envs
     scaling: {
       maxCapacityAcu: 2,
