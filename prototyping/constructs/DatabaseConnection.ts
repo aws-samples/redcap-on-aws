@@ -22,6 +22,7 @@ export class DatabaseConnection {
   public readonly securityGroup: ISecurityGroup;
 
   private readonly scope: Construct;
+  private readonly clusterResourceId: string;
 
   constructor(scope: Construct, stage: string) {
     this.scope = scope;
@@ -30,6 +31,10 @@ export class DatabaseConnection {
     this.secretArn = aws_ssm.StringParameter.valueForStringParameter(scope, names.secretArn);
     this.secretName = aws_ssm.StringParameter.valueForStringParameter(scope, names.secretName);
     this.readEndpoint = aws_ssm.StringParameter.valueForStringParameter(scope, names.readEndpoint);
+    this.clusterResourceId = aws_ssm.StringParameter.valueForStringParameter(
+      scope,
+      names.clusterResourceId,
+    );
 
     this.secret = aws_secretsmanager.Secret.fromSecretCompleteArn(
       scope,
@@ -45,13 +50,18 @@ export class DatabaseConnection {
     );
   }
 
+  /**
+   * Grant `rds-db:connect`. The cluster resource id is resolved from SSM, so the
+   * grant is scoped to the current cluster only (not other stages) and still
+   * survives cluster replacement (the SSM value updates on the next deploy).
+   */
   public grantConnect(grantee: IGrantable, dbUser: string): void {
     const stack = Stack.of(this.scope);
     const resourceArn = Arn.format(
       {
         service: 'rds-db',
         resource: 'dbuser',
-        resourceName: `*/${dbUser}`,
+        resourceName: `${this.clusterResourceId}/${dbUser}`,
         arnFormat: ArnFormat.COLON_RESOURCE_NAME,
       },
       stack,
