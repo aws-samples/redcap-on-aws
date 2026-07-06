@@ -36,11 +36,8 @@ export function Backend({ stack, app }: StackContext) {
   const { dbAllowedSg } = use(Database);
   const repository = use(BuildImage);
 
-  // Resolve the database cluster's volatile attributes (secret, read endpoint,
-  // etc.) from SSM Parameter Store by their stable names, rather than importing
-  // them through CloudFormation cross-stack exports. This lets the Database stack
-  // replace the cluster (e.g. when restoring from a different snapshot) without
-  // hitting "cannot update export ... as it is in use by dev-REDCap-Backend".
+  // Resolve DB attributes from SSM (see DatabaseConnection) instead of
+  // cross-stack exports, so the cluster can be replaced without breaking deploys.
   const dbConnection = new DatabaseConnection(stack, stack.stage);
 
   // Config

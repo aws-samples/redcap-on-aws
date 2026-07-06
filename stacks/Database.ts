@@ -77,11 +77,9 @@ export function Database({ stack, app }: StackContext) {
     preferredMaintenanceWindow,
   });
 
-  // Publish the volatile cluster attributes to SSM Parameter Store instead of
-  // sharing them through CloudFormation cross-stack exports. The parameter names
-  // are stable (stage-based), so replacing the cluster (e.g. restoring a different
-  // snapshot) only changes the parameter *value* and never triggers the
-  // "cannot update export ... as it is in use" failure between Database and Backend.
+  // Publish volatile cluster attributes to SSM instead of CloudFormation exports,
+  // so replacing the cluster (e.g. snapshot restore) doesn't hit
+  // "cannot update export ... as it is in use". See dbSharedParameters.
   const dbParams = dbParameterNames(stack.stage);
 
   if (auroraClusterV2.aurora.secret) {

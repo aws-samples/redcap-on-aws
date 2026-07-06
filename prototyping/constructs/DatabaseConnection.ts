@@ -12,16 +12,7 @@ import type { Construct } from 'constructs';
 import { dbParameterNames } from '../dbSharedParameters';
 
 /**
- * Decoupled view of the database cluster for consuming stacks (Backend, EC2Server).
- *
- * Instead of importing the live cluster's volatile attributes through
- * CloudFormation cross-stack exports (which prevents replacing the cluster while
- * those exports are in use), the consuming stacks resolve the values from SSM
- * Parameter Store by their stable, stage-based names at deploy time.
- *
- * IAM grants are built from the resolved values (a reconstructed secret) and from
- * a stable `rds-db:connect` resource ARN scoped by database user, so they no
- * longer depend on the cluster's resource id and survive cluster replacement.
+ * Reads the DB cluster's volatile attributes from SSM
  */
 export class DatabaseConnection {
   public readonly secret: ISecret;
@@ -36,9 +27,6 @@ export class DatabaseConnection {
     this.scope = scope;
     const names = dbParameterNames(stage);
 
-    // Deploy-time dynamic references ({{resolve:ssm:...}}). These resolve to the
-    // current parameter value when the stack is deployed, so a cluster
-    // replacement (which updates the value in the Database stack) is picked up.
     this.secretArn = aws_ssm.StringParameter.valueForStringParameter(scope, names.secretArn);
     this.secretName = aws_ssm.StringParameter.valueForStringParameter(scope, names.secretName);
     this.readEndpoint = aws_ssm.StringParameter.valueForStringParameter(scope, names.readEndpoint);
@@ -57,13 +45,6 @@ export class DatabaseConnection {
     );
   }
 
-  /**
-   * Grant `rds-db:connect` for the given database user.
-   *
-   * The resource ARN uses a wildcard for the cluster resource id
-   * (`dbuser:*​/{dbUser}`) so the grant does not depend on the cluster's
-   * `clusterResourceIdentifier`, which changes when the cluster is replaced.
-   */
   public grantConnect(grantee: IGrantable, dbUser: string): void {
     const stack = Stack.of(this.scope);
     const resourceArn = Arn.format(
@@ -84,7 +65,6 @@ export class DatabaseConnection {
     );
   }
 
-  /** Grant read access to the database credentials secret. */
   public grantSecretRead(grantee: IGrantable | IRole): void {
     this.secret.grantRead(grantee);
   }

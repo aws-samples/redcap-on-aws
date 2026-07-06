@@ -61,9 +61,7 @@ export function EC2Server({ stack, app }: StackContext) {
   const { dbSalt, s3UserCredentials, sesUserCredentials, environmentVariables } = use(Backend);
   const { dbAllowedSg } = use(Database);
 
-  // Resolve the database cluster's volatile attributes from SSM (by stable name)
-  // instead of importing them via CloudFormation exports, so the cluster can be
-  // replaced without breaking this stack. See DatabaseConnection for details.
+  // Resolve DB attributes from SSM
   const dbConnection = new DatabaseConnection(stack, stack.stage);
 
   const userData = UserData.forLinux({ shebang: '#!/bin/bash' });
