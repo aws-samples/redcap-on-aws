@@ -41,6 +41,19 @@ const dev: RedCapConfig = {
   //     cpuUtilization: 90,
   //   },
   // },
+  // Uncomment to use ECS Express Mode (AWS::ECS::ExpressGatewayService).
+  // Takes precedence over `ecs` and `appRunner`. CPU/memory are CloudFormation
+  // strings. ECS manages the ALB, TLS, security groups and auto scaling.
+  // express: {
+  //   cpu: '1024',
+  //   memory: '2048',
+  //   scaling: {
+  //     autoScalingMetric: 'AVERAGE_CPU',
+  //     autoScalingTargetValue: 60,
+  //     minTaskCount: 1,
+  //     maxTaskCount: 3,
+  //   },
+  // },
 };
 
 const prod: RedCapConfig = {

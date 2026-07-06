@@ -6,15 +6,18 @@ import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { type Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
 import { ApiDestination } from 'aws-cdk-lib/aws-events-targets';
 import type { IGrantable } from 'aws-cdk-lib/aws-iam';
+import type { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import type { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { get, isNumber } from 'lodash';
 import type { App, ServiceProps, Stack } from 'sst/constructs';
 import { AppRunner } from '../../prototyping/constructs/AppRunner';
 import type { DatabaseConnection } from '../../prototyping/constructs/DatabaseConnection';
+import { EcsExpress } from '../../prototyping/constructs/EcsExpress';
 import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
+import type { ExpressGatewayScalingTargetProperty } from '../../prototyping/constructs/vendored/ecs-express.generated';
 import { type Waf, WebACLAssociation } from '../../prototyping/constructs/Waf';
 import * as stage from '../../stages';
 
@@ -25,8 +28,10 @@ export class RedcapService {
   private connection: Connection;
   public ecsService?: EcsFargate;
   public appRunnerService?: AppRunner;
+  public expressService?: EcsExpress;
   public EcsServiceUrl?: string | undefined;
   public AppRunnerServiceUrl?: string | undefined;
+  public ExpressServiceUrl?: string | undefined;
   public CustomServiceUrl?: string | undefined;
 
   constructor(
@@ -70,6 +75,7 @@ export class RedcapService {
   private associateWaf(resourceArn: string, serviceType: string) {
     let id = 'apprunner-redcap';
     if (serviceType === 'ecs-redcap') id = 'ecs-redcap';
+    else if (serviceType === 'express-redcap') id = 'express-redcap';
     new WebACLAssociation(this.stack, id, {
       webAclArn: get(
         stage,
@@ -86,6 +92,9 @@ export class RedcapService {
     if (serviceType === 'apprunner') {
       url = this.AppRunnerServiceUrl;
       prefixId = 'apprunner-service';
+    } else if (serviceType === 'express') {
+      url = this.ExpressServiceUrl;
+      prefixId = 'express-service';
     }
 
     const destination = new aws_events.ApiDestination(this.stack, `${prefixId}-destination`, {
@@ -229,5 +238,45 @@ export class RedcapService {
       this.CustomServiceUrl = `https://${this.appRunnerService.customUrl}`;
     }
     this.setupCronJob('apprunner');
+  }
+
+  public expressDeploy(config: {
+    securityGroups: Array<SecurityGroup>;
+    cpu?: string;
+    memory?: string;
+    tag: string;
+    scaling?: ExpressGatewayScalingTargetProperty;
+  }) {
+    this.expressService = new EcsExpress(
+      this.stack,
+      `${this.app.stage}-${this.app.name}-express-service`,
+      {
+        app: this.app,
+        stack: this.stack,
+        tag: config.tag || 'latest',
+        repository: this.common.repository,
+        environmentVariables: this.common.environmentVariables,
+        cpu: config.cpu,
+        memory: config.memory,
+        servicePort: this.common.servicePort || 8080,
+        scaling: config.scaling,
+        logRetention: this.common.logRetention as unknown as RetentionDays,
+        network: {
+          vpc: this.common.vpc,
+          subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          securityGroups: config.securityGroups,
+        },
+      },
+    );
+
+    // The application identity gets the same secret/DB grants as the ECS path.
+    this.grantSecretsReadAndConnect(this.expressService.taskRole);
+    // WAF is associated with the ECS-managed Application Load Balancer.
+    this.associateWaf(this.expressService.loadBalancerArn, 'express-redcap');
+
+    // Express Mode exposes an HTTPS endpoint managed by ECS.
+    this.ExpressServiceUrl = `https://${this.expressService.url}`;
+    this.CustomServiceUrl = this.ExpressServiceUrl;
+    this.setupCronJob('express');
   }
 }

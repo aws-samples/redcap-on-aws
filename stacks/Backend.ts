@@ -49,6 +49,7 @@ export function Backend({ stack, app }: StackContext) {
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
   const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
+  const expressConfig = get(stage, [stack.stage, 'express']);
   const email = get(stage, [stack.stage, 'email']);
   const bounceNotificationEmail = get(stage, [stack.stage, 'bounceNotificationEmail']);
   const port = get(stage, [stack.stage, 'port']);
@@ -184,7 +185,16 @@ export function Backend({ stack, app }: StackContext) {
     cronMinutes,
   });
 
-  if (ecsConfig) {
+  if (expressConfig) {
+    // Deploy with ECS Express Mode backend
+    service.expressDeploy({
+      securityGroups: [dbAllowedSg],
+      cpu: get(expressConfig, 'cpu', '1024'),
+      memory: get(expressConfig, 'memory', '2048'),
+      scaling: get(expressConfig, 'scaling', undefined),
+      tag,
+    });
+  } else if (ecsConfig) {
     // Deploy with ECS backend
     service.ecsDeploy({
       cpu: get(ecsConfig, 'cpu', '2 vCPU'),
@@ -218,6 +228,7 @@ export function Backend({ stack, app }: StackContext) {
     AppRunnerServiceUrl: service.AppRunnerServiceUrl || '',
     CustomServiceUrl: service.CustomServiceUrl || '',
     EcsServiceUrl: service.EcsServiceUrl || '',
+    ExpressServiceUrl: service.ExpressServiceUrl || '',
   });
 
   // Suppress cdk nag offenses.
@@ -228,6 +239,7 @@ export function Backend({ stack, app }: StackContext) {
 
   if (service.appRunnerService) Suppressions.AppRunnerSuppressions(service.appRunnerService, app);
   if (service.ecsService) Suppressions.ECSSuppressions(service.ecsService);
+  if (service.expressService) Suppressions.ExpressSuppressions(service.expressService);
 
   return {
     repository,

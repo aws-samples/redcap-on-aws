@@ -20,12 +20,36 @@ import * as stage from '../../stages';
 import type { AppRunner } from '../constructs/AppRunner';
 import type { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
 import type { CodeBuildProject } from '../constructs/CodeBuildProject';
+import type { EcsExpress } from '../constructs/EcsExpress';
 import type { EcsFargate } from '../constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../constructs/SimpleEmailService';
 import type { Waf } from '../constructs/Waf';
 
 const Suppressions = {
+  ExpressSuppressions(service: EcsExpress) {
+    try {
+      NagSuppressions.addResourceSuppressions(
+        service,
+        [
+          {
+            id: 'AwsSolutions-IAM4',
+            reason:
+              'AmazonECSInfrastructureRoleforExpressGatewayServices is the AWS-recommended managed policy for ECS Express Mode',
+          },
+          {
+            id: 'AwsSolutions-IAM5',
+            reason:
+              'ECR auth token and log write actions require wildcard resources for the Express task execution role',
+          },
+        ],
+        true,
+      );
+    } catch {
+      /* empty */
+    }
+  },
+
   ECSSuppressions(service: EcsFargate) {
     const stack = Stack.of(service);
     try {
