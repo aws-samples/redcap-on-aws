@@ -40,6 +40,19 @@ export interface RedCapConfig extends ProtoConfigOptions {
     cpu: ServiceProps['cpu'];
     scaling: ServiceProps['scaling'];
   };
+  express?: {
+    // Override AppRunner/ECS deployment and use ECS Express Mode
+    // (AWS::ECS::ExpressGatewayService). CPU/memory are CloudFormation
+    // strings, e.g. cpu: '1024', memory: '2048'. Takes precedence over `ecs`.
+    memory?: string;
+    cpu?: string;
+    scaling?: {
+      autoScalingMetric?: 'AVERAGE_CPU' | 'AVERAGE_MEMORY' | 'REQUEST_COUNT_PER_TARGET';
+      autoScalingTargetValue?: number;
+      minTaskCount?: number;
+      maxTaskCount?: number;
+    };
+  };
   db?: {
     // The number of additional aurora readers, by default, 1 reader is added. Use 0 to use single writer/reader
     dbReaders?: number;
