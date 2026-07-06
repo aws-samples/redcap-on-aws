@@ -4,7 +4,6 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { createHash } from 'node:crypto';
 import { type aws_ec2, aws_iam, aws_rds, Duration, type RemovalPolicy, Stack } from 'aws-cdk-lib';
 import type { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -151,7 +150,7 @@ export class AuroraServerlessV2 extends Construct {
 
       this.aurora = new aws_rds.DatabaseClusterFromSnapshot(
         this,
-        `ServerlessAuroraDatabaseFromSnapshot-${createHash('sha1').update(props.snapshotIdentifier).digest('hex')}`,
+        'ServerlessAuroraDatabaseFromSnapshot',
         databaseSnapshotProps,
       );
 

@@ -21,7 +21,6 @@ import {
 import { Rule } from 'aws-cdk-lib/aws-events';
 import { SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
-import type { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
 import { ARecord, type IPublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { DefinitionBody, LogLevel, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
@@ -37,6 +36,7 @@ import {
   type Stack,
 } from 'sst/constructs';
 import { bucketProps } from '../overrides/BucketProps';
+import type { DatabaseConnection } from './DatabaseConnection';
 
 export interface EcsFargateCertificate {
   fromArn?: string;
@@ -66,7 +66,7 @@ export interface EcsFargateProps {
   domain?: string;
   subdomain?: string;
   customDomain?: string | ServiceDomainProps | undefined;
-  databaseCluster: DatabaseCluster;
+  databaseCluster: DatabaseConnection;
   certificate?: EcsFargateCertificate;
   containerInsights?: boolean;
   publicHostedZone?: IPublicHostedZone;
@@ -117,15 +117,7 @@ export class EcsFargate extends Construct {
 
     this.ecsSg = new SecurityGroup(this, `redcap-ecs-service`, { vpc: props.network.vpc });
 
-    const sg = props.databaseCluster.connections.securityGroups;
-    const auroraSG = SecurityGroup.fromSecurityGroupId(
-      this,
-      'aurora-security-id',
-      sg[0].securityGroupId,
-      {
-        mutable: true,
-      },
-    );
+    const auroraSG = props.databaseCluster.securityGroup;
     auroraSG.addIngressRule(this.ecsSg, Port.tcp(3306));
 
     const albSg = new SecurityGroup(this, 'alb-sg', {

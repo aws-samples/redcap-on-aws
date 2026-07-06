@@ -2,6 +2,11 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.2.3
+
+- 別のスナップショットからデータベースを復元する際のデプロイ失敗（`Cannot update export ... as it is in use by ...-Backend`）を修正しました。データベースクラスターの可変属性（シークレット、リードエンドポイント、クラスターリソースID、セキュリティグループ）は、CloudFormationのクロススタックエクスポートではなくSSMパラメータストアを介してBackendおよびEC2Serverスタックと共有されるようになりました。これにより、（`db.dbSnapshotId` の変更時に発生する）クラスターの置き換えが、使用中のエクスポートと競合しなくなりました。
+- `ServerlessAuroraDatabaseFromSnapshot` コンストラクトの論理ID（Logical ID）がスナップショット識別子に依存しなくなりました。
+
 ## 1.2.2
 
 - REDCapバージョン16に関するphpとaws-sdkのバグ修正。REDCapに含まれるaws-sdkは、composeからのデフォルトインストールから変更されており、RDSライブラリが存在しません。セットアップスクリプトは、バージョン不一致の問題を回避するために、REDCap SDKバージョンと一致させて同じものをインストールするようになりました。

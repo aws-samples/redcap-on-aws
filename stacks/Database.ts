@@ -4,7 +4,7 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { aws_ec2, Duration } from 'aws-cdk-lib';
+import { aws_ec2, aws_ssm, Duration } from 'aws-cdk-lib';
 import { AuroraMysqlEngineVersion } from 'aws-cdk-lib/aws-rds';
 import { get } from 'lodash';
 import moment from 'moment';
@@ -12,6 +12,7 @@ import { type StackContext, use } from 'sst/constructs';
 import type { RedCapConfig } from '../prototyping';
 import Suppressions from '../prototyping/cdkNag/Suppressions';
 import { AuroraServerlessV2 } from '../prototyping/constructs/AuroraServerlessV2';
+import { dbParameterNames } from '../prototyping/dbSharedParameters';
 import * as stage from '../stages';
 import { Network } from './Network';
 
@@ -56,7 +57,8 @@ export function Database({ stack, app }: StackContext) {
 
   const auroraClusterV2 = new AuroraServerlessV2(stack, 'RDSV2', {
     engine: 'mysql8.0',
-    engineVersion: dbConfig?.engineVersion ?? AuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.10.3', '8.0'),
+    engineVersion:
+      dbConfig?.engineVersion ?? AuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.10.3', '8.0'),
     defaultDatabaseName: 'redcap',
     dbUserName: 'dbadmin',
     vpc: networkVpc.vpc,
@@ -75,8 +77,38 @@ export function Database({ stack, app }: StackContext) {
     preferredMaintenanceWindow,
   });
 
-  stack.exportValue(auroraClusterV2.aurora.clusterResourceIdentifier);
-  stack.exportValue(auroraClusterV2.aurora.connections.securityGroups[0].securityGroupId);
+  // Publish the volatile cluster attributes to SSM Parameter Store instead of
+  // sharing them through CloudFormation cross-stack exports. The parameter names
+  // are stable (stage-based), so replacing the cluster (e.g. restoring a different
+  // snapshot) only changes the parameter *value* and never triggers the
+  // "cannot update export ... as it is in use" failure between Database and Backend.
+  const dbParams = dbParameterNames(stack.stage);
+
+  if (auroraClusterV2.aurora.secret) {
+    new aws_ssm.StringParameter(stack, 'DbSecretArnParam', {
+      parameterName: dbParams.secretArn,
+      stringValue: auroraClusterV2.aurora.secret.secretArn,
+    });
+    new aws_ssm.StringParameter(stack, 'DbSecretNameParam', {
+      parameterName: dbParams.secretName,
+      stringValue: auroraClusterV2.aurora.secret.secretName,
+    });
+  }
+
+  new aws_ssm.StringParameter(stack, 'DbReadEndpointParam', {
+    parameterName: dbParams.readEndpoint,
+    stringValue: auroraClusterV2.aurora.clusterReadEndpoint.hostname,
+  });
+
+  new aws_ssm.StringParameter(stack, 'DbClusterResourceIdParam', {
+    parameterName: dbParams.clusterResourceId,
+    stringValue: auroraClusterV2.aurora.clusterResourceIdentifier,
+  });
+
+  new aws_ssm.StringParameter(stack, 'DbSecurityGroupIdParam', {
+    parameterName: dbParams.securityGroupId,
+    stringValue: auroraClusterV2.aurora.connections.securityGroups[0].securityGroupId,
+  });
 
   auroraClusterV2?.aurora.connections.allowDefaultPortFrom(dbAllowedSg);
   Suppressions.RDSV2Suppressions(auroraClusterV2);
