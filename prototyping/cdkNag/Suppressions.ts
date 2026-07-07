@@ -20,12 +20,69 @@ import * as stage from '../../stages';
 import type { AppRunner } from '../constructs/AppRunner';
 import type { AuroraServerlessV2 } from '../constructs/AuroraServerlessV2';
 import type { CodeBuildProject } from '../constructs/CodeBuildProject';
+import type { EcsExpress } from '../constructs/EcsExpress';
 import type { EcsFargate } from '../constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../constructs/SimpleEmailService';
 import type { Waf } from '../constructs/Waf';
 
 const Suppressions = {
+  ExpressSuppressions(service: EcsExpress) {
+    const stack = Stack.of(service);
+    try {
+      NagSuppressions.addResourceSuppressions(
+        service,
+        [
+          {
+            id: 'AwsSolutions-IAM4',
+            reason:
+              'AmazonECSInfrastructureRoleforExpressGatewayServices is the AWS-recommended managed policy for ECS Express Mode',
+          },
+          {
+            id: 'AwsSolutions-IAM5',
+            reason:
+              'ECR auth token and log write actions require wildcard resources for the Express task execution role',
+          },
+          {
+            id: 'AwsSolutions-CFR1',
+            reason: 'Geo restriction handled by AWS WAF associated with the distribution',
+          },
+          {
+            id: 'AwsSolutions-CFR3',
+            reason: 'CloudFront access logging is not required for this deployment',
+          },
+          {
+            id: 'AwsSolutions-CFR4',
+            reason:
+              'Viewer protocol is redirect-to-HTTPS; TLS to the internal ALB origin is HTTPS_ONLY',
+          },
+        ],
+        true,
+      );
+    } catch {
+      /* empty */
+    }
+
+    // DnsValidatedCertificate's cross-region custom-resource Lambda.
+    if (service.customUrl) {
+      try {
+        NagSuppressions.addStackSuppressions(stack, [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason:
+              'DnsValidatedCertificate custom resource requires wildcard ACM/Route53 permissions',
+          },
+          {
+            id: 'AwsSolutions-L1',
+            reason: 'CDK-managed custom-resource Lambda runtime for the cross-region certificate',
+          },
+        ]);
+      } catch {
+        /* empty */
+      }
+    }
+  },
+
   ECSSuppressions(service: EcsFargate) {
     const stack = Stack.of(service);
     try {
@@ -172,6 +229,33 @@ const Suppressions = {
     }
   },
 
+  // Suppresses findings on SST-generated resources that exist on every Backend
+  // stack (e.g. the sourcemap uploader policy and deploy lambdas), independent
+  // of the chosen runtime or optional stacks like the EC2 server.
+  BackendStackSuppressions(scope: Construct) {
+    try {
+      const stack = Stack.of(scope);
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason:
+            'SST SourcemapUploaderPolicy uses * because the full stack ARN is not available at deploy time; the cross-region SSM reader custom resource is scoped to the exact parameter ARN',
+        },
+        {
+          id: 'AwsSolutions-IAM4',
+          reason:
+            'SST deploy lambdas and the CDK AwsCustomResource provider use AWS managed policies',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'SST- and CDK-managed lambda runtime versions (deploy lambdas, custom resources)',
+        },
+      ]);
+    } catch {
+      /* empty */
+    }
+  },
+
   SesSuppressions(ses: SimpleEmailService) {
     try {
       const stack = Stack.of(ses);
@@ -182,6 +266,7 @@ const Suppressions = {
           `${stack.stackName}/get-credentials/ServiceRole/Resource`,
           `${stack.stackName}/get-credentials/ServiceRole/DefaultPolicy/Resource`,
           `${stack.stackName}/get-credentials/Resource`,
+          `${stack.stackName}/${ses.node.id}/user-policy/Resource`,
         ],
         [
           {
@@ -199,6 +284,24 @@ const Suppressions = {
           {
             id: 'AwsSolutions-L1',
             reason: 'SST lambda version',
+          },
+        ],
+        true,
+      );
+
+      // The SES user-policy (ses:SendRawEmail/SendEmail on '*') is created
+      // under the SimpleEmailService construct. Suppress at the construct level
+      // so it is covered regardless of the stage/app name prefix in its path.
+      NagSuppressions.addResourceSuppressions(
+        ses,
+        [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'SES SendRawEmail/SendEmail require * resource; scoped to the SES IAM user',
+          },
+          {
+            id: 'AwsSolutions-SMG4',
+            reason: 'SES credential secret is managed by the createSesCredentials lambda',
           },
         ],
         true,

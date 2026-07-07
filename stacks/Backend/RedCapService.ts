@@ -1,20 +1,24 @@
 import type { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { aws_ec2, aws_events, Duration, SecretValue } from 'aws-cdk-lib';
 import type { CfnAutoScalingConfigurationProps } from 'aws-cdk-lib/aws-apprunner';
+import { DnsValidatedCertificate, type ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import type { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { type Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
 import { ApiDestination } from 'aws-cdk-lib/aws-events-targets';
 import type { IGrantable } from 'aws-cdk-lib/aws-iam';
+import type { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import type { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { get, isNumber } from 'lodash';
 import type { App, ServiceProps, Stack } from 'sst/constructs';
 import { AppRunner } from '../../prototyping/constructs/AppRunner';
 import type { DatabaseConnection } from '../../prototyping/constructs/DatabaseConnection';
+import { EcsExpress } from '../../prototyping/constructs/EcsExpress';
 import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
+import type { ExpressGatewayScalingTargetProperty } from '../../prototyping/constructs/vendored/ecs-express.generated';
 import { type Waf, WebACLAssociation } from '../../prototyping/constructs/Waf';
 import * as stage from '../../stages';
 
@@ -25,8 +29,10 @@ export class RedcapService {
   private connection: Connection;
   public ecsService?: EcsFargate;
   public appRunnerService?: AppRunner;
+  public expressService?: EcsExpress;
   public EcsServiceUrl?: string | undefined;
   public AppRunnerServiceUrl?: string | undefined;
+  public ExpressServiceUrl?: string | undefined;
   public CustomServiceUrl?: string | undefined;
 
   constructor(
@@ -36,7 +42,7 @@ export class RedcapService {
       domain: string;
       subdomain: string;
       publicHostedZone?: IPublicHostedZone;
-      waf: Waf;
+      waf?: Waf;
       secrets: {
         dbSecret: ISecret;
         dbSalt: ISecret;
@@ -67,14 +73,12 @@ export class RedcapService {
     this.common.dbConnection.grantConnect(grantee, 'redcap_user');
   }
 
-  private associateWaf(resourceArn: string, serviceType: string) {
-    let id = 'apprunner-redcap';
-    if (serviceType === 'ecs-redcap') id = 'ecs-redcap';
+  private associateWaf(resourceArn: string, id: string) {
     new WebACLAssociation(this.stack, id, {
       webAclArn: get(
         stage,
         [this.app.stage, 'externalResources', 'wafWebAcl'],
-        this.common.waf.waf.attrArn,
+        this.common.waf?.waf.attrArn,
       ),
       resourceArn,
     });
@@ -86,6 +90,9 @@ export class RedcapService {
     if (serviceType === 'apprunner') {
       url = this.AppRunnerServiceUrl;
       prefixId = 'apprunner-service';
+    } else if (serviceType === 'express') {
+      url = this.ExpressServiceUrl;
+      prefixId = 'express-service';
     }
 
     const destination = new aws_events.ApiDestination(this.stack, `${prefixId}-destination`, {
@@ -163,7 +170,7 @@ export class RedcapService {
     const loadBalancerArn = this.ecsService.service?.cdk?.applicationLoadBalancer?.loadBalancerArn;
 
     if (ecsTaskRole) this.grantSecretsReadAndConnect(ecsTaskRole);
-    if (loadBalancerArn) this.associateWaf(loadBalancerArn, 'ecs-service');
+    if (loadBalancerArn) this.associateWaf(loadBalancerArn, 'ecs-redcap');
 
     this.EcsServiceUrl = `https://${this.ecsService.url}`;
     this.setupCronJob('ecs');
@@ -222,12 +229,74 @@ export class RedcapService {
     );
 
     this.grantSecretsReadAndConnect(this.appRunnerService.service);
-    this.associateWaf(this.appRunnerService.service.serviceArn, 'apprunner');
+    this.associateWaf(this.appRunnerService.service.serviceArn, 'apprunner-redcap');
 
     this.AppRunnerServiceUrl = `https://${this.appRunnerService.service.serviceUrl}`;
     if (this.appRunnerService.customUrl) {
       this.CustomServiceUrl = `https://${this.appRunnerService.customUrl}`;
     }
     this.setupCronJob('apprunner');
+  }
+
+  public expressDeploy(config: {
+    securityGroups: Array<SecurityGroup>;
+    cpu?: string;
+    memory?: string;
+    tag: string;
+    scaling?: ExpressGatewayScalingTargetProperty;
+    /** ARN of the CLOUDFRONT-scoped WAF Web ACL (in us-east-1). */
+    webAclArn?: string;
+  }) {
+    // CloudFront needs its ACM cert in us-east-1. DnsValidatedCertificate is
+    // deprecated but kept intentionally.
+    // https://github.com/aws/aws-cdk/issues/25343
+    let certificate: ICertificate | undefined;
+    if (this.common.domain && this.common.publicHostedZone) {
+      const domainName = this.common.subdomain
+        ? `${this.common.subdomain}.${this.common.domain}`
+        : this.common.domain;
+      certificate = new DnsValidatedCertificate(this.stack, 'express-cf-certificate', {
+        domainName,
+        hostedZone: this.common.publicHostedZone,
+        region: 'us-east-1',
+      });
+    }
+
+    this.expressService = new EcsExpress(
+      this.stack,
+      `${this.app.stage}-${this.app.name}-express-service`,
+      {
+        app: this.app,
+        stack: this.stack,
+        tag: config.tag || 'latest',
+        repository: this.common.repository,
+        environmentVariables: this.common.environmentVariables,
+        cpu: config.cpu,
+        memory: config.memory,
+        servicePort: this.common.servicePort || 8080,
+        scaling: config.scaling,
+        logRetention: this.common.logRetention as unknown as RetentionDays,
+        domain: this.common.domain,
+        subdomain: this.common.subdomain,
+        publicHostedZone: this.common.publicHostedZone,
+        certificate,
+        webAclArn: config.webAclArn,
+        network: {
+          vpc: this.common.vpc,
+          subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          securityGroups: config.securityGroups,
+        },
+      },
+    );
+
+    // The application identity gets the same secret/DB grants as the ECS path.
+    this.grantSecretsReadAndConnect(this.expressService.taskRole);
+    // WAF is attached to CloudFront via webAclId inside EcsExpress.
+
+    this.ExpressServiceUrl = `https://${this.expressService.url}`;
+    this.CustomServiceUrl = this.expressService.customUrl
+      ? `https://${this.expressService.customUrl}`
+      : this.ExpressServiceUrl;
+    this.setupCronJob('express');
   }
 }

@@ -2,7 +2,7 @@
 
 # Load testing with Locust
 
-In this project, a simple load test with Docker Compose is included [here](../../loadtest/locust/)
+In this project, a simple load test with Docker Compose is included [here](../../tests/loadtest/locust/)
 
 To run it, you must have docker installed in your machine.
 
@@ -11,13 +11,13 @@ Then you must do:
 1. Go to the locust folder
 
    ```sh
-   cd ./loadtest/locust
+   cd ./tests/loadtest/locust
    ```
 
 2. Start Locust
 
    ```sh
-   docker-compose up
+   docker compose -f Compose.yaml up
    ```
 
 3. Open the tool in your browser: <http://0.0.0.0:8089>

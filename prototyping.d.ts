@@ -9,6 +9,31 @@ export interface ProtoConfigOptions extends ConfigOptions {
   allowedCountries?: string[]; // WAF allowed country list,  ISO 3166-2.
 }
 
+/** Valid ECS Express (Fargate) CPU allocations, as CloudFormation strings. */
+export type ExpressCpu = '256' | '512' | '1024' | '2048' | '4096';
+
+/**
+ * Valid ECS Express (Fargate) memory allocations (MiB strings). Must pair
+ * validly with `cpu`:
+ *  - 256:  512, 1024, 2048
+ *  - 512:  1024..4096
+ *  - 1024: 2048..8192
+ *  - 2048: 4096..16384
+ *  - 4096: 8192..30720
+ */
+export type ExpressMemory =
+  | '512'
+  | '1024'
+  | '2048'
+  | '3072'
+  | '4096'
+  | '5120'
+  | '6144'
+  | '7168'
+  | '8192'
+  | '16384'
+  | '30720';
+
 export interface RedCapConfig extends ProtoConfigOptions {
   generalLogRetention?: ServiceProps['logRetention']; // Optional general log retention period for <ecs fargate, aurora rds, vpc>
   bounceNotificationEmail?: string;
@@ -25,7 +50,7 @@ export interface RedCapConfig extends ProtoConfigOptions {
   autoDeploymentsEnabled?: boolean;
   cpu?: Cpu;
   memory?: Memory;
-  cronSecret?: string; // protect cron.php endpoint with a secret parameter https://endpoint/cron.php?secret=<secret>
+  cronSecret: string; // protect cron.php endpoint with a secret parameter https://endpoint/cron.php?secret=<secret>
   cronMinutes?: number; // cron execution in minutes, a value of zero means disabled
   port?: number;
   deployTag?: string; // forces a new AppRunner deployment and tags ECR docker image with this value
@@ -39,6 +64,18 @@ export interface RedCapConfig extends ProtoConfigOptions {
     memory: ServiceProps['memory'];
     cpu: ServiceProps['cpu'];
     scaling: ServiceProps['scaling'];
+  };
+  express?: {
+    // Use ECS Express Mode. CloudFormation strings, e.g. cpu: '1024'. Takes
+    // precedence over `ecs`; setting both throws at synth time.
+    memory?: ExpressMemory;
+    cpu?: ExpressCpu;
+    scaling?: {
+      autoScalingMetric?: 'AVERAGE_CPU' | 'AVERAGE_MEMORY' | 'REQUEST_COUNT_PER_TARGET';
+      autoScalingTargetValue?: number;
+      minTaskCount?: number;
+      maxTaskCount?: number;
+    };
   };
   db?: {
     // The number of additional aurora readers, by default, 1 reader is added. Use 0 to use single writer/reader

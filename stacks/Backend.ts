@@ -6,11 +6,12 @@
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { aws_secretsmanager, Fn, RemovalPolicy } from 'aws-cdk-lib';
-import { assign, get, isEmpty, random } from 'lodash';
+import { assign, get, isEmpty } from 'lodash';
 // SST
 import { Bucket, type StackContext, use } from 'sst/constructs';
 // Nag suppressions
 import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { CrossRegionSsmParameter } from '../prototyping/constructs/CrossRegionSsmParameter';
 import { DatabaseConnection } from '../prototyping/constructs/DatabaseConnection';
 // Construct and other assets
 import { RedCapAwsAccessUser } from '../prototyping/constructs/RedCapAwsAccessUser';
@@ -26,6 +27,7 @@ import { RedcapService } from './Backend/RedCapService';
 import { getCountryLimitRule, getRedcapCronRule } from './Backend/WafExtraRules';
 // Stack dependency
 import { BuildImage } from './BuildImage';
+import { cloudFrontWafParamName } from './CloudFrontWaf';
 import { Database } from './Database';
 import { Network } from './Network';
 
@@ -45,10 +47,17 @@ export function Backend({ stack, app }: StackContext) {
   const subdomain = get(stage, [stack.stage, 'subdomain']);
   const hostInRoute53: boolean | string = get(stage, [stack.stage, 'hostInRoute53'], true);
   const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
-  const cronSecret = get(stage, [stack.stage, 'cronSecret'], random(0, 10).toString());
+  const cronSecret: string = get(stage, [stack.stage, 'cronSecret']);
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
   const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
+  const expressConfig = get(stage, [stack.stage, 'express']);
+
+  if (ecsConfig && expressConfig) {
+    throw new Error(
+      "Configure only one runtime override per stage: set either 'ecs' or 'express', not both.",
+    );
+  }
   const email = get(stage, [stack.stage, 'email']);
   const bounceNotificationEmail = get(stage, [stack.stage, 'bounceNotificationEmail']);
   const port = get(stage, [stack.stage, 'port']);
@@ -142,10 +151,9 @@ export function Backend({ stack, app }: StackContext) {
     if (countryRules) extraRules.push(countryRules);
   }
 
-  const waf = new Waf(stack, `${app.stage}-${app.name}-appwaf`, {
-    allowedIps,
-    extraRules,
-  });
+  const waf = !expressConfig
+    ? new Waf(stack, `${app.stage}-${app.name}-appwaf`, { allowedIps, extraRules })
+    : undefined;
 
   const environmentVariables = {
     S3_BUCKET: redcapApplicationBucket.bucketName,
@@ -184,7 +192,23 @@ export function Backend({ stack, app }: StackContext) {
     cronMinutes,
   });
 
-  if (ecsConfig) {
+  if (expressConfig) {
+    // Deploy with ECS Express Mode backend, fronted by CloudFront.
+    // Deploy the WAF first: sst deploy --stage <stage> --region us-east-1
+    const cloudFrontWafArn = new CrossRegionSsmParameter(stack, 'cloudfront-waf-arn-reader', {
+      region: 'us-east-1',
+      parameterName: cloudFrontWafParamName(stack.stage),
+    }).value;
+
+    service.expressDeploy({
+      securityGroups: [dbAllowedSg],
+      cpu: get(expressConfig, 'cpu', '1024'),
+      memory: get(expressConfig, 'memory', '2048'),
+      scaling: get(expressConfig, 'scaling', undefined),
+      tag,
+      webAclArn: cloudFrontWafArn,
+    });
+  } else if (ecsConfig) {
     // Deploy with ECS backend
     service.ecsDeploy({
       cpu: get(ecsConfig, 'cpu', '2 vCPU'),
@@ -218,16 +242,19 @@ export function Backend({ stack, app }: StackContext) {
     AppRunnerServiceUrl: service.AppRunnerServiceUrl || '',
     CustomServiceUrl: service.CustomServiceUrl || '',
     EcsServiceUrl: service.EcsServiceUrl || '',
+    ExpressServiceUrl: service.ExpressServiceUrl || '',
   });
 
   // Suppress cdk nag offenses.
+  Suppressions.BackendStackSuppressions(stack);
   Suppressions.SesSuppressions(ses);
-  Suppressions.WebWafSuppressions(waf);
+  if (waf) Suppressions.WebWafSuppressions(waf);
   Suppressions.RedCapAwsAccessUserSuppressions([redCapS3AccessUser, redCapSESAccessUser]);
   Suppressions.DBSecretSaltSuppressions(dbSalt);
 
   if (service.appRunnerService) Suppressions.AppRunnerSuppressions(service.appRunnerService, app);
   if (service.ecsService) Suppressions.ECSSuppressions(service.ecsService);
+  if (service.expressService) Suppressions.ExpressSuppressions(service.expressService);
 
   return {
     repository,

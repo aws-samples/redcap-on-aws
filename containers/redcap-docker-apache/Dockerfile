@@ -1,13 +1,10 @@
-FROM public.ecr.aws/docker/library/php:8.2-apache
+FROM composer@sha256:805ff9b13d4d183754efd22d28dc32370b374308a5c04317041b57e7be7be87d AS composer
 
-ARG PORT
-ARG LANG_S3_URI
-ARG REDCAP_S3_URI
-ARG AWS_DEFAULT_REGION
-ARG DEBIAN_FRONTEND=noninteractive
-ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+# php:8.2-apache (Debian trixie, ImageMagick 7)
+FROM public.ecr.aws/docker/library/php@sha256:848bd4a97499465e365eb4681142332a958701cb6d2fff77342f02699b81985f
 
 # Required packages setup
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -qq && \
     apt-get install -yq --no-install-recommends \
     ca-certificates jq ghostscript \
@@ -34,8 +31,16 @@ RUN mkdir -p /usr/local/share/redcap/aws
 RUN curl "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" \
     -o "/usr/local/share/redcap/global-bundle.pem"
 
-# Fix ImageMagick policy for REDCap
-RUN sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/{d;}' /etc/ImageMagick-6/policy.xml
+# Ensure REDCap can process PDFs regardless of the ImageMagick default policy.
+RUN set -eu; \
+    im6=/etc/ImageMagick-6/policy.xml; \
+    im7=/etc/ImageMagick-7/policy.xml; \
+    if [ -f "$im6" ]; then \
+        sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/d' "$im6"; \
+    fi; \
+    if [ -f "$im7" ] && ! grep -q 'pattern="PDF"' "$im7"; then \
+        sed -i '/<\/policymap>/i\  <policy domain="coder" rights="read|write" pattern="PDF" \/>' "$im7"; \
+    fi
 
 # Apache config
 COPY apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf
@@ -43,6 +48,7 @@ COPY apache2/cert/apache-selfsigned.key /etc/ssl/certs/apache-selfsigned.key
 COPY apache2/cert/apache-selfsigned.crt /etc/ssl/certs/apache-selfsigned.crt
 
 # Apache tuning: server name, ports, SSL certs, and enable required modules/sites
+ARG PORT
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf && \
     echo "ServerTokens Prod" >> /etc/apache2/apache2.conf && \
     echo "ServerSignature Off" >> /etc/apache2/apache2.conf && \
@@ -64,6 +70,11 @@ RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf && \
     a2ensite 000-default
 
 # Container start scripts
+ARG LANG_S3_URI
+ARG REDCAP_S3_URI
+ARG AWS_DEFAULT_REGION
+ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+
 COPY scripts/ /etc/redcap-entry/
 RUN chown www-data -R /etc/redcap-entry && \
     chmod a+x /etc/redcap-entry/*.sh && \

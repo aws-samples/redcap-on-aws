@@ -12,6 +12,7 @@ import { NagConsoleLogger } from './prototyping/cdkNag/NagConsoleLogger';
 import { OverrideEc2ServerRemovalPolicy } from './prototyping/overrides/RemovalPolicy';
 import { Backend } from './stacks/Backend';
 import { BuildImage } from './stacks/BuildImage';
+import { CloudFrontWaf } from './stacks/CloudFrontWaf';
 import { Database } from './stacks/Database';
 import { EC2Server } from './stacks/EC2Server';
 import { Network } from './stacks/Network';
@@ -21,11 +22,13 @@ import * as stage from './stages';
 
 export default {
   config(_input) {
+    // biome-ignore lint: ignore next line
     return stage[_input.stage as keyof typeof stage];
   },
   stacks(app) {
     const logger = new NagConsoleLogger();
     const ec2ServerStack = get(stage, [app.stage, 'ec2ServerStack']);
+    const expressConfig = get(stage, [app.stage, 'express']);
 
     if (app.mode === 'deploy') logger.showSuppressed();
 
@@ -48,6 +51,9 @@ export default {
     /****** Stacks ******/
     if (app.stage === 'route53NS') {
       app.stack(Route53NSRecords);
+    } else if (app.region === 'us-east-1' && expressConfig) {
+      // CLOUDFRONT-scoped WAF for ECS Express; must live in us-east-1.
+      app.stack(CloudFrontWaf);
     } else {
       app.stack(Network);
       app.stack(BuildImage);

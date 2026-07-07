@@ -102,6 +102,8 @@ export function BuildImage({ stack, app }: StackContext) {
     exclude: ['.DS_Store'],
   });
 
+  const isExpress = Boolean(get(stage, [stack.stage, 'express']));
+
   // Codebuild project to build REDCap image and push to ECR
   const codeBuild = new CodeBuildProject(stack, `${app.stage}-${app.name}-codeBuildProject`, {
     projectName: `${app.stage}-${app.name}-build`,
@@ -119,6 +121,9 @@ export function BuildImage({ stack, app }: StackContext) {
       ECR_REPOSITORY_URI: {
         value: repository.repositoryUri,
       },
+      ECR_REPOSITORY_NAME: {
+        value: repository.repositoryName,
+      },
       IMAGE_TAG: {
         value: redcapTag,
       },
@@ -133,6 +138,13 @@ export function BuildImage({ stack, app }: StackContext) {
       },
       PORT: {
         value: port || '8080',
+      },
+      // ECS Express has no ECR-push auto-deploy (unlike App Runner / Fargate).
+      EXPRESS_SERVICE_NAME: {
+        value: isExpress ? `${app.stage}-${app.name}-express` : '',
+      },
+      EXPRESS_CLUSTER: {
+        value: 'default',
       },
     },
     buildSpec: BuildSpec.fromAsset('./buildspec/redcap-build.yml'),
@@ -162,6 +174,32 @@ export function BuildImage({ stack, app }: StackContext) {
       }),
     );
 
+  // ECS Express roll from the buildspec
+  if (isExpress) {
+    project.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'ecs:DescribeExpressGatewayService',
+          'ecs:UpdateExpressGatewayService',
+          'ecs:RegisterTaskDefinition',
+        ],
+        resources: ['*'],
+      }),
+    );
+    project.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ecr:DescribeImages'],
+        resources: [repository.repositoryArn],
+      }),
+    );
+    project.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['iam:PassRole'],
+        resources: ['*'],
+      }),
+    );
+  }
+
   const lambdaBuild = codeBuild.addLambdaTrigger({
     handler: 'packages/functions/src/startProjectBuild.handler',
     name: 'redcap-build',
@@ -171,8 +209,10 @@ export function BuildImage({ stack, app }: StackContext) {
     executeBefore: [],
   });
 
+  const buildCommand = `aws lambda invoke --function-name ${lambdaBuild} --region ${stack.region} --profile ${profile} deployLambdaResponse.json`;
+
   stack.addOutputs({
-    UpdateDeploymentCommand: `aws lambda invoke --function-name ${lambdaBuild} --region ${stack.region} --profile ${profile} deployLambdaResponse.json`,
+    BuildImageCommand: buildCommand,
   });
 
   Suppressions.BuildImageSuppressions(codeBuild);

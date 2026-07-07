@@ -38,13 +38,13 @@ AWS マネジメントコンソールを用いて再実行を行う場合、[Cod
 aws --version
 ```
 
-デプロイ完了時に `UpdateDeploymentCommand`として表示されるコマンドを実行してください。
+デプロイ完了時に `BuildImageCommand`として表示されるコマンドを実行してください。
 
 ```sh
 ✔  Deployed:
    Network
    BuildImage
-   UpdateDeploymentCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
+   BuildImageCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
    ...
 ```
 

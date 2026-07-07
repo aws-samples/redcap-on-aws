@@ -1,0 +1,3 @@
+# Load test dependencies for the Locust suite.
+# Install with: pip install -r requirements.txt
+locust>=2.20,<3.0

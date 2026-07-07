@@ -2,7 +2,7 @@ JP | [EN](../en/loadtest.md)
 
 # Locust での負荷試験
 
-このプロジェクトには、Docker Compose を使った簡単な[負荷テスト](../../loadtest/locust/)が含まれています
+このプロジェクトには、Docker Compose を使った簡単な[負荷テスト](../../tests/loadtest/locust/)が含まれています
 
 これを実行する前に、コンピューターに Docker がインストールされていることを確認してください。
 
@@ -11,13 +11,13 @@ JP | [EN](../en/loadtest.md)
 1. `locust` ディレクトリに移動
 
    ```sh
-   cd ./loadtest/locust
+   cd ./tests/loadtest/locust
    ```
 
 2. Locust を起動
 
    ```sh
-   docker-compose up
+   docker compose -f Compose.yaml up
    ```
 
 3. ブラウザで <http://0.0.0.0:8089> にアクセスしツールを開く

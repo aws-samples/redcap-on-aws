@@ -7,6 +7,7 @@ REDCap versions tested:
 - redcap14.1.5
 - redcap15.8.0
 - redcap16.1.5
+- redcap17.1.1
 
 > Other Minor versions of REDCap should still deploy, if not please report it in a issue.
 
@@ -41,10 +42,19 @@ The following, is a serverless architecture designed for high availability with 
 
 ### 2. Serverless
 
-1. **AWS App Runner**: Provides load balancer, autoscaling and automatic container deployments to ensure your REDCap setup is always available.
+> [!IMPORTANT]
+> **AWS App Runner is closed to new customers as of April 30, 2026.** Per the
+> [AWS App Runner availability change](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html),
+> new AWS accounts can no longer create App Runner services (existing customers
+> may continue using it). For new deployments, use the **Amazon ECS Express Mode**
+> runtime (see [Use Amazon ECS Express Mode](#3-use-amazon-ecs-express-mode-recommended-replacement-for-app-runner)),
+> or **Amazon ECS on AWS Fargate**.
+
+1. **AWS App Runner** _(closed to new customers — see note above)_: Provides load balancer, autoscaling and automatic container deployments to ensure your REDCap setup is always available.
 2. **Amazon Aurora Serverless**: With MySQL compatibility, Aurora serverless can auto scale your database as needed. MySQL Reader and writer configuration for REDCap is enabled by default.
 3. **Amazon S3**: For file storage, REDCap integration with Amazon S3 is the recommended setting and enabled by default.
 4. **Amazon ECS on AWS Fargate**: An alternative to AWS App Runner to run long user requests.
+5. **Amazon ECS Express Mode**: A fully managed way to run REDCap containers. Amazon ECS provisions the load balancer, TLS, security groups and autoscaling. Containers run in private subnets, fronted by an Amazon CloudFront distribution (with AWS WAF) for public access.
 
 ### 3. IaC using AWS CDK
 
@@ -119,7 +129,7 @@ Each property described below allows you to configure your deployment.
 | appRunnerConcurrency [3] | The number of requests that a single REDCap instance can process. When the value is exceeded, it will trigger the auto-scaling.                                                                                                                       | Number            | 10                                        |
 | appRunnerMaxSize         | Sets the upper limit on the number of instance App Runner can scale.                                                                                                                                                                                  | Number            | 2                                         |
 | appRunnerMinSize         | Sets the minimum number of `warm` instances.                                                                                                                                                                                                          | Number            | 1                                         |
-| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php                                                                                                                                                                 | String            | Random 10 digit string                    |
+| cronSecret               | Base string to create a hashed secret to allow access to https:<your_domain>/cron.php. **Required** — must be set explicitly in every stage configuration.                                                                                            | String            | —                                         |
 | cronMinutes              | Number in minutes that sets the schedule for REDCap's cron, a value of zero will disable the scheduler on Amazon EventBridge                                                                                                                          | Number            | 1                                         |
 | cpu                      | The number of vCpu assigned to each instance                                                                                                                                                                                                          | Cpu               | `Cpu.TWO_VCPU`                            |
 | memory                   | The amount of memory assigned to each instance                                                                                                                                                                                                        | Memory            | `Memory.FOUR_GB`                          |
@@ -128,6 +138,7 @@ Each property described below allows you to configure your deployment.
 | rebuildImage [4]         | Whether to rebuild the REDCap Docker Image each time it is deployed                                                                                                                                                                                   | Boolean           | `false`                                   |
 | ec2ServerStack [5]       | Configuration for a temporary EC2 instance for long running request                                                                                                                                                                                   | Object            | `undefined`                               |
 | ecs [6]                  | Configuration to use Amazon ECS on AWS Fargate instead of AWS App Runner                                                                                                                                                                              | Object            | `undefined`                               |
+| express [7]              | Configuration to use Amazon ECS Express Mode (fronted by CloudFront + WAF) instead of AWS App Runner. Mutually exclusive with `ecs`.                                                                                                                   | Object            | `undefined`                               |
 | db                       | Configuration for Amazon Aurora RDS Serverless V2                                                                                                                                                                                                     | Object            | `undefined`                               |
 | generalLogRetention      | Optional general log retention period for ECS Fargate, RDS and VPC logs                                                                                                                                                                               | String            | `undefined`                               |
 | bounceNotificationEmail  | The email address to receive notifications when an email sent from SES bounces logs                                                                                                                                                                   | String            | `undefined`                               |
@@ -143,6 +154,8 @@ Each property described below allows you to configure your deployment.
 - [5] [Ec2 server stack](#1-ec2-server-stack)
 
 - [6] [Use Amazon ECS on AWS Fargate instead of AWS App Runner for REDCap instances](#2-use-amazon-ecs-on-aws-fargate-instead-of-aws-app-runner-for-redcap-instances)
+
+- [7] [Use Amazon ECS Express Mode (recommended replacement for App Runner)](#3-use-amazon-ecs-express-mode-recommended-replacement-for-app-runner)
 
 ### 4. Configure basic REDCap settings
 
@@ -408,7 +421,7 @@ This is an AWS Codebuild process that will build the new docker image and trigge
 
 #### 3.2 Call AWS lambda via terminal CLI
 
-1. Check for the terminal output `UpdateDeploymentCommand` and copy the command
+1. Check for the terminal output `BuildImageCommand` and copy the command
 2. Paste and execute to call the AWS cli and start the update and deployment process.
 
 To monitor the status, you can use the AWS CLI or access the AWS Console to check AWS CodeBuild and later the Blue-Green deployment of AWS App Runner.
@@ -528,6 +541,68 @@ const stag: RedCapConfig = {
 ```
 
 **Important:** Test you change in a development environment first. If you have previously deployed this project using AWS App Runner and choose to use Amazon ECS, only the AWS App Runner resources will be destroyed, this does not include Amazon S3 buckets for data storage or database. This only change can take up to 20 minutes to complete.
+
+### 3. Use Amazon ECS Express Mode (recommended replacement for App Runner)
+
+Since [AWS App Runner is closed to new customers](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html), **Amazon ECS Express Mode** is the recommended runtime for new deployments. It uses the `AWS::ECS::ExpressGatewayService` resource: Amazon ECS provisions and manages the Application Load Balancer, TLS certificate, security groups and autoscaling for you.
+
+In this project the REDCap containers and the ECS-managed ALB run in **private subnets** (the ALB is internal, tasks have no public IPs). Public internet access is provided by an **Amazon CloudFront** distribution using a [VPC Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html) that points at the internal ALB. An **AWS WAF** Web ACL is attached to the CloudFront distribution.
+
+Activate it by adding an `express` block to your stage. It is **mutually exclusive** with `ecs` (setting both fails at synth time) and takes precedence over App Runner:
+
+```ts
+const dev: RedCapConfig = {
+  ...baseOptions,
+  hostInRoute53: true,
+  domain: 'redcap.mydomain.dev',
+  redCapS3Path: 'redcap-bucket/redcap16.1.5.zip',
+  cronSecret: 'your_secret',
+  email: 'myemail@mydomain.dev',
+  express: {
+    // CPU/memory are CloudFormation strings and follow valid AWS Fargate combinations.
+    cpu: '1024',
+    memory: '2048',
+    scaling: {
+      autoScalingMetric: 'AVERAGE_CPU', // AVERAGE_CPU | AVERAGE_MEMORY | REQUEST_COUNT_PER_TARGET
+      autoScalingTargetValue: 60,
+      minTaskCount: 1,
+      maxTaskCount: 3,
+    },
+  },
+};
+```
+
+#### Deploying with ECS Express Mode
+
+A CloudFront distribution requires its AWS WAF Web ACL (and the custom-domain ACM certificate) to live in the **us-east-1** Region. This project keeps the WAF in a separate, us-east-1-only deployment. Use the provided script, which deploys the us-east-1 WAF **first** and then the application in its main Region:
+
+```bash
+yarn deploy:express --stage <your_stage>
+```
+
+To remove an ECS Express stage (tears down the app first, then the us-east-1 WAF):
+
+```bash
+yarn remove:express --stage <your_stage>
+```
+
+To preview changes for an ECS Express stage (diffs both the us-east-1 WAF and the app):
+
+```bash
+yarn diff:express --stage <your_stage>
+```
+
+> [!NOTE]
+> The `deploy:express`/`remove:express`/`diff:express` scripts are cross-platform (Node-based) and require `--stage`: they abort if it is not provided instead of falling back to the default stage. Deploying only with `sst deploy` (without the WAF step) will fail at deploy time when the CloudFront WAF ARN cannot be read from us-east-1. Always use `yarn deploy:express` for Express stages.
+
+#### Custom domain
+
+When `domain`/`subdomain` and `hostInRoute53` are set, the ACM certificate for CloudFront is issued in us-east-1 automatically, and a Route53 alias record is created pointing your domain at the CloudFront distribution. Without a domain, the service is reachable at its default `https://xxxx.cloudfront.net` address.
+
+> [!NOTE]
+> When a custom domain is configured, CDK emits a deprecation warning for `DnsValidatedCertificate` during synth. This is expected: it is the only CDK construct that can issue a `us-east-1` ACM certificate validated against a hosted zone in the main-region stack. The warning is cosmetic and does not affect the deployment.
+
+**Important:** Test your change in a development environment first. Switching an existing stage's runtime to `express` replaces the application backend only; it does not affect the Amazon S3 buckets for data storage or the database.
 
 ---
 
