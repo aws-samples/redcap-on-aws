@@ -4,10 +4,12 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { aws_iam, RemovalPolicy } from 'aws-cdk-lib';
+import { aws_iam, cloudformation_include, RemovalPolicy } from 'aws-cdk-lib';
+import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
 import type { ISecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import { Construct } from 'constructs';
 import type { App, Stack } from 'sst/constructs';
 import {
@@ -64,6 +66,14 @@ export interface EcsExpressProps {
    * Log retention for the container log group. Default: two years.
    */
   logRetention?: RetentionDays;
+  /**
+   * Custom domain to attach to the Express-managed ALB. When set together with
+   * `publicHostedZone`, an ACM certificate is issued and a host-header rule +
+   * Route53 alias record are created via a custom-resource workaround.
+   */
+  domain?: string;
+  subdomain?: string;
+  publicHostedZone?: IPublicHostedZone;
 }
 
 /**
@@ -89,6 +99,8 @@ export class EcsExpress extends Construct {
   public readonly url: string;
   /** The ARN of the managed load balancer, for WAF association. */
   public readonly loadBalancerArn: string;
+  /** The custom domain name, when configured. */
+  public readonly customUrl?: string;
 
   constructor(scope: Stack, id: string, props: EcsExpressProps) {
     super(scope, id);
@@ -172,5 +184,38 @@ export class EcsExpress extends Construct {
 
     this.url = this.service.attrEndpoint;
     this.loadBalancerArn = this.service.attrIngressPathLoadBalancerArn;
+
+    // Attach a custom domain to the ECS-managed ALB. Express Mode does not
+    // expose certificate/domain configuration on the CloudFormation resource,
+    // so we replicate AWS's documented "update outside Express Mode" steps via
+    // a custom-resource Lambda (mirrors the App Runner custom-domain approach).
+    if (props.domain && props.publicHostedZone) {
+      const domainName = props.subdomain ? `${props.subdomain}.${props.domain}` : props.domain;
+
+      const certificate = new Certificate(this, 'express-domain-certificate', {
+        domainName,
+        validation: CertificateValidation.fromDns(props.publicHostedZone),
+      });
+
+      const customDomainCfn = new cloudformation_include.CfnInclude(
+        this,
+        `${prefix}-custom-domain`,
+        {
+          templateFile: './prototyping/cfn/EcsExpressCustomDomain.yaml',
+          parameters: {
+            DomainName: domainName,
+            ListenerArn: this.service.attrIngressPathListenerArn,
+            LoadBalancerArn: this.service.attrIngressPathLoadBalancerArn,
+            CertificateArn: certificate.certificateArn,
+            DNSDomainId: props.publicHostedZone.hostedZoneId,
+          },
+        },
+      );
+
+      // Re-assert the domain config after each Express service update to
+      // counter drift from UpdateExpressGatewayService.
+      customDomainCfn.node.addDependency(this.service);
+      this.customUrl = domainName;
+    }
   }
 }

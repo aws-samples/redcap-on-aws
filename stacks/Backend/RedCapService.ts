@@ -261,6 +261,9 @@ export class RedcapService {
         servicePort: this.common.servicePort || 8080,
         scaling: config.scaling,
         logRetention: this.common.logRetention as unknown as RetentionDays,
+        domain: this.common.domain,
+        subdomain: this.common.subdomain,
+        publicHostedZone: this.common.publicHostedZone,
         network: {
           vpc: this.common.vpc,
           subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
@@ -274,9 +277,13 @@ export class RedcapService {
     // WAF is associated with the ECS-managed Application Load Balancer.
     this.associateWaf(this.expressService.loadBalancerArn, 'express-redcap');
 
-    // Express Mode exposes an HTTPS endpoint managed by ECS.
+    // Express Mode exposes an HTTPS endpoint managed by ECS. When a custom
+    // domain is configured its certificate matches the domain, so cron/WAF can
+    // target it; otherwise fall back to the managed endpoint.
     this.ExpressServiceUrl = `https://${this.expressService.url}`;
-    this.CustomServiceUrl = this.ExpressServiceUrl;
+    this.CustomServiceUrl = this.expressService.customUrl
+      ? `https://${this.expressService.customUrl}`
+      : this.ExpressServiceUrl;
     this.setupCronJob('express');
   }
 }

@@ -28,6 +28,7 @@ import type { Waf } from '../constructs/Waf';
 
 const Suppressions = {
   ExpressSuppressions(service: EcsExpress) {
+    const stack = Stack.of(service);
     try {
       NagSuppressions.addResourceSuppressions(
         service,
@@ -47,6 +48,34 @@ const Suppressions = {
       );
     } catch {
       /* empty */
+    }
+
+    // Custom-domain workaround Lambda + role (only present when a domain is set).
+    if (service.customUrl) {
+      const prefix = `${service.node.id}/${service.node.id}-custom-domain`;
+      try {
+        NagSuppressions.addResourceSuppressionsByPath(
+          stack,
+          [
+            `${stack.stackName}/${prefix}/EcsExpressCustomDomainProvider`,
+            `${stack.stackName}/${prefix}/LambdaRole`,
+          ],
+          [
+            {
+              id: 'AwsSolutions-IAM5',
+              reason:
+                'The custom-domain provider must manage the AWS-managed Express ALB listener/rules, whose ARNs are not known at synth time',
+            },
+            {
+              id: 'AwsSolutions-L1',
+              reason: 'Inline custom-resource Lambda pinned to a supported runtime',
+            },
+          ],
+          true,
+        );
+      } catch {
+        /* empty */
+      }
     }
   },
 
