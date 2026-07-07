@@ -4,12 +4,23 @@
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
 
-import { aws_iam, cloudformation_include, RemovalPolicy } from 'aws-cdk-lib';
-import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
+import { aws_iam, Duration, RemovalPolicy } from 'aws-cdk-lib';
+import type { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import {
+  AllowedMethods,
+  CachePolicy,
+  Distribution,
+  OriginProtocolPolicy,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { VpcOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { type ISecurityGroup, SubnetType, type Vpc } from 'aws-cdk-lib/aws-ec2';
 import type { Repository } from 'aws-cdk-lib/aws-ecr';
+import { ApplicationLoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
-import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import { ARecord, type IPublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import type { App, Stack } from 'sst/constructs';
 import {
@@ -72,27 +83,43 @@ export interface EcsExpressProps {
    */
   logRetention?: RetentionDays;
   /**
-   * Custom domain to attach to the Express-managed ALB. When set together with
-   * `publicHostedZone`, an ACM certificate is issued and a host-header rule +
-   * Route53 alias record are created via a custom-resource workaround.
+   * Custom domain served by the CloudFront distribution. When set together with
+   * `publicHostedZone` and `certificate` (which must be in us-east-1), CloudFront
+   * uses the domain and a Route53 alias record is created.
    */
   domain?: string;
   subdomain?: string;
   publicHostedZone?: IPublicHostedZone;
+  /**
+   * ACM certificate for the custom domain. MUST be issued in us-east-1 because
+   * it is attached to CloudFront. If omitted, CloudFront serves its default
+   * `*.cloudfront.net` domain.
+   */
+  certificate?: ICertificate;
+  /**
+   * ARN of the CLOUDFRONT-scoped WAF Web ACL (must be in us-east-1) to attach
+   * to the CloudFront distribution.
+   */
+  webAclArn?: string;
 }
 
 /**
- * Deploys REDCap on ECS Express Mode (`AWS::ECS::ExpressGatewayService`).
+ * Deploys REDCap on ECS Express Mode (`AWS::ECS::ExpressGatewayService`) fronted
+ * by a CloudFront distribution using a VPC Origin.
  *
  * Express Mode is a managed abstraction: Amazon ECS provisions and owns the
  * Application Load Balancer, target groups, listener, service security groups,
  * SSL certificate and auto-scaling policies. We provide the container config,
  * three IAM roles, and the VPC/subnet/security-group placement.
  *
- * Because the service security groups are AWS-managed and only known as tokens
- * after creation, DB connectivity is achieved by attaching the shared
- * `dbAllowedSg` (which Aurora already trusts) to the service tasks — the same
- * pattern used by the App Runner runtime.
+ * The tasks and the ECS-managed ALB run in PRIVATE subnets (internal ALB, no
+ * public IPs). Public internet access is provided by a CloudFront distribution
+ * whose origin is a VPC Origin pointing at the internal ALB. This keeps the
+ * REDCap containers private while still exposing a public HTTPS endpoint, and
+ * lets WAF and the custom domain attach to CloudFront.
+ *
+ * DB connectivity is achieved by attaching the shared `dbAllowedSg` (which
+ * Aurora already trusts) to the service tasks — the same pattern as App Runner.
  */
 export class EcsExpress extends Construct {
   public readonly service: CfnExpressGatewayService;
@@ -100,10 +127,13 @@ export class EcsExpress extends Construct {
   public readonly taskRole: aws_iam.Role;
   public readonly infrastructureRole: aws_iam.Role;
   public readonly logGroup: LogGroup;
-  /** The managed endpoint hostname of the Express service. */
+  public readonly distribution: Distribution;
+  /** The public CloudFront domain name of the distribution. */
   public readonly url: string;
-  /** The ARN of the managed load balancer, for WAF association. */
+  /** The ARN of the managed load balancer. */
   public readonly loadBalancerArn: string;
+  /** The ARN of the CloudFront distribution, for WAF association. */
+  public readonly distributionArn: string;
   /** The custom domain name, when configured. */
   public readonly customUrl?: string;
 
@@ -177,12 +207,10 @@ export class EcsExpress extends Construct {
       networkConfiguration: {
         securityGroups: props.network.securityGroups.map((sg) => sg.securityGroupId),
         // ECS Express Mode places its managed ALB in the subnets given here.
-        // We use PRIVATE_WITH_EGRESS so the managed ALB is INTERNAL and the
-        // tasks stay private (no public IPs). Public internet access is provided
-        // by a CloudFront distribution with a VPC Origin in front of the
-        // internal ALB (see the CloudFront wiring below). NOTE: subnet type is
-        // immutable on an Express service - changing it requires REPLACING the
-        // service (CloudFormation update is rejected by ECS).
+        // PRIVATE_WITH_EGRESS keeps the managed ALB INTERNAL and the tasks
+        // private (no public IPs). Public access is via CloudFront (below).
+        // NOTE: subnet type is immutable on an Express service - changing it
+        // requires REPLACING the service (a CloudFormation update is rejected).
         subnets: props.network.vpc.selectSubnets({
           subnetType: props.network.subnetType ?? SubnetType.PRIVATE_WITH_EGRESS,
         }).subnetIds,
@@ -195,39 +223,73 @@ export class EcsExpress extends Construct {
     this.service.node.addDependency(this.executionRole);
     this.service.node.addDependency(this.taskRole);
 
-    this.url = this.service.attrEndpoint;
     this.loadBalancerArn = this.service.attrIngressPathLoadBalancerArn;
 
-    // Attach a custom domain to the ECS-managed ALB. Express Mode does not
-    // expose certificate/domain configuration on the CloudFormation resource,
-    // so we replicate AWS's documented "update outside Express Mode" steps via
-    // a custom-resource Lambda (mirrors the App Runner custom-domain approach).
-    if (props.domain && props.publicHostedZone) {
-      const domainName = props.subdomain ? `${props.subdomain}.${props.domain}` : props.domain;
+    // Import the ECS-managed internal ALB by its attributes so it can be used
+    // as a CloudFront VPC Origin. The ALB DNS name and canonical hosted zone
+    // are exposed by the Express service; the security group is AWS-managed.
+    const managedAlb = ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(
+      this,
+      'managed-alb',
+      {
+        loadBalancerArn: this.service.attrIngressPathLoadBalancerArn,
+        securityGroupId: this.service.attrIngressPathLoadBalancerSecurityGroupId,
+        loadBalancerDnsName: this.service.attrEndpoint,
+      },
+    );
 
-      const certificate = new Certificate(this, 'express-domain-certificate', {
-        domainName,
-        validation: CertificateValidation.fromDns(props.publicHostedZone),
+    const domainName =
+      props.domain && props.publicHostedZone
+        ? props.subdomain
+          ? `${props.subdomain}.${props.domain}`
+          : props.domain
+        : undefined;
+
+    const useCustomDomain = Boolean(domainName && props.certificate);
+
+    // CloudFront distribution fronting the internal ALB via a VPC Origin.
+    //
+    // The Express-managed ALB routes by host-header matching its own
+    // `*.ecs.<region>.on.aws` endpoint. So we must send that endpoint as the
+    // Host header to the origin, NOT the viewer's CloudFront/custom domain
+    // (which would 404 at the ALB). We achieve this by:
+    //   - setting the VPC origin `domainName` to the Express endpoint, and
+    //   - using ALL_VIEWER_EXCEPT_HOST_HEADER so CloudFront sends the origin
+    //     domain (the Express endpoint) as Host instead of the viewer Host.
+    this.distribution = new Distribution(this, 'distribution', {
+      comment: `${prefix} REDCap CloudFront`,
+      defaultBehavior: {
+        origin: VpcOrigin.withApplicationLoadBalancer(managedAlb, {
+          protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
+          httpsPort: 443,
+          readTimeout: Duration.seconds(60),
+          domainName: this.service.attrEndpoint,
+        }),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        cachePolicy: CachePolicy.CACHING_DISABLED,
+        originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      },
+      ...(useCustomDomain
+        ? { domainNames: [domainName as string], certificate: props.certificate }
+        : {}),
+      ...(props.webAclArn ? { webAclId: props.webAclArn } : {}),
+    });
+
+    this.distribution.node.addDependency(this.service);
+
+    this.distributionArn = `arn:aws:cloudfront::${scope.account}:distribution/${this.distribution.distributionId}`;
+    this.url = this.distribution.distributionDomainName;
+
+    // Route53 alias for the custom domain -> CloudFront.
+    if (useCustomDomain && props.publicHostedZone) {
+      new ARecord(this, 'cloudfront-a-record', {
+        zone: props.publicHostedZone,
+        recordName: domainName,
+        deleteExisting: true,
+        comment: 'To REDCap ECS Express CloudFront',
+        target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
       });
-
-      const customDomainCfn = new cloudformation_include.CfnInclude(
-        this,
-        `${prefix}-custom-domain`,
-        {
-          templateFile: './prototyping/cfn/EcsExpressCustomDomain.yaml',
-          parameters: {
-            DomainName: domainName,
-            ListenerArn: this.service.attrIngressPathListenerArn,
-            LoadBalancerArn: this.service.attrIngressPathLoadBalancerArn,
-            CertificateArn: certificate.certificateArn,
-            DNSDomainId: props.publicHostedZone.hostedZoneId,
-          },
-        },
-      );
-
-      // Re-assert the domain config after each Express service update to
-      // counter drift from UpdateExpressGatewayService.
-      customDomainCfn.node.addDependency(this.service);
       this.customUrl = domainName;
     }
   }

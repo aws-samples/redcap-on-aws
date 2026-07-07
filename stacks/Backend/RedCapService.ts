@@ -1,6 +1,7 @@
 import type { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { aws_ec2, aws_events, Duration, SecretValue } from 'aws-cdk-lib';
 import type { CfnAutoScalingConfigurationProps } from 'aws-cdk-lib/aws-apprunner';
+import { DnsValidatedCertificate, type ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import type { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { type Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
@@ -246,7 +247,23 @@ export class RedcapService {
     memory?: string;
     tag: string;
     scaling?: ExpressGatewayScalingTargetProperty;
+    /** ARN of the CLOUDFRONT-scoped WAF Web ACL (in us-east-1). */
+    webAclArn?: string;
   }) {
+    // CloudFront requires the ACM certificate in us-east-1. When a domain and
+    // hosted zone are configured, issue a DNS-validated cert there.
+    let certificate: ICertificate | undefined;
+    if (this.common.domain && this.common.publicHostedZone) {
+      const domainName = this.common.subdomain
+        ? `${this.common.subdomain}.${this.common.domain}`
+        : this.common.domain;
+      certificate = new DnsValidatedCertificate(this.stack, 'express-cf-certificate', {
+        domainName,
+        hostedZone: this.common.publicHostedZone,
+        region: 'us-east-1',
+      });
+    }
+
     this.expressService = new EcsExpress(
       this.stack,
       `${this.app.stage}-${this.app.name}-express-service`,
@@ -264,6 +281,8 @@ export class RedcapService {
         domain: this.common.domain,
         subdomain: this.common.subdomain,
         publicHostedZone: this.common.publicHostedZone,
+        certificate,
+        webAclArn: config.webAclArn,
         network: {
           vpc: this.common.vpc,
           subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
@@ -274,12 +293,11 @@ export class RedcapService {
 
     // The application identity gets the same secret/DB grants as the ECS path.
     this.grantSecretsReadAndConnect(this.expressService.taskRole);
-    // WAF is associated with the ECS-managed Application Load Balancer.
-    this.associateWaf(this.expressService.loadBalancerArn, 'express-redcap');
+    // WAF is attached directly to the CloudFront distribution via webAclId
+    // (set inside EcsExpress); no WebACLAssociation is used for CloudFront.
 
-    // Express Mode exposes an HTTPS endpoint managed by ECS. When a custom
-    // domain is configured its certificate matches the domain, so cron/WAF can
-    // target it; otherwise fall back to the managed endpoint.
+    // Public access is via CloudFront. Use the custom domain when configured,
+    // otherwise the default CloudFront domain (both are valid HTTPS endpoints).
     this.ExpressServiceUrl = `https://${this.expressService.url}`;
     this.CustomServiceUrl = this.expressService.customUrl
       ? `https://${this.expressService.customUrl}`

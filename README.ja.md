@@ -41,10 +41,19 @@ JP | [EN](README.md)
 
 ### 2. サーバーレス
 
-1. **AWS App Runner**: ロードバランサー、自動スケーリング、自動コンテナデプロイ機能を備えているため、REDCap をいつでも利用できる状態にします。
+> [!IMPORTANT]
+> **AWS App Runner は 2026 年 4 月 30 日をもって新規のお客様の受付を終了します。**
+> [AWS App Runner の提供状況の変更](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html)
+> に記載のとおり、新規の AWS アカウントでは App Runner サービスを作成できなくなります
+> （既存のお客様は引き続き利用可能です）。新規のデプロイでは、**Amazon ECS Express モード**
+> のランタイム（[Amazon ECS Express モードを使用する](#3-amazon-ecs-express-モードを使用する-app-runner-の推奨代替)を参照）
+> または **Amazon ECS on AWS Fargate** を使用してください。
+
+1. **AWS App Runner** _(新規のお客様の受付終了 — 上記の注意事項を参照)_: ロードバランサー、自動スケーリング、自動コンテナデプロイ機能を備えているため、REDCap をいつでも利用できる状態にします。
 2. **Amazon Aurora Serverless**: MySQL との互換性を持ちながら、Aurora Serverlessは必要に応じてデータベースを自動スケーリングできます。 REDCap の MySQL リードレプリカの設定はデフォルトで有効になっています。
 3. **Amazon S3**: ファイルストレージでは、REDCap と Amazon S3 の統合が推奨設定されており、デフォルトで有効になっています。
 4. **Amazon ECS on AWS Fargate**: 長いHTTPリクエストを処理することができる App Runner の代替となるコンピュート基盤
+5. **Amazon ECS Express モード**: REDCap コンテナを実行するフルマネージドな方法です。Amazon ECS がロードバランサー、TLS、セキュリティグループ、自動スケーリングをプロビジョニングします。コンテナはプライベートサブネットで実行され、公開アクセスは（AWS WAF を備えた）Amazon CloudFront ディストリビューション経由で提供されます。
 
 ### 3. AWS CDK を用いた IaC
 
@@ -126,6 +135,7 @@ cp stages.sample.ts stages.ts
 | rebuildImage [4]         | デプロイを実行するたびにコンテナイメージのビルドを行うかどうか設定します。(\*\*\*)                                                                                                                                                                               | Boolean           | `false`                                               |
 | ec2ServerStack [5]       | 長時間実行リクエスト用の一時的な EC2 インスタンスの構成                                                                                                                                                                                                          | Object            | `undefined`                                           |
 | ecs [6]                  | Amazon ECS on AWS FargateをAWS App Runnerの代わりに使用するための設定                                                                                                                                                                                            | Object            | `undefined`                                           |
+| express [7]              | AWS App Runnerの代わりにAmazon ECS Expressモード（CloudFront + WAF 経由）を使用するための設定。`ecs` とは排他的です。                                                                                                                                             | Object            | `undefined`                                           |
 | db                       | Amazon Aurora RDS Serverless V2 の設定                                                                                                                                                                                                                           | Object            | `undefined`                                           |
 | generalLogRetention      | ECS Fargate、RDS、VPC ログのオプションの一般的なログ保持期間                                                                                                                                                                                                     | String            | `undefined`                                           |
 | bounceNotificationEmail  | SESから送ったメールがバウンスされた時の通知を受け取るためのメールアドレス                                                                                                                                                                                        |
@@ -143,6 +153,8 @@ cp stages.sample.ts stages.ts
 [5] [EC2 Server Stack](#1-ec2-server-stack)
 
 [6] [AWS App Runnerの代わりにAmazon ECS on AWS Fargateを使用する](#2-aws-app-runnerの代わりにamazon-ecs-on-aws-fargateを使用する)
+
+[7] [Amazon ECS Express モードを使用する（App Runner の推奨代替）](#3-amazon-ecs-express-モードを使用する-app-runner-の推奨代替)
 
 ### 4. REDCap の基本的設定
 
@@ -527,6 +539,59 @@ const stag: RedCapConfig = {
 ```
 
 重要: まず開発環境で変更をテストしてください。AWS App Runnerを使用してこのプロジェクトを以前にデプロイした場合、AWS App Runnerのリソースのみが破棄されます。これにはデータストレージのAmazon S3バケットやデータベースは含まれません。この変更には最大20分かかる場合があります。
+
+### 3. Amazon ECS Express モードを使用する（App Runner の推奨代替）
+
+[AWS App Runner が新規のお客様の受付を終了した](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html)ため、新規のデプロイでは **Amazon ECS Express モード** が推奨されるランタイムです。これは `AWS::ECS::ExpressGatewayService` リソースを使用します。Amazon ECS が Application Load Balancer、TLS 証明書、セキュリティグループ、自動スケーリングをプロビジョニングし、管理します。
+
+このプロジェクトでは、REDCap コンテナと ECS が管理する ALB は**プライベートサブネット**で実行されます（ALB は内部向けで、タスクにパブリック IP はありません）。公開インターネットアクセスは、内部 ALB を指す [VPC オリジン](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html) を使用する **Amazon CloudFront** ディストリビューションによって提供されます。**AWS WAF** の Web ACL が CloudFront ディストリビューションにアタッチされます。
+
+ステージに `express` ブロックを追加して有効化します。これは `ecs` とは**排他的**であり（両方を設定すると synth 時に失敗します）、App Runner よりも優先されます。
+
+```ts
+const dev: RedCapConfig = {
+  ...baseOptions,
+  hostInRoute53: true,
+  domain: 'redcap.mydomain.dev',
+  redCapS3Path: 'redcap-bucket/redcap16.1.5.zip',
+  cronSecret: 'your_secret',
+  email: 'myemail@mydomain.dev',
+  express: {
+    // CPU/メモリは CloudFormation の文字列で、有効な AWS Fargate の組み合わせに従います。
+    cpu: '1024',
+    memory: '2048',
+    scaling: {
+      autoScalingMetric: 'AVERAGE_CPU', // AVERAGE_CPU | AVERAGE_MEMORY | REQUEST_COUNT_PER_TARGET
+      autoScalingTargetValue: 60,
+      minTaskCount: 1,
+      maxTaskCount: 3,
+    },
+  },
+};
+```
+
+#### ECS Express モードでのデプロイ
+
+CloudFront ディストリビューションでは、その AWS WAF Web ACL（およびカスタムドメインの ACM 証明書）を **us-east-1** リージョンに配置する必要があります。このプロジェクトでは、それらを us-east-1 専用の別デプロイで管理します。提供されているスクリプトを使用してください。これは us-east-1 の WAF を**先に**デプロイし、その後アプリケーションをメインリージョンにデプロイします。
+
+```bash
+STAGE=<your_stage> yarn deploy:express
+```
+
+ECS Express ステージを削除するには（先にアプリケーション、次に us-east-1 の WAF を削除します）:
+
+```bash
+STAGE=<your_stage> yarn remove:express
+```
+
+> [!NOTE]
+> WAF のステップなしで `sst deploy` のみを実行すると、先に us-east-1 の WAF をデプロイするよう促すメッセージとともに失敗します。Express ステージでは必ず `yarn deploy:express` を使用してください。
+
+#### カスタムドメイン
+
+`domain`/`subdomain` と `hostInRoute53` が設定されている場合、CloudFront 用の ACM 証明書が us-east-1 で自動的に発行され、ドメインを CloudFront ディストリビューションに向ける Route53 のエイリアスレコードが作成されます。ドメインがない場合、サービスはデフォルトの `https://xxxx.cloudfront.net` アドレスでアクセスできます。
+
+重要: まず開発環境で変更をテストしてください。既存のステージのランタイムを `express` に切り替えても、アプリケーションのバックエンドのみが置き換えられ、データストレージの Amazon S3 バケットやデータベースには影響しません。なお、Amazon ECS Express モードは作成後のサブネットタイプの変更をサポートしていないため、ネットワークの変更にはサービスの置き換えが必要です。
 
 ---
 

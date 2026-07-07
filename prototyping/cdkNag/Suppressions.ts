@@ -43,6 +43,19 @@ const Suppressions = {
             reason:
               'ECR auth token and log write actions require wildcard resources for the Express task execution role',
           },
+          {
+            id: 'AwsSolutions-CFR1',
+            reason: 'Geo restriction handled by AWS WAF associated with the distribution',
+          },
+          {
+            id: 'AwsSolutions-CFR3',
+            reason: 'CloudFront access logging is not required for this deployment',
+          },
+          {
+            id: 'AwsSolutions-CFR4',
+            reason:
+              'Viewer protocol is redirect-to-HTTPS; TLS to the internal ALB origin is HTTPS_ONLY',
+          },
         ],
         true,
       );
@@ -50,29 +63,21 @@ const Suppressions = {
       /* empty */
     }
 
-    // Custom-domain workaround Lambda + role (only present when a domain is set).
+    // The us-east-1 DnsValidatedCertificate provisions a cross-region
+    // custom-resource Lambda; suppress its default policy/runtime findings.
     if (service.customUrl) {
-      const prefix = `${service.node.id}/${service.node.id}-custom-domain`;
       try {
-        NagSuppressions.addResourceSuppressionsByPath(
-          stack,
-          [
-            `${stack.stackName}/${prefix}/EcsExpressCustomDomainProvider`,
-            `${stack.stackName}/${prefix}/LambdaRole`,
-          ],
-          [
-            {
-              id: 'AwsSolutions-IAM5',
-              reason:
-                'The custom-domain provider must manage the AWS-managed Express ALB listener/rules, whose ARNs are not known at synth time',
-            },
-            {
-              id: 'AwsSolutions-L1',
-              reason: 'Inline custom-resource Lambda pinned to a supported runtime',
-            },
-          ],
-          true,
-        );
+        NagSuppressions.addStackSuppressions(stack, [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason:
+              'DnsValidatedCertificate custom resource requires wildcard ACM/Route53 permissions',
+          },
+          {
+            id: 'AwsSolutions-L1',
+            reason: 'CDK-managed custom-resource Lambda runtime for the cross-region certificate',
+          },
+        ]);
       } catch {
         /* empty */
       }

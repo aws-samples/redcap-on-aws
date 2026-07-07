@@ -7,6 +7,8 @@
     "dev": "sst dev",
     "build": "sst build",
     "deploy": "sst deploy",
+    "deploy:express": "sst deploy --stage $STAGE --region us-east-1 && sst deploy --stage $STAGE",
+    "remove:express": "sst remove --stage $STAGE && sst remove --stage $STAGE --region us-east-1",
     "removeRoute53NS": "sst remove --stage route53NS",
     "destroy": "npm run removeRoute53NS && sst remove",
     "console": "sst console",
@@ -17,7 +19,7 @@
     "gen": "hygen"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.8",
+    "@biomejs/biome": "2.5.2",
     "@tsconfig/node22": "22.0.5",
     "@types/lodash": "^4.17.24",
     "@types/node": "^20.19.37",
@@ -26,7 +28,7 @@
     "globals": "^15.15.0",
     "hygen": "^6.2.11",
     "sst": "2.49.8",
-    "typescript": "^5.1.6"
+    "typescript": "^5.9.3"
   },
   "workspaces": [
     "packages/*"

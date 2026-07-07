@@ -5,6 +5,8 @@
  */
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { fromIni } from '@aws-sdk/credential-providers';
 import { aws_secretsmanager, Fn, RemovalPolicy } from 'aws-cdk-lib';
 import { assign, get, isEmpty, random } from 'lodash';
 // SST
@@ -26,12 +28,13 @@ import { RedcapService } from './Backend/RedCapService';
 import { getCountryLimitRule, getRedcapCronRule } from './Backend/WafExtraRules';
 // Stack dependency
 import { BuildImage } from './BuildImage';
+import { cloudFrontWafParamName } from './CloudFrontWaf';
 import { Database } from './Database';
 import { Network } from './Network';
 
 const { createHmac } = await import('node:crypto');
 
-export function Backend({ stack, app }: StackContext) {
+export async function Backend({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
   const { dbAllowedSg } = use(Database);
   const repository = use(BuildImage);
@@ -192,13 +195,37 @@ export function Backend({ stack, app }: StackContext) {
   });
 
   if (expressConfig) {
-    // Deploy with ECS Express Mode backend
+    // Deploy with ECS Express Mode backend, fronted by CloudFront.
+    // The CLOUDFRONT-scoped WAF lives in a separate us-east-1 deployment
+    // (CloudFrontWaf stack). Its ARN is published to SSM in us-east-1 and read
+    // here at synth time. Deploy the WAF first:
+    //   sst deploy --stage <stage> --region us-east-1
+    let cloudFrontWafArn: string | undefined;
+    try {
+      // Use the stage's AWS profile (as SST does) so the SSM read authenticates
+      // even when AWS_PROFILE is not exported in the environment.
+      const profile = get(stage, [stack.stage, 'profile']) as string | undefined;
+      const ssm = new SSMClient({
+        region: 'us-east-1',
+        ...(profile ? { credentials: fromIni({ profile }) } : {}),
+      });
+      const res = await ssm.send(
+        new GetParameterCommand({ Name: cloudFrontWafParamName(stack.stage) }),
+      );
+      cloudFrontWafArn = res.Parameter?.Value;
+    } catch (err) {
+      throw new Error(
+        `ECS Express requires the CloudFront WAF. Deploy it first with: sst deploy --stage ${stack.stage} --region us-east-1\nUnderlying error: ${(err as Error).name}: ${(err as Error).message}`,
+      );
+    }
+
     service.expressDeploy({
       securityGroups: [dbAllowedSg],
       cpu: get(expressConfig, 'cpu', '1024'),
       memory: get(expressConfig, 'memory', '2048'),
       scaling: get(expressConfig, 'scaling', undefined),
       tag,
+      webAclArn: cloudFrontWafArn,
     });
   } else if (ecsConfig) {
     // Deploy with ECS backend

@@ -39,7 +39,7 @@
  * none are needed to synthesize the resource.
  */
 
-import { CfnResource, type CfnTag, type IResolvable } from 'aws-cdk-lib';
+import { CfnResource, type CfnTag, Fn, type IResolvable } from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
 
 /**
@@ -277,6 +277,8 @@ export class CfnExpressGatewayService extends CfnResource {
   public readonly attrIngressPathListenerArn: string;
   /** The Certificate ARN associated with the Express service. */
   public readonly attrIngressPathCertificateArn: string;
+  /** The first Load Balancer Security Group ID associated with the Express service. */
+  public readonly attrIngressPathLoadBalancerSecurityGroupId: string;
 
   constructor(scope: Construct, id: string, props: CfnExpressGatewayServiceProps) {
     super(scope, id, {
@@ -311,5 +313,10 @@ export class CfnExpressGatewayService extends CfnResource {
     this.attrIngressPathCertificateArn = this.getAtt(
       'ECSManagedResourceArns.IngressPath.CertificateArn',
     ).toString();
+    // The security groups attr is a list; take the first for ALB import.
+    this.attrIngressPathLoadBalancerSecurityGroupId = Fn.select(
+      0,
+      this.getAtt('ECSManagedResourceArns.IngressPath.LoadBalancerSecurityGroups').toStringList(),
+    );
   }
 }

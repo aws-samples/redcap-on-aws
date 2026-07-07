@@ -12,6 +12,7 @@ import { NagConsoleLogger } from './prototyping/cdkNag/NagConsoleLogger';
 import { OverrideEc2ServerRemovalPolicy } from './prototyping/overrides/RemovalPolicy';
 import { Backend } from './stacks/Backend';
 import { BuildImage } from './stacks/BuildImage';
+import { CloudFrontWaf } from './stacks/CloudFrontWaf';
 import { Database } from './stacks/Database';
 import { EC2Server } from './stacks/EC2Server';
 import { Network } from './stacks/Network';
@@ -48,6 +49,11 @@ export default {
     /****** Stacks ******/
     if (app.stage === 'route53NS') {
       app.stack(Route53NSRecords);
+    } else if (app.region === 'us-east-1') {
+      // Multi-region: the CLOUDFRONT-scoped WAF for the ECS Express runtime must
+      // live in us-east-1. Deploy it with `sst deploy --stage <stage> --region us-east-1`
+      // BEFORE deploying the app in its main region.
+      app.stack(CloudFrontWaf);
     } else {
       app.stack(Network);
       app.stack(BuildImage);
