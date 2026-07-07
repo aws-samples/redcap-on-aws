@@ -423,7 +423,7 @@ AWS CodeBuildにより新しいDockerイメージをビルドし、新しいイ�
 
 #### 3.2 AWS CLI から AWS Lambdaを呼び出す
 
-1. ターミナルの出力 `UpdateDeploymentCommand` を確認し、コマンドをコピーします
+1. ターミナルの出力 `BuildImageCommand` を確認し、コマンドをコピーします
 2. 貼り付けて実行し、AWS CLI を呼び出し、更新とデプロイを開始します。
 
 ステータスをモニタリングするには、AWS CLI を使用するか、AWS Management Consoleにアクセスして AWS CodeBuildで確認し、後で AWS App Runner のブルーグリーンデプロイを確認します。

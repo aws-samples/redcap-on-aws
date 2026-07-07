@@ -39,13 +39,13 @@ Confirm AWS CLI is installed in your computer first.
 aws --version
 ```
 
-Run the command which is outputted as `UpdateDeploymentCommand` after deployment.
+Run the command which is outputted as `BuildImageCommand` after deployment.
 
 ```sh
 ✔  Deployed:
    Network
    BuildImage
-   UpdateDeploymentCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
+   BuildImageCommand: aws lambda invoke --function-name <function-name> --region <region> --profile <profile> deployLambdaResponse.json
    ...
 ```
 

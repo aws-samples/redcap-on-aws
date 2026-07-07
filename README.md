@@ -420,7 +420,7 @@ This is an AWS Codebuild process that will build the new docker image and trigge
 
 #### 3.2 Call AWS lambda via terminal CLI
 
-1. Check for the terminal output `UpdateDeploymentCommand` and copy the command
+1. Check for the terminal output `BuildImageCommand` and copy the command
 2. Paste and execute to call the AWS cli and start the update and deployment process.
 
 To monitor the status, you can use the AWS CLI or access the AWS Console to check AWS CodeBuild and later the Blue-Green deployment of AWS App Runner.
