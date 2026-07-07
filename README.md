@@ -601,7 +601,7 @@ When `domain`/`subdomain` and `hostInRoute53` are set, the ACM certificate for C
 > [!NOTE]
 > When a custom domain is configured, CDK emits a deprecation warning for `DnsValidatedCertificate` during synth. This is expected: it is the only CDK construct that can issue a `us-east-1` ACM certificate validated against a hosted zone in the main-region stack. The warning is cosmetic and does not affect the deployment.
 
-**Important:** Test your change in a development environment first. Switching an existing stage's runtime to `express` replaces the application backend only; it does not affect the Amazon S3 buckets for data storage or the database. Note that Amazon ECS Express Mode does not support changing subnet types after creation, so network changes require replacing the service.
+**Important:** Test your change in a development environment first. Switching an existing stage's runtime to `express` replaces the application backend only; it does not affect the Amazon S3 buckets for data storage or the database.
 
 ---
 
