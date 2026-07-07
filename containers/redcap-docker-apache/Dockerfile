@@ -3,14 +3,8 @@ FROM composer@sha256:805ff9b13d4d183754efd22d28dc32370b374308a5c04317041b57e7be7
 # php:8.2-apache (Debian trixie, ImageMagick 7)
 FROM public.ecr.aws/docker/library/php@sha256:848bd4a97499465e365eb4681142332a958701cb6d2fff77342f02699b81985f
 
-ARG PORT
-ARG LANG_S3_URI
-ARG REDCAP_S3_URI
-ARG AWS_DEFAULT_REGION
-ARG DEBIAN_FRONTEND=noninteractive
-ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
-
 # Required packages setup
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -qq && \
     apt-get install -yq --no-install-recommends \
     ca-certificates jq ghostscript \
@@ -54,6 +48,7 @@ COPY apache2/cert/apache-selfsigned.key /etc/ssl/certs/apache-selfsigned.key
 COPY apache2/cert/apache-selfsigned.crt /etc/ssl/certs/apache-selfsigned.crt
 
 # Apache tuning: server name, ports, SSL certs, and enable required modules/sites
+ARG PORT
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf && \
     echo "ServerTokens Prod" >> /etc/apache2/apache2.conf && \
     echo "ServerSignature Off" >> /etc/apache2/apache2.conf && \
@@ -75,6 +70,11 @@ RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf && \
     a2ensite 000-default
 
 # Container start scripts
+ARG LANG_S3_URI
+ARG REDCAP_S3_URI
+ARG AWS_DEFAULT_REGION
+ARG AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+
 COPY scripts/ /etc/redcap-entry/
 RUN chown www-data -R /etc/redcap-entry && \
     chmod a+x /etc/redcap-entry/*.sh && \

@@ -6,7 +6,7 @@ JP | [EN](./CHANGELOG)
 
 - 新しい REDCap ランタイムとして **Amazon ECS Express モード**（`AWS::ECS::ExpressGatewayService`）を追加しました。ステージの `express` オプションで設定します。これは、[2026年4月30日をもって新規のお客様の受付を終了する](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html) AWS App Runner の推奨代替です。`express` と `ecs` オプションは排他的です。
 - REDCap コンテナと ECS が管理する ALB はプライベートサブネットで実行されます（内部 ALB、パブリック IP なし）。パブリックアクセスは、内部 ALB への VPC オリジンを使用する Amazon CloudFront ディストリビューションによって提供され、AWS WAF の Web ACL がディストリビューションにアタッチされます。
-- CLOUDFRONT スコープの WAF Web ACL（および CloudFront カスタムドメイン用の ACM 証明書）は、AWS の要件に従い `us-east-1` にデプロイされます。両リージョンを順番にデプロイするには `STAGE=<stage> yarn deploy:express` を、削除するには `STAGE=<stage> yarn remove:express` を使用してください。
+- CLOUDFRONT スコープの WAF Web ACL（および CloudFront カスタムドメイン用の ACM 証明書）は、AWS の要件に従い `us-east-1` にデプロイされます。**Express ランタイムは `yarn deploy:express --stage <stage>` でデプロイする必要があります**。このコマンドは両リージョンを正しい順序でデプロイします。削除するには `yarn remove:express --stage <stage>` を使用してください。
 - Express ランタイムのカスタムドメインは CloudFront にアタッチされます。ACM 証明書は `us-east-1` で自動的に発行され、Route53 のエイリアスレコードがドメインをディストリビューションに向けます。
 - プロジェクトが固定している `aws-cdk-lib`（2.224.0）で、AWS CDK や SST をアップグレードせずに動作するよう、`CfnExpressGatewayService` L1 コンストラクトをベンダリングしました。
 - 型付きの `express.cpu` / `express.memory`（有効な AWS Fargate の組み合わせ）および `express.scaling` オプションを追加しました。

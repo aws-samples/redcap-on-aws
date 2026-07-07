@@ -2,14 +2,15 @@ version: "0.2"
 phases:
   install:
     commands:
-      - "docker buildx create --name containerd --driver=docker-container --driver-opt default-load=true --use"
+      - "docker buildx inspect containerd >/dev/null 2>&1 || docker buildx create --name containerd --driver=docker-container --driver-opt default-load=true"
+      - "docker buildx use containerd"
   pre_build:
     commands:
       - "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
   build:
     commands:
       # Persistent Docker layer cache in Amazon ECR (tag: buildcache).
-      - "docker buildx build --builder=containerd --cache-from type=registry,ref=$ECR_REPOSITORY_URI:buildcache --cache-to type=registry,ref=$ECR_REPOSITORY_URI:buildcache,mode=max,image-manifest=true --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg LANG_S3_URI=$LANG_S3_URI --build-arg REDCAP_S3_URI=$REDCAP_S3_URI --build-arg AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION --build-arg PORT=$PORT --build-arg AWS_CONTAINER_CREDENTIALS_RELATIVE_URI=$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI -t $ECR_REPOSITORY_URI:$IMAGE_TAG -t $ECR_REPOSITORY_URI:latest --push ."
+      - "docker buildx build --builder=containerd --provenance=false --cache-from type=registry,ref=$ECR_REPOSITORY_URI:buildcache --cache-to type=registry,ref=$ECR_REPOSITORY_URI:buildcache,mode=max,image-manifest=true,oci-mediatypes=true --build-arg LANG_S3_URI=$LANG_S3_URI --build-arg REDCAP_S3_URI=$REDCAP_S3_URI --build-arg AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION --build-arg PORT=$PORT --build-arg AWS_CONTAINER_CREDENTIALS_RELATIVE_URI=$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI -t $ECR_REPOSITORY_URI:$IMAGE_TAG -t $ECR_REPOSITORY_URI:latest --push ."
   post_build:
     commands:
       # The image (both tags) was already published by `buildx --push`.
