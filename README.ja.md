@@ -126,7 +126,7 @@ cp stages.sample.ts stages.ts
 | appRunnerConcurrency [3] | REDCap アプリケーションを動かす App Runner について、1 つのインスタンスが処理するリクエスト数の閾値を設定します。この値を超えると、インスタンスは自動で水平スケールします。                                                                                      | Number            | 10 (\*\*)                                             |
 | appRunnerMaxSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の上限を設定します。                                                                                                                                                                  | Number            | 2                                                     |
 | appRunnerMinSize         | REDCap アプリケーションを動かす App Runner について、インスタンススケール数の下限を設定します。                                                                                                                                                                  | Number            | 1                                                     |
-| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。                                                                                                                                                       | String            | 10桁のランダムな文字列                                |
+| cronSecret               | `https:<your_domain>/cron.php`にアクセスするためのシークレットを作成するための元になる文字列を指定します。**必須** — すべてのステージ設定で明示的に設定する必要があります。                                                                                   | String            | —                                                 |
 | cronMinutes              | 分単位の数値で、REDCapのcronのスケジュールを設定します。値が0の場合、Amazonのスケジューラが無効になります                                                                                                                                                        | Number            | 1                                                     |
 | cpu                      | インスタンスあたりの vCPU 数を指定します。                                                                                                                                                                                                                       | Cpu               | `Cpu.TWO_VCPU`                                        |
 | memory                   | インスタンスあたりのメモリ容量を指定します。                                                                                                                                                                                                                     | Memory            | `Memory.FOUR_GB`                                      |
@@ -596,6 +596,9 @@ yarn diff:express --stage <your_stage>
 #### カスタムドメイン
 
 `domain`/`subdomain` と `hostInRoute53` が設定されている場合、CloudFront 用の ACM 証明書が us-east-1 で自動的に発行され、ドメインを CloudFront ディストリビューションに向ける Route53 のエイリアスレコードが作成されます。ドメインがない場合、サービスはデフォルトの `https://xxxx.cloudfront.net` アドレスでアクセスできます。
+
+> [!NOTE]
+> カスタムドメインを設定した場合、CDK は synth 時に `DnsValidatedCertificate` の非推奨警告を出力します。これは想定された動作です。メインリージョンのスタックに存在するホストゾーンに対して `us-east-1` の ACM 証明書を発行できる唯一の CDK コンストラクトであるため、意図的に使用しています。この警告はデプロイに影響しません。
 
 重要: まず開発環境で変更をテストしてください。既存のステージのランタイムを `express` に切り替えても、アプリケーションのバックエンドのみが置き換えられ、データストレージの Amazon S3 バケットやデータベースには影響しません。なお、Amazon ECS Express モードは作成後のサブネットタイプの変更をサポートしていないため、ネットワークの変更にはサービスの置き換えが必要です。
 

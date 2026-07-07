@@ -22,6 +22,7 @@ import * as stage from './stages';
 
 export default {
   config(_input) {
+    // biome-ignore lint: ignore next line
     return stage[_input.stage as keyof typeof stage];
   },
   stacks(app) {

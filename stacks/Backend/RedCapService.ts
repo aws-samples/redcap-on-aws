@@ -73,10 +73,7 @@ export class RedcapService {
     this.common.dbConnection.grantConnect(grantee, 'redcap_user');
   }
 
-  private associateWaf(resourceArn: string, serviceType: string) {
-    let id = 'apprunner-redcap';
-    if (serviceType === 'ecs-redcap') id = 'ecs-redcap';
-    else if (serviceType === 'express-redcap') id = 'express-redcap';
+  private associateWaf(resourceArn: string, id: string) {
     new WebACLAssociation(this.stack, id, {
       webAclArn: get(
         stage,
@@ -173,7 +170,7 @@ export class RedcapService {
     const loadBalancerArn = this.ecsService.service?.cdk?.applicationLoadBalancer?.loadBalancerArn;
 
     if (ecsTaskRole) this.grantSecretsReadAndConnect(ecsTaskRole);
-    if (loadBalancerArn) this.associateWaf(loadBalancerArn, 'ecs-service');
+    if (loadBalancerArn) this.associateWaf(loadBalancerArn, 'ecs-redcap');
 
     this.EcsServiceUrl = `https://${this.ecsService.url}`;
     this.setupCronJob('ecs');
@@ -232,7 +229,7 @@ export class RedcapService {
     );
 
     this.grantSecretsReadAndConnect(this.appRunnerService.service);
-    this.associateWaf(this.appRunnerService.service.serviceArn, 'apprunner');
+    this.associateWaf(this.appRunnerService.service.serviceArn, 'apprunner-redcap');
 
     this.AppRunnerServiceUrl = `https://${this.appRunnerService.service.serviceUrl}`;
     if (this.appRunnerService.customUrl) {
@@ -251,9 +248,7 @@ export class RedcapService {
     webAclArn?: string;
   }) {
     // CloudFront needs its ACM cert in us-east-1. DnsValidatedCertificate is
-    // deprecated but kept intentionally: it's the only construct that issues a
-    // us-east-1 cert validated against a hosted zone in the main-region stack
-    // (`hostInRoute53: true`). Its custom-resource Lambda is nag-suppressed.
+    // deprecated but kept intentionally.
     // https://github.com/aws/aws-cdk/issues/25343
     let certificate: ICertificate | undefined;
     if (this.common.domain && this.common.publicHostedZone) {
