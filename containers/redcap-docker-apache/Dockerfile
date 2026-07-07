@@ -1,7 +1,7 @@
 FROM composer@sha256:805ff9b13d4d183754efd22d28dc32370b374308a5c04317041b57e7be7be87d AS composer
 
-# php:8.2-apache (Debian trixie, ImageMagick 7)
-FROM public.ecr.aws/docker/library/php@sha256:848bd4a97499465e365eb4681142332a958701cb6d2fff77342f02699b81985f
+# php:8.4-apache (Debian trixie, ImageMagick 7)
+FROM public.ecr.aws/docker/library/php@sha256:1d8a39a120898814820a5eb90f28751fb72ed6342754189014f17bc60a54c0d0
 
 # Required packages setup
 ARG DEBIAN_FRONTEND=noninteractive

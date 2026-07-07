@@ -2,6 +2,10 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.3.1
+
+- REDCap コンテナのベースイメージを `php:8.2-apache` から `php:8.4-apache`（引き続き Debian trixie / ImageMagick 7）にアップグレードし、ダイジェストで固定しました。必要な PHP 拡張（`imagick`、`apcu`、`gd`、`zip`、`mysqli`、`opcache`）はすべて PHP 8.4 でビルドおよびロードできることを確認しました。
+
 ## 1.3.0
 
 - 新しい REDCap ランタイムとして **Amazon ECS Express モード**（`AWS::ECS::ExpressGatewayService`）を追加しました。ステージの `express` オプションで設定します。これは、[2026年4月30日をもって新規のお客様の受付を終了する](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html) AWS App Runner の推奨代替です。`express` と `ecs` オプションは排他的です。
