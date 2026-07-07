@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright 2026 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
  *  Licensed under the Amazon Software License  http://aws.amazon.com/asl/
  */
@@ -8,14 +8,9 @@
  * Cross-platform orchestrator for ECS Express Mode deploy/remove/diff.
  *
  * The CLOUDFRONT-scoped WAF must live in us-east-1, so order matters:
- *   - deploy: WAF (us-east-1) first, then the app.
- *   - remove: app first, then the WAF.
- *   - diff:   both regions, read-only.
+ * deploy WAF first then app; remove app first then WAF.
  *
- * Usage:
- *   node scripts/express.js deploy --stage <stage>
- *   node scripts/express.js remove --stage <stage>
- *   node scripts/express.js diff --stage <stage>
+ * Usage: node scripts/express.js <deploy|remove|diff> --stage <stage>
  */
 
 import { spawnSync } from 'node:child_process';
@@ -36,7 +31,7 @@ if (!ACTIONS.includes(action)) {
 
 const rest = process.argv.slice(3);
 
-/** Read an `sst`-style flag: supports `--flag value` and `--flag=value`. */
+/** Supports `--flag value` and `--flag=value`. */
 function readFlag(flag) {
   const i = rest.findIndex((a) => a === flag || a.startsWith(`${flag}=`));
   if (i === -1) return undefined;
@@ -53,19 +48,18 @@ if (stage === 'route53NS') {
   fail('"route53NS" is a reserved stage and cannot be used for ECS Express.');
 }
 
-/** Run `sst <args>`, aborting the sequence on failure (deploy path). */
+/** Run `sst <args>`, aborting the sequence on failure. */
 function sst(args) {
   if (!sstTry(args)) {
     fail(`Command failed: ${['sst', ...args].join(' ')}`);
   }
 }
 
-/** Run `sst <args>` without aborting; returns success (remove/diff paths). */
+/** Run `sst <args>` without aborting; returns success. */
 function sstTry(args) {
   const printable = ['sst', ...args].join(' ');
   console.log(`\n[express] > ${printable}\n`);
-  // Single command string with shell:true works on both POSIX and Windows
-  // (resolves sst / sst.cmd from node_modules/.bin on PATH under yarn).
+  // shell:true resolves sst/sst.cmd from node_modules/.bin on both POSIX and Windows.
   const result = spawnSync(printable, { stdio: 'inherit', shell: true });
   if (result.status !== 0) {
     console.error(
@@ -77,19 +71,17 @@ function sstTry(args) {
 }
 
 if (action === 'deploy') {
-  // WAF (us-east-1) first, then the app; abort if the WAF step fails.
   sst(['deploy', '--stage', stage, '--region', USEAST1]);
   sst(['deploy', '--stage', stage]);
 } else if (action === 'diff') {
-  // Read-only; diff both regions, best-effort.
   const wafOk = sstTry(['diff', '--stage', stage, '--region', USEAST1]);
   const appOk = sstTry(['diff', '--stage', stage]);
   if (!wafOk || !appOk) {
     fail('One or more diff steps failed; review the output above.');
   }
 } else {
-  // App first (CloudFront depends on the WAF), then the WAF. Best-effort so a
-  // failed app teardown doesn't strand the us-east-1 WAF.
+  // App first (CloudFront depends on the WAF); best-effort so a failed app
+  // teardown doesn't strand the us-east-1 WAF.
   const appOk = sstTry(['remove', '--stage', stage]);
   const wafOk = sstTry(['remove', '--stage', stage, '--region', USEAST1]);
   if (!appOk || !wafOk) {
