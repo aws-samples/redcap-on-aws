@@ -5,14 +5,13 @@
  */
 
 import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
-import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import { fromIni } from '@aws-sdk/credential-providers';
 import { aws_secretsmanager, Fn, RemovalPolicy } from 'aws-cdk-lib';
-import { assign, get, isEmpty, random } from 'lodash';
+import { assign, get, isEmpty } from 'lodash';
 // SST
 import { Bucket, type StackContext, use } from 'sst/constructs';
 // Nag suppressions
 import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { CrossRegionSsmParameter } from '../prototyping/constructs/CrossRegionSsmParameter';
 import { DatabaseConnection } from '../prototyping/constructs/DatabaseConnection';
 // Construct and other assets
 import { RedCapAwsAccessUser } from '../prototyping/constructs/RedCapAwsAccessUser';
@@ -34,7 +33,7 @@ import { Network } from './Network';
 
 const { createHmac } = await import('node:crypto');
 
-export async function Backend({ stack, app }: StackContext) {
+export function Backend({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
   const { dbAllowedSg } = use(Database);
   const repository = use(BuildImage);
@@ -48,7 +47,7 @@ export async function Backend({ stack, app }: StackContext) {
   const subdomain = get(stage, [stack.stage, 'subdomain']);
   const hostInRoute53: boolean | string = get(stage, [stack.stage, 'hostInRoute53'], true);
   const phpTimezone = get(stage, [stack.stage, 'phpTimezone']);
-  const cronSecret = get(stage, [stack.stage, 'cronSecret'], random(0, 10).toString());
+  const cronSecret: string = get(stage, [stack.stage, 'cronSecret']);
   const allowedIps = get(stage, [stack.stage, 'allowedIps'], []);
   const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
@@ -152,10 +151,9 @@ export async function Backend({ stack, app }: StackContext) {
     if (countryRules) extraRules.push(countryRules);
   }
 
-  const waf = new Waf(stack, `${app.stage}-${app.name}-appwaf`, {
-    allowedIps,
-    extraRules,
-  });
+  const waf = !expressConfig
+    ? new Waf(stack, `${app.stage}-${app.name}-appwaf`, { allowedIps, extraRules })
+    : undefined;
 
   const environmentVariables = {
     S3_BUCKET: redcapApplicationBucket.bucketName,
@@ -196,28 +194,11 @@ export async function Backend({ stack, app }: StackContext) {
 
   if (expressConfig) {
     // Deploy with ECS Express Mode backend, fronted by CloudFront.
-    // The CLOUDFRONT-scoped WAF lives in a separate us-east-1 deployment
-    // (CloudFrontWaf stack). Its ARN is published to SSM in us-east-1 and read
-    // here at synth time. Deploy the WAF first:
-    //   sst deploy --stage <stage> --region us-east-1
-    let cloudFrontWafArn: string | undefined;
-    try {
-      // Use the stage's AWS profile (as SST does) so the SSM read authenticates
-      // even when AWS_PROFILE is not exported in the environment.
-      const profile = get(stage, [stack.stage, 'profile']) as string | undefined;
-      const ssm = new SSMClient({
-        region: 'us-east-1',
-        ...(profile ? { credentials: fromIni({ profile }) } : {}),
-      });
-      const res = await ssm.send(
-        new GetParameterCommand({ Name: cloudFrontWafParamName(stack.stage) }),
-      );
-      cloudFrontWafArn = res.Parameter?.Value;
-    } catch (err) {
-      throw new Error(
-        `ECS Express requires the CloudFront WAF. Deploy it first with: sst deploy --stage ${stack.stage} --region us-east-1\nUnderlying error: ${(err as Error).name}: ${(err as Error).message}`,
-      );
-    }
+    // Deploy the WAF first: sst deploy --stage <stage> --region us-east-1
+    const cloudFrontWafArn = new CrossRegionSsmParameter(stack, 'cloudfront-waf-arn-reader', {
+      region: 'us-east-1',
+      parameterName: cloudFrontWafParamName(stack.stage),
+    }).value;
 
     service.expressDeploy({
       securityGroups: [dbAllowedSg],
@@ -267,7 +248,7 @@ export async function Backend({ stack, app }: StackContext) {
   // Suppress cdk nag offenses.
   Suppressions.BackendStackSuppressions(stack);
   Suppressions.SesSuppressions(ses);
-  Suppressions.WebWafSuppressions(waf);
+  if (waf) Suppressions.WebWafSuppressions(waf);
   Suppressions.RedCapAwsAccessUserSuppressions([redCapS3AccessUser, redCapSESAccessUser]);
   Suppressions.DBSecretSaltSuppressions(dbSalt);
 

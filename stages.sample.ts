@@ -1,4 +1,3 @@
-import { Cpu, Memory } from '@aws-cdk/aws-apprunner-alpha';
 import { aws_rds, Duration } from 'aws-cdk-lib';
 import type { DomainAppsConfig, ProtoConfigOptions, RedCapConfig } from './prototyping';
 
@@ -41,9 +40,8 @@ const dev: RedCapConfig = {
   //     cpuUtilization: 90,
   //   },
   // },
-  // Uncomment to use ECS Express Mode (AWS::ECS::ExpressGatewayService).
-  // Takes precedence over `ecs` and `appRunner`. CPU/memory are CloudFormation
-  // strings. ECS manages the ALB, TLS, security groups and auto scaling.
+  // Uncomment to use ECS Express Mode instead of appRunner. Takes precedence
+  // over `ecs`. CPU/memory are CloudFormation strings.
   // express: {
   //   cpu: '1024',
   //   memory: '2048',
@@ -63,13 +61,8 @@ const prod: RedCapConfig = {
   domain: 'redcap.mydomain.com',
   hostInRoute53: true,
   email: 'email@mydomain.com',
-  appRunnerConcurrency: 10,
-  appRunnerMaxSize: 10,
-  appRunnerMinSize: 2,
   cronSecret: 'prodsecret',
   cronMinutes: 1,
-  cpu: Cpu.FOUR_VCPU,
-  memory: Memory.EIGHT_GB,
   ec2ServerStack: {
     ec2StackDuration: Duration.hours(3),
   },
@@ -78,6 +71,17 @@ const prod: RedCapConfig = {
     preferredMaintenanceWindow: 'Sun:23:45-Mon:00:15',
   },
   bounceNotificationEmail: 'email+bounce@mydomain.com',
+  // ECS Express Mode runtime. Deploy with `yarn deploy:express --stage prod`.
+  express: {
+    cpu: '4096',
+    memory: '8192',
+    scaling: {
+      autoScalingMetric: 'AVERAGE_CPU',
+      autoScalingTargetValue: 60,
+      minTaskCount: 2,
+      maxTaskCount: 10,
+    },
+  },
 };
 
 const stag: RedCapConfig = {
@@ -86,14 +90,20 @@ const stag: RedCapConfig = {
   domain: 'redcap.mydomain.com',
   phpTimezone: 'Asia/Tokyo',
   hostInRoute53: true,
-  appRunnerConcurrency: 10,
-  appRunnerMaxSize: 5,
-  appRunnerMinSize: 1,
   rebuildImage: false,
   cronSecret: 'stagsecret',
   cronMinutes: 1,
-  cpu: Cpu.FOUR_VCPU,
-  memory: Memory.EIGHT_GB,
+  // ECS Express Mode runtime. Deploy with `yarn deploy:express --stage stag`.
+  express: {
+    cpu: '4096',
+    memory: '8192',
+    scaling: {
+      autoScalingMetric: 'AVERAGE_CPU',
+      autoScalingTargetValue: 60,
+      minTaskCount: 1,
+      maxTaskCount: 5,
+    },
+  },
 };
 
 // Optional: External NameServer configuration with AppRunner stage, example:

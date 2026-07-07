@@ -575,17 +575,23 @@ const dev: RedCapConfig = {
 CloudFront ディストリビューションでは、その AWS WAF Web ACL（およびカスタムドメインの ACM 証明書）を **us-east-1** リージョンに配置する必要があります。このプロジェクトでは、それらを us-east-1 専用の別デプロイで管理します。提供されているスクリプトを使用してください。これは us-east-1 の WAF を**先に**デプロイし、その後アプリケーションをメインリージョンにデプロイします。
 
 ```bash
-STAGE=<your_stage> yarn deploy:express
+yarn deploy:express --stage <your_stage>
 ```
 
 ECS Express ステージを削除するには（先にアプリケーション、次に us-east-1 の WAF を削除します）:
 
 ```bash
-STAGE=<your_stage> yarn remove:express
+yarn remove:express --stage <your_stage>
+```
+
+ECS Express ステージの変更をプレビューするには（us-east-1 の WAF とアプリケーションの両方を diff します）:
+
+```bash
+yarn diff:express --stage <your_stage>
 ```
 
 > [!NOTE]
-> WAF のステップなしで `sst deploy` のみを実行すると、先に us-east-1 の WAF をデプロイするよう促すメッセージとともに失敗します。Express ステージでは必ず `yarn deploy:express` を使用してください。
+> `deploy:express`/`remove:express`/`diff:express` スクリプトはクロスプラットフォーム（Node ベース）で、`--stage` の指定が必須です。未指定の場合は、デフォルトステージにフォールバックせずに中断します。WAF のステップなしで `sst deploy` のみを実行すると、us-east-1 から CloudFront WAF の ARN を読み取れずデプロイ時に失敗します。Express ステージでは必ず `yarn deploy:express` を使用してください。
 
 #### カスタムドメイン
 

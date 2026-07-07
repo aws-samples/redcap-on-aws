@@ -9,20 +9,17 @@ export interface ProtoConfigOptions extends ConfigOptions {
   allowedCountries?: string[]; // WAF allowed country list,  ISO 3166-2.
 }
 
-/**
- * Valid ECS Express (Fargate) CPU allocations, as CloudFormation strings.
- * Powers of 2 between 256 and 4096.
- */
+/** Valid ECS Express (Fargate) CPU allocations, as CloudFormation strings. */
 export type ExpressCpu = '256' | '512' | '1024' | '2048' | '4096';
 
 /**
- * Valid ECS Express (Fargate) memory allocations, as CloudFormation strings
- * (MiB). Must form a valid pair with the chosen `cpu`:
+ * Valid ECS Express (Fargate) memory allocations (MiB strings). Must pair
+ * validly with `cpu`:
  *  - 256:  512, 1024, 2048
- *  - 512:  1024..4096 (1 GiB increments)
- *  - 1024: 2048..8192 (1 GiB increments)
- *  - 2048: 4096..16384 (1 GiB increments)
- *  - 4096: 8192..30720 (1 GiB increments)
+ *  - 512:  1024..4096
+ *  - 1024: 2048..8192
+ *  - 2048: 4096..16384
+ *  - 4096: 8192..30720
  */
 export type ExpressMemory =
   | '512'
@@ -53,7 +50,7 @@ export interface RedCapConfig extends ProtoConfigOptions {
   autoDeploymentsEnabled?: boolean;
   cpu?: Cpu;
   memory?: Memory;
-  cronSecret?: string; // protect cron.php endpoint with a secret parameter https://endpoint/cron.php?secret=<secret>
+  cronSecret: string; // protect cron.php endpoint with a secret parameter https://endpoint/cron.php?secret=<secret>
   cronMinutes?: number; // cron execution in minutes, a value of zero means disabled
   port?: number;
   deployTag?: string; // forces a new AppRunner deployment and tags ECR docker image with this value
@@ -69,11 +66,8 @@ export interface RedCapConfig extends ProtoConfigOptions {
     scaling: ServiceProps['scaling'];
   };
   express?: {
-    // Override AppRunner/ECS deployment and use ECS Express Mode
-    // (AWS::ECS::ExpressGatewayService). CPU/memory are CloudFormation
-    // strings, e.g. cpu: '1024', memory: '2048'. Takes precedence over `ecs`.
-    // Mutually exclusive with `ecs` - setting both throws at synth time.
-    // Values follow the valid AWS Fargate CPU/memory combinations.
+    // Use ECS Express Mode. CloudFormation strings, e.g. cpu: '1024'. Takes
+    // precedence over `ecs`; setting both throws at synth time.
     memory?: ExpressMemory;
     cpu?: ExpressCpu;
     scaling?: {

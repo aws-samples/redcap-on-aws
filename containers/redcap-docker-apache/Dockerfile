@@ -1,10 +1,6 @@
-# Composer image pinned by digest for reproducible builds. Tag: composer:latest
-# (used only to copy the composer binary). Re-pin deliberately when upgrading.
 FROM composer@sha256:805ff9b13d4d183754efd22d28dc32370b374308a5c04317041b57e7be7be87d AS composer
 
-# Base image pinned by digest for reproducible builds. Tag: php:8.2-apache
-# (Debian 13 trixie, ImageMagick 7). Re-pin deliberately after verifying the
-# ImageMagick policy step below still applies against the new base.
+# php:8.2-apache (Debian trixie, ImageMagick 7)
 FROM public.ecr.aws/docker/library/php@sha256:848bd4a97499465e365eb4681142332a958701cb6d2fff77342f02699b81985f
 
 ARG PORT
@@ -41,13 +37,9 @@ RUN mkdir -p /usr/local/share/redcap/aws
 RUN curl "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" \
     -o "/usr/local/share/redcap/global-bundle.pem"
 
-# Fix ImageMagick policy so REDCap can process PDFs.
-# The policy layout differs by ImageMagick major version and base image:
-#  - ImageMagick 6 (older Debian) denied PDF via a dedicated line -> remove it.
-#  - ImageMagick 7 (Debian trixie) denies all coders via pattern="*" and only
-#    re-enables a few formats -> add an explicit PDF read|write policy.
-# The step tolerates the file being absent so future base-image changes do not
-# break the build.
+# Allow REDCap to process PDFs. ImageMagick 6 denied PDF via a dedicated line;
+# ImageMagick 7 (trixie) denies all coders, so add an explicit PDF policy.
+# Tolerates either file being absent.
 RUN set -eu; \
     im6=/etc/ImageMagick-6/policy.xml; \
     im7=/etc/ImageMagick-7/policy.xml; \

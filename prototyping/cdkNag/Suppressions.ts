@@ -63,8 +63,7 @@ const Suppressions = {
       /* empty */
     }
 
-    // The us-east-1 DnsValidatedCertificate provisions a cross-region
-    // custom-resource Lambda; suppress its default policy/runtime findings.
+    // DnsValidatedCertificate's cross-region custom-resource Lambda.
     if (service.customUrl) {
       try {
         NagSuppressions.addStackSuppressions(stack, [
@@ -240,15 +239,16 @@ const Suppressions = {
         {
           id: 'AwsSolutions-IAM5',
           reason:
-            'SST SourcemapUploaderPolicy uses * because the full stack ARN is not available at deploy time',
+            'SST SourcemapUploaderPolicy uses * because the full stack ARN is not available at deploy time; the cross-region SSM reader custom resource is scoped to the exact parameter ARN',
         },
         {
           id: 'AwsSolutions-IAM4',
-          reason: 'SST deploy lambdas use AWS managed policies',
+          reason:
+            'SST deploy lambdas and the CDK AwsCustomResource provider use AWS managed policies',
         },
         {
           id: 'AwsSolutions-L1',
-          reason: 'SST-managed lambda runtime version',
+          reason: 'SST- and CDK-managed lambda runtime versions (deploy lambdas, custom resources)',
         },
       ]);
     } catch {

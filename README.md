@@ -573,20 +573,26 @@ const dev: RedCapConfig = {
 
 #### Deploying with ECS Express Mode
 
-A CloudFront distribution requires its AWS WAF Web ACL (and the custom-domain ACM certificate) to live in the **us-east-1** Region. This project keeps them in a separate, us-east-1-only deployment. Use the provided script, which deploys the us-east-1 WAF **first** and then the application in its main Region:
+A CloudFront distribution requires its AWS WAF Web ACL (and the custom-domain ACM certificate) to live in the **us-east-1** Region. This project keeps the WAF in a separate, us-east-1-only deployment. Use the provided script, which deploys the us-east-1 WAF **first** and then the application in its main Region:
 
 ```bash
-STAGE=<your_stage> yarn deploy:express
+yarn deploy:express --stage <your_stage>
 ```
 
 To remove an ECS Express stage (tears down the app first, then the us-east-1 WAF):
 
 ```bash
-STAGE=<your_stage> yarn remove:express
+yarn remove:express --stage <your_stage>
+```
+
+To preview changes for an ECS Express stage (diffs both the us-east-1 WAF and the app):
+
+```bash
+yarn diff:express --stage <your_stage>
 ```
 
 > [!NOTE]
-> Deploying only with `sst deploy` (without the WAF step) will fail with a message telling you to deploy the us-east-1 WAF first. Always use `yarn deploy:express` for Express stages.
+> The `deploy:express`/`remove:express`/`diff:express` scripts are cross-platform (Node-based) and require `--stage`: they abort if it is not provided instead of falling back to the default stage. Deploying only with `sst deploy` (without the WAF step) will fail at deploy time when the CloudFront WAF ARN cannot be read from us-east-1. Always use `yarn deploy:express` for Express stages.
 
 #### Custom domain
 

@@ -31,95 +31,49 @@ import {
 export interface EcsExpressProps {
   app: App;
   stack: Stack;
-  /**
-   * The container image tag to deploy from the ECR repository.
-   */
+  /** Container image tag to deploy from the ECR repository. */
   tag: string;
-  /**
-   * The ECR repository that hosts the REDCap image.
-   */
+  /** ECR repository hosting the REDCap image. */
   repository: Repository;
-  /**
-   * Environment variables passed to the primary container. REDCap reads its
-   * secrets by ARN from these variables at runtime.
-   */
+  /** Environment variables passed to the primary container. */
   environmentVariables?: Record<string, string>;
-  /**
-   * CPU allocation string, e.g. "256", "512", "1024". Default: "1024".
-   */
+  /** CPU allocation string, e.g. "1024". Default: "1024". */
   cpu?: string;
-  /**
-   * Memory allocation string, e.g. "512", "2048". Default: "2048".
-   */
+  /** Memory allocation string, e.g. "2048". Default: "2048". */
   memory?: string;
-  /**
-   * The port the REDCap container listens on. Default: 8080.
-   */
+  /** Container listen port. Default: 8080. */
   servicePort?: number;
-  /**
-   * Health check path used by the managed load balancer. Default: "/".
-   */
+  /** Load balancer health check path. Default: "/". */
   healthCheckPath?: string;
-  /**
-   * Auto-scaling configuration for the Express service.
-   */
+  /** Auto-scaling configuration for the Express service. */
   scaling?: ExpressGatewayScalingTargetProperty;
   network: {
     vpc: Vpc;
-    /**
-     * Subnet type for the Express service. Defaults to PRIVATE_WITH_EGRESS so
-     * the ECS-managed ALB is internal and tasks stay private; a CloudFront VPC
-     * Origin fronts the internal ALB for public access. Immutable after create.
-     */
+    /** Subnet type for the managed ALB. Default PRIVATE_WITH_EGRESS. Immutable after create. */
     subnetType?: SubnetType;
-    /**
-     * Security groups attached to the service tasks. Pass the shared
-     * `dbAllowedSg` so Aurora ingress works without touching AWS-managed SGs.
-     */
+    /** Security groups for the tasks (pass the shared `dbAllowedSg` for Aurora ingress). */
     securityGroups: ISecurityGroup[];
   };
-  /**
-   * Log retention for the container log group. Default: two years.
-   */
+  /** Log retention for the container log group. Default: two years. */
   logRetention?: RetentionDays;
-  /**
-   * Custom domain served by the CloudFront distribution. When set together with
-   * `publicHostedZone` and `certificate` (which must be in us-east-1), CloudFront
-   * uses the domain and a Route53 alias record is created.
-   */
+  /** Custom domain served by CloudFront (requires `publicHostedZone` and `certificate`). */
   domain?: string;
   subdomain?: string;
   publicHostedZone?: IPublicHostedZone;
-  /**
-   * ACM certificate for the custom domain. MUST be issued in us-east-1 because
-   * it is attached to CloudFront. If omitted, CloudFront serves its default
-   * `*.cloudfront.net` domain.
-   */
+  /** ACM certificate for the custom domain. Must be in us-east-1 (attached to CloudFront). */
   certificate?: ICertificate;
-  /**
-   * ARN of the CLOUDFRONT-scoped WAF Web ACL (must be in us-east-1) to attach
-   * to the CloudFront distribution.
-   */
+  /** ARN of the CLOUDFRONT-scoped WAF Web ACL (us-east-1) for the distribution. */
   webAclArn?: string;
 }
 
 /**
  * Deploys REDCap on ECS Express Mode (`AWS::ECS::ExpressGatewayService`) fronted
- * by a CloudFront distribution using a VPC Origin.
+ * by a CloudFront distribution via a VPC Origin.
  *
- * Express Mode is a managed abstraction: Amazon ECS provisions and owns the
- * Application Load Balancer, target groups, listener, service security groups,
- * SSL certificate and auto-scaling policies. We provide the container config,
- * three IAM roles, and the VPC/subnet/security-group placement.
- *
- * The tasks and the ECS-managed ALB run in PRIVATE subnets (internal ALB, no
- * public IPs). Public internet access is provided by a CloudFront distribution
- * whose origin is a VPC Origin pointing at the internal ALB. This keeps the
- * REDCap containers private while still exposing a public HTTPS endpoint, and
- * lets WAF and the custom domain attach to CloudFront.
- *
- * DB connectivity is achieved by attaching the shared `dbAllowedSg` (which
- * Aurora already trusts) to the service tasks — the same pattern as App Runner.
+ * ECS manages the ALB, target groups, listener, service SGs, TLS cert and auto
+ * scaling. Tasks and the ALB are private (internal ALB, no public IPs); public
+ * access is through CloudFront, which also carries WAF and the custom domain.
+ * DB access uses the shared `dbAllowedSg`, as in the App Runner path.
  */
 export class EcsExpress extends Construct {
   public readonly service: CfnExpressGatewayService;
@@ -128,13 +82,11 @@ export class EcsExpress extends Construct {
   public readonly infrastructureRole: aws_iam.Role;
   public readonly logGroup: LogGroup;
   public readonly distribution: Distribution;
-  /** The public CloudFront domain name of the distribution. */
+  /** Public CloudFront domain name. */
   public readonly url: string;
-  /** The ARN of the managed load balancer. */
+  /** ARN of the managed load balancer. */
   public readonly loadBalancerArn: string;
-  /** The ARN of the CloudFront distribution, for WAF association. */
-  public readonly distributionArn: string;
-  /** The custom domain name, when configured. */
+  /** Custom domain name, when configured. */
   public readonly customUrl?: string;
 
   constructor(scope: Stack, id: string, props: EcsExpressProps) {
@@ -143,13 +95,12 @@ export class EcsExpress extends Construct {
     const prefix = `${props.app.stage}-${props.app.name}-express`;
     const servicePort = props.servicePort ?? 8080;
 
-    // Log group for the primary container.
     this.logGroup = new LogGroup(this, 'log-group', {
       retention: props.logRetention ?? RetentionDays.TWO_YEARS,
       removalPolicy: props.app.stage === 'prod' ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     });
 
-    // Task execution role: pull the image from ECR and write container logs.
+    // Execution role: pull image from ECR, write logs.
     this.executionRole = new aws_iam.Role(this, 'execution-role', {
       assumedBy: new aws_iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'REDCap Express task execution role',
@@ -163,15 +114,13 @@ export class EcsExpress extends Construct {
     );
     this.logGroup.grantWrite(this.executionRole);
 
-    // Task role: the application identity. Secret/DB grants are added by the
-    // caller (RedcapService.grantSecretsReadAndConnect), mirroring the ECS path.
+    // Task role: application identity; secret/DB grants added by the caller.
     this.taskRole = new aws_iam.Role(this, 'task-role', {
       assumedBy: new aws_iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'REDCap Express task role',
     });
 
-    // Infrastructure role: lets Amazon ECS manage the ALB, target groups,
-    // security groups, SSL certs and auto scaling on our behalf.
+    // Infrastructure role: lets ECS manage the ALB, SGs, TLS and auto scaling.
     this.infrastructureRole = new aws_iam.Role(this, 'infrastructure-role', {
       assumedBy: new aws_iam.ServicePrincipal('ecs.amazonaws.com'),
       description: 'REDCap Express infrastructure role',
@@ -206,11 +155,8 @@ export class EcsExpress extends Construct {
       },
       networkConfiguration: {
         securityGroups: props.network.securityGroups.map((sg) => sg.securityGroupId),
-        // ECS Express Mode places its managed ALB in the subnets given here.
-        // PRIVATE_WITH_EGRESS keeps the managed ALB INTERNAL and the tasks
-        // private (no public IPs). Public access is via CloudFront (below).
-        // NOTE: subnet type is immutable on an Express service - changing it
-        // requires REPLACING the service (a CloudFormation update is rejected).
+        // Subnets host the managed ALB. PRIVATE_WITH_EGRESS keeps it internal.
+        // Subnet type is immutable; changing it replaces the service.
         subnets: props.network.vpc.selectSubnets({
           subnetType: props.network.subnetType ?? SubnetType.PRIVATE_WITH_EGRESS,
         }).subnetIds,
@@ -218,16 +164,14 @@ export class EcsExpress extends Construct {
       scalingTarget: props.scaling,
     });
 
-    // Ensure the roles exist before the service that references their ARNs.
+    // Roles must exist before the service that references their ARNs.
     this.service.node.addDependency(this.infrastructureRole);
     this.service.node.addDependency(this.executionRole);
     this.service.node.addDependency(this.taskRole);
 
     this.loadBalancerArn = this.service.attrIngressPathLoadBalancerArn;
 
-    // Import the ECS-managed internal ALB by its attributes so it can be used
-    // as a CloudFront VPC Origin. The ALB DNS name and canonical hosted zone
-    // are exposed by the Express service; the security group is AWS-managed.
+    // Import the ECS-managed internal ALB so it can back a CloudFront VPC Origin.
     const managedAlb = ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(
       this,
       'managed-alb',
@@ -247,22 +191,17 @@ export class EcsExpress extends Construct {
 
     const useCustomDomain = Boolean(domainName && props.certificate);
 
-    // CloudFront distribution fronting the internal ALB via a VPC Origin.
-    //
-    // The Express-managed ALB routes by host-header matching its own
-    // `*.ecs.<region>.on.aws` endpoint. So we must send that endpoint as the
-    // Host header to the origin, NOT the viewer's CloudFront/custom domain
-    // (which would 404 at the ALB). We achieve this by:
-    //   - setting the VPC origin `domainName` to the Express endpoint, and
-    //   - using ALL_VIEWER_EXCEPT_HOST_HEADER so CloudFront sends the origin
-    //     domain (the Express endpoint) as Host instead of the viewer Host.
+    // CloudFront fronts the internal ALB via a VPC Origin. The managed ALB
+    // routes by host header matching its own `*.ecs.<region>.on.aws` endpoint,
+    // so ALL_VIEWER_EXCEPT_HOST_HEADER + origin `domainName` send that endpoint
+    // as Host (the viewer Host would 404 at the ALB).
     this.distribution = new Distribution(this, 'distribution', {
       comment: `${prefix} REDCap CloudFront`,
       defaultBehavior: {
         origin: VpcOrigin.withApplicationLoadBalancer(managedAlb, {
           protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
           httpsPort: 443,
-          readTimeout: Duration.seconds(60),
+          readTimeout: Duration.seconds(120),
           domainName: this.service.attrEndpoint,
         }),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -278,10 +217,8 @@ export class EcsExpress extends Construct {
 
     this.distribution.node.addDependency(this.service);
 
-    this.distributionArn = `arn:aws:cloudfront::${scope.account}:distribution/${this.distribution.distributionId}`;
     this.url = this.distribution.distributionDomainName;
 
-    // Route53 alias for the custom domain -> CloudFront.
     if (useCustomDomain && props.publicHostedZone) {
       new ARecord(this, 'cloudfront-a-record', {
         zone: props.publicHostedZone,

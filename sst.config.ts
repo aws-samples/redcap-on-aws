@@ -27,6 +27,7 @@ export default {
   stacks(app) {
     const logger = new NagConsoleLogger();
     const ec2ServerStack = get(stage, [app.stage, 'ec2ServerStack']);
+    const expressConfig = get(stage, [app.stage, 'express']);
 
     if (app.mode === 'deploy') logger.showSuppressed();
 
@@ -49,10 +50,8 @@ export default {
     /****** Stacks ******/
     if (app.stage === 'route53NS') {
       app.stack(Route53NSRecords);
-    } else if (app.region === 'us-east-1') {
-      // Multi-region: the CLOUDFRONT-scoped WAF for the ECS Express runtime must
-      // live in us-east-1. Deploy it with `sst deploy --stage <stage> --region us-east-1`
-      // BEFORE deploying the app in its main region.
+    } else if (app.region === 'us-east-1' && expressConfig) {
+      // CLOUDFRONT-scoped WAF for ECS Express; must live in us-east-1.
       app.stack(CloudFrontWaf);
     } else {
       app.stack(Network);

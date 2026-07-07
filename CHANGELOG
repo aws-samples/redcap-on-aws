@@ -2,6 +2,17 @@
 
 # CHANGELOG
 
+## 1.3.0
+
+- Add **Amazon ECS Express Mode** (`AWS::ECS::ExpressGatewayService`) as a new REDCap runtime, configured via the `express` stage option. This is the recommended replacement for AWS App Runner, which is [closed to new customers as of April 30, 2026](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html). The `express` and `ecs` options are mutually exclusive.
+- REDCap containers and the ECS-managed ALB run in private subnets (internal ALB, no public IPs). Public access is provided by an Amazon CloudFront distribution using a VPC Origin to the internal ALB, with an AWS WAF Web ACL attached to the distribution.
+- The CLOUDFRONT-scoped WAF Web ACL (and the CloudFront custom-domain ACM certificate) are deployed to `us-east-1` as required by AWS. Use `STAGE=<stage> yarn deploy:express` to deploy both Regions in order, and `STAGE=<stage> yarn remove:express` to tear them down.
+- Custom domains for the Express runtime attach to CloudFront: the ACM certificate is issued in `us-east-1` automatically and a Route53 alias record points the domain at the distribution.
+- Vendored the `CfnExpressGatewayService` L1 construct so it works on the project's pinned `aws-cdk-lib` (2.224.0) without upgrading AWS CDK or SST.
+- Add typed `express.cpu` / `express.memory` (valid AWS Fargate combinations) and `express.scaling` options.
+- `cronSecret` is now a required field in all stage configurations. Previously it defaulted to a random value; the explicit value is now mandatory to keep the CloudFront WAF and the regional WAF cron rules in sync.
+- Pin the REDCap container base images (`php:8.2-apache` and `composer`) by digest to prevent upstream base-image drift, and make the ImageMagick PDF policy step compatible with both ImageMagick 6 and 7 (Debian trixie).
+
 ## 1.2.3
 
 - Fix a deployment failure when restoring the database from a different snapshot (`Cannot update export ... as it is in use by ...-Backend`). The database cluster's volatile attributes (secret, read endpoint, cluster resource id, security group) are now shared with the Backend and EC2Server stacks through SSM Parameter Store instead of CloudFormation cross-stack exports, so replacing the cluster (which happens whenever `db.dbSnapshotId` changes) no longer conflicts with in-use exports.

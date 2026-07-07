@@ -2,6 +2,17 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.3.0
+
+- 新しい REDCap ランタイムとして **Amazon ECS Express モード**（`AWS::ECS::ExpressGatewayService`）を追加しました。ステージの `express` オプションで設定します。これは、[2026年4月30日をもって新規のお客様の受付を終了する](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html) AWS App Runner の推奨代替です。`express` と `ecs` オプションは排他的です。
+- REDCap コンテナと ECS が管理する ALB はプライベートサブネットで実行されます（内部 ALB、パブリック IP なし）。パブリックアクセスは、内部 ALB への VPC オリジンを使用する Amazon CloudFront ディストリビューションによって提供され、AWS WAF の Web ACL がディストリビューションにアタッチされます。
+- CLOUDFRONT スコープの WAF Web ACL（および CloudFront カスタムドメイン用の ACM 証明書）は、AWS の要件に従い `us-east-1` にデプロイされます。両リージョンを順番にデプロイするには `STAGE=<stage> yarn deploy:express` を、削除するには `STAGE=<stage> yarn remove:express` を使用してください。
+- Express ランタイムのカスタムドメインは CloudFront にアタッチされます。ACM 証明書は `us-east-1` で自動的に発行され、Route53 のエイリアスレコードがドメインをディストリビューションに向けます。
+- プロジェクトが固定している `aws-cdk-lib`（2.224.0）で、AWS CDK や SST をアップグレードせずに動作するよう、`CfnExpressGatewayService` L1 コンストラクトをベンダリングしました。
+- 型付きの `express.cpu` / `express.memory`（有効な AWS Fargate の組み合わせ）および `express.scaling` オプションを追加しました。
+- `cronSecret` がすべてのステージ設定で必須フィールドになりました。以前はランダムな値がデフォルトとして使用されていましたが、CloudFront WAF とリージョン WAF の cron ルールを同期させるため、明示的な値が必須となりました。
+- 上流のベースイメージのドリフトを防ぐため、REDCap コンテナのベースイメージ（`php:8.2-apache` と `composer`）をダイジェストで固定しました。また、ImageMagick の PDF ポリシー処理を ImageMagick 6 と 7（Debian trixie）の両方に対応させました。
+
 ## 1.2.3
 
 - 別のスナップショットからデータベースを復元する際のデプロイ失敗（`Cannot update export ... as it is in use by ...-Backend`）を修正しました。データベースクラスターの可変属性（シークレット、リードエンドポイント、クラスターリソースID、セキュリティグループ）は、CloudFormationのクロススタックエクスポートではなくSSMパラメータストアを介してBackendおよびEC2Serverスタックと共有されるようになりました。これにより、（`db.dbSnapshotId` の変更時に発生する）クラスターの置き換えが、使用中のエクスポートと競合しなくなりました。

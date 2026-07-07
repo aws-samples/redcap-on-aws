@@ -7,36 +7,11 @@
 /**
  * Vendored L1 construct for `AWS::ECS::ExpressGatewayService`.
  *
- * WHY THIS EXISTS
- * ---------------
- * The typed `aws-cdk-lib/aws-ecs.CfnExpressGatewayService` L1 only ships in
- * aws-cdk-lib >= 2.261.0. This project is pinned to aws-cdk-lib 2.224.0 (via
- * SST v2), which cannot be upgraded without a large, slow migration.
- *
- * A CDK L1 construct is just a thin, code-generated wrapper around
- * `cdk.CfnResource` that:
- *   1. accepts camelCase props,
- *   2. maps them to the CloudFormation PascalCase property shape, and
- *   3. exposes `attr*` accessors over `getAtt(...)`.
- *
- * The deployed CloudFormation template is identical regardless of the local
- * aws-cdk-lib version — CloudFormation validates `AWS::ECS::ExpressGatewayService`
- * server-side. So we reproduce (1)-(3) here on top of `CfnResource`, giving us
- * the same ergonomics and compile-time typing without upgrading CDK.
- *
- * The interfaces below are 1:1 with the CDK-generated types. They are derived
- * from the authoritative CloudFormation resource + property-type specifications:
- *   - AWS::ECS::ExpressGatewayService
- *   - AWS::ECS::ExpressGatewayService ExpressGatewayContainer
- *   - AWS::ECS::ExpressGatewayService ExpressGatewayServiceNetworkConfiguration
- *   - AWS::ECS::ExpressGatewayService ExpressGatewayScalingTarget
- *   - AWS::ECS::ExpressGatewayService ExpressGatewayServiceAwsLogsConfiguration
- *   - AWS::ECS::ExpressGatewayService ExpressGatewayRepositoryCredentials
- *
- * What we intentionally DO NOT reproduce from the generated file: the
- * `cfn_parse` round-trip (`fromCloudFormation`), property validators, and the
- * 2.26x-era `ITaggableV2`/mixin machinery. None of those exist on 2.224 and
- * none are needed to synthesize the resource.
+ * The typed `CfnExpressGatewayService` only ships in aws-cdk-lib >= 2.261.0;
+ * this project is pinned to 2.224.0 (SST v2). This reproduces the L1 (camelCase
+ * props -> CloudFormation PascalCase, `attr*` getters) on top of `CfnResource`.
+ * CloudFormation validates the resource server-side, so the template is
+ * identical regardless of local CDK version.
  */
 
 import { CfnResource, type CfnTag, Fn, type IResolvable } from 'aws-cdk-lib';
@@ -173,13 +148,9 @@ export interface CfnExpressGatewayServiceProps {
   readonly tags?: CfnTag[];
 }
 
-// ---------------------------------------------------------------------------
-// camelCase -> CloudFormation PascalCase serialization.
-//
-// These mirror the generated `*PropertyToCloudFormation` mappers. They are
-// pure functions with no dependency on CDK internals. `undefined` inputs are
-// passed straight through so optional properties are omitted from the template.
-// ---------------------------------------------------------------------------
+// camelCase -> CloudFormation PascalCase serialization, mirroring the generated
+// `*PropertyToCloudFormation` mappers. `undefined` inputs pass through so
+// optional properties are omitted from the template.
 
 function isResolvable(x: unknown): x is IResolvable {
   return (
@@ -252,10 +223,7 @@ function scalingTargetToCfn(prop?: IResolvable | ExpressGatewayScalingTargetProp
 }
 
 /**
- * An L1 CloudFormation construct for `AWS::ECS::ExpressGatewayService`.
- *
- * Behaviourally equivalent to the generated
- * `aws-cdk-lib/aws-ecs.CfnExpressGatewayService`, but implemented on
+ * L1 construct for `AWS::ECS::ExpressGatewayService`, implemented on
  * `CfnResource` so it compiles against aws-cdk-lib 2.224.0.
  */
 export class CfnExpressGatewayService extends CfnResource {

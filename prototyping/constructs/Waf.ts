@@ -9,7 +9,9 @@ import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import { concat, isEmpty, uniqBy } from 'lodash';
 
-let wafRules: WafRule[] = [
+// Immutable base rule set. Each WAF instance derives its own list from this
+// (see WAF.buildRules), so rules never leak between instances.
+const defaultWafRules: readonly WafRule[] = [
   // Rate Filter
   {
     name: 'rate-filter',
@@ -201,11 +203,36 @@ class WAF extends wafv2.CfnWebACL {
     distScope: string,
     extraRules?: Array<WafRule>,
   ) {
+    super(scope, id, {
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: `${id}-metric`,
+        sampledRequestsEnabled: false,
+      },
+      customResponseBodies: {
+        response: {
+          contentType: 'TEXT_HTML',
+          content: '<div> Access denied </div>',
+        },
+      },
+      scope: distScope,
+      name: `${id}-waf`,
+      rules: WAF.buildRules(ipset, extraRules).map((wafRule) => wafRule.rule),
+    });
+  }
+
+  /** Build this instance's rule list from the default set + extra + ip-filter. */
+  private static buildRules(
+    ipset: cdk.aws_wafv2.CfnIPSet | null,
+    extraRules?: Array<WafRule>,
+  ): WafRule[] {
+    let rules: WafRule[] = [...defaultWafRules];
     if (extraRules && !isEmpty(extraRules)) {
-      wafRules = uniqBy(concat(wafRules, extraRules), 'name');
+      rules = uniqBy(concat(rules, extraRules), 'name');
     }
     if (ipset) {
-      wafRules.push({
+      rules.push({
         name: 'ip-filter',
         rule: {
           name: 'ip-filter',
@@ -260,22 +287,6 @@ class WAF extends wafv2.CfnWebACL {
         },
       });
     }
-    super(scope, id, {
-      defaultAction: { allow: {} },
-      visibilityConfig: {
-        cloudWatchMetricsEnabled: true,
-        metricName: `${id}-metric`,
-        sampledRequestsEnabled: false,
-      },
-      customResponseBodies: {
-        response: {
-          contentType: 'TEXT_HTML',
-          content: '<div> Access denied </div>',
-        },
-      },
-      scope: distScope,
-      name: `${id}-waf`,
-      rules: wafRules.map((wafRule) => wafRule.rule),
-    });
+    return rules;
   }
 }

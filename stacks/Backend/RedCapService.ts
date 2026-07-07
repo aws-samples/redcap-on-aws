@@ -42,7 +42,7 @@ export class RedcapService {
       domain: string;
       subdomain: string;
       publicHostedZone?: IPublicHostedZone;
-      waf: Waf;
+      waf?: Waf;
       secrets: {
         dbSecret: ISecret;
         dbSalt: ISecret;
@@ -81,7 +81,7 @@ export class RedcapService {
       webAclArn: get(
         stage,
         [this.app.stage, 'externalResources', 'wafWebAcl'],
-        this.common.waf.waf.attrArn,
+        this.common.waf?.waf.attrArn,
       ),
       resourceArn,
     });
@@ -250,8 +250,11 @@ export class RedcapService {
     /** ARN of the CLOUDFRONT-scoped WAF Web ACL (in us-east-1). */
     webAclArn?: string;
   }) {
-    // CloudFront requires the ACM certificate in us-east-1. When a domain and
-    // hosted zone are configured, issue a DNS-validated cert there.
+    // CloudFront needs its ACM cert in us-east-1. DnsValidatedCertificate is
+    // deprecated but kept intentionally: it's the only construct that issues a
+    // us-east-1 cert validated against a hosted zone in the main-region stack
+    // (`hostInRoute53: true`). Its custom-resource Lambda is nag-suppressed.
+    // https://github.com/aws/aws-cdk/issues/25343
     let certificate: ICertificate | undefined;
     if (this.common.domain && this.common.publicHostedZone) {
       const domainName = this.common.subdomain
@@ -293,11 +296,8 @@ export class RedcapService {
 
     // The application identity gets the same secret/DB grants as the ECS path.
     this.grantSecretsReadAndConnect(this.expressService.taskRole);
-    // WAF is attached directly to the CloudFront distribution via webAclId
-    // (set inside EcsExpress); no WebACLAssociation is used for CloudFront.
+    // WAF is attached to CloudFront via webAclId inside EcsExpress.
 
-    // Public access is via CloudFront. Use the custom domain when configured,
-    // otherwise the default CloudFront domain (both are valid HTTPS endpoints).
     this.ExpressServiceUrl = `https://${this.expressService.url}`;
     this.CustomServiceUrl = this.expressService.customUrl
       ? `https://${this.expressService.customUrl}`
