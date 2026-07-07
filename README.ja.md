@@ -7,6 +7,7 @@ JP | [EN](README.md)
 - redcap14.1.5
 - redcap15.8.0
 - redcap16.1.5
+- redcap17.1.1
 
 > REDCapの他のマイナーバージョンもデプロイ可能です。デプロイできない場合は、issueで報告してください。
 

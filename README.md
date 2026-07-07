@@ -7,6 +7,7 @@ REDCap versions tested:
 - redcap14.1.5
 - redcap15.8.0
 - redcap16.1.5
+- redcap17.1.1
 
 > Other Minor versions of REDCap should still deploy, if not please report it in a issue.
 

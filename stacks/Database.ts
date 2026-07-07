@@ -50,7 +50,7 @@ export function Database({ stack, app }: StackContext) {
     maxCapacityAcu: 2,
     minCapacityAcu: 0.5,
   };
-  const maxAllowedPacket = dbConfig?.maxAllowedPacket ?? '4194304';
+  const maxAllowedPacket = dbConfig?.maxAllowedPacket ?? '1073741824'; // 1 GB, REDCap recommended max
   const snapshotIdentifier = dbConfig?.dbSnapshotId ?? undefined;
   const preferredMaintenanceWindow = dbConfig?.preferredMaintenanceWindow;
   const logRetention = get(stage, [stack.stage, 'generalLogRetention'], undefined);
