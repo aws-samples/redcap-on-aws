@@ -8,10 +8,7 @@
  * Vendored L1 construct for `AWS::ECS::ExpressGatewayService`.
  *
  * The typed `CfnExpressGatewayService` only ships in aws-cdk-lib >= 2.261.0;
- * this project is pinned to 2.224.0 (SST v2). This reproduces the L1 (camelCase
- * props -> CloudFormation PascalCase, `attr*` getters) on top of `CfnResource`.
- * CloudFormation validates the resource server-side, so the template is
- * identical regardless of local CDK version.
+ * this project is pinned to 2.224.0 (SST v2).
  */
 
 import { CfnResource, type CfnTag, Fn, type IResolvable } from 'aws-cdk-lib';

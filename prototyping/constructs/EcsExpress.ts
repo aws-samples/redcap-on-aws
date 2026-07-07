@@ -69,11 +69,6 @@ export interface EcsExpressProps {
 /**
  * Deploys REDCap on ECS Express Mode (`AWS::ECS::ExpressGatewayService`) fronted
  * by a CloudFront distribution via a VPC Origin.
- *
- * ECS manages the ALB, target groups, listener, service SGs, TLS cert and auto
- * scaling. Tasks and the ALB are private (internal ALB, no public IPs); public
- * access is through CloudFront, which also carries WAF and the custom domain.
- * DB access uses the shared `dbAllowedSg`, as in the App Runner path.
  */
 export class EcsExpress extends Construct {
   public readonly service: CfnExpressGatewayService;
@@ -155,8 +150,6 @@ export class EcsExpress extends Construct {
       },
       networkConfiguration: {
         securityGroups: props.network.securityGroups.map((sg) => sg.securityGroupId),
-        // Subnets host the managed ALB. PRIVATE_WITH_EGRESS keeps it internal.
-        // Subnet type is immutable; changing it replaces the service.
         subnets: props.network.vpc.selectSubnets({
           subnetType: props.network.subnetType ?? SubnetType.PRIVATE_WITH_EGRESS,
         }).subnetIds,
@@ -164,7 +157,6 @@ export class EcsExpress extends Construct {
       scalingTarget: props.scaling,
     });
 
-    // Roles must exist before the service that references their ARNs.
     this.service.node.addDependency(this.infrastructureRole);
     this.service.node.addDependency(this.executionRole);
     this.service.node.addDependency(this.taskRole);

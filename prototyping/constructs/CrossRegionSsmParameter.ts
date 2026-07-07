@@ -21,9 +21,7 @@ export interface CrossRegionSsmParameterProps {
 
 /**
  * Reads an SSM parameter from another Region at deploy time via an
- * `AwsCustomResource` (`ssm:GetParameter`). CDK's native SSM readers are
- * region-locked to the consuming stack, so a cross-region read needs this.
- * Synthesis stays offline.
+ * `AwsCustomResource` (`ssm:GetParameter`).
  */
 export class CrossRegionSsmParameter extends Construct {
   private readonly reader: AwsCustomResource;
