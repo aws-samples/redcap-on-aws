@@ -6,7 +6,7 @@
 
 import { aws_iam, cloudformation_include, RemovalPolicy } from 'aws-cdk-lib';
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
-import type { ISecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { type ISecurityGroup, SubnetType, type Vpc } from 'aws-cdk-lib/aws-ec2';
 import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
@@ -55,7 +55,12 @@ export interface EcsExpressProps {
   scaling?: ExpressGatewayScalingTargetProperty;
   network: {
     vpc: Vpc;
-    subnetType: SubnetType;
+    /**
+     * Subnet type for the Express service. Defaults to PRIVATE_WITH_EGRESS so
+     * the ECS-managed ALB is internal and tasks stay private; a CloudFront VPC
+     * Origin fronts the internal ALB for public access. Immutable after create.
+     */
+    subnetType?: SubnetType;
     /**
      * Security groups attached to the service tasks. Pass the shared
      * `dbAllowedSg` so Aurora ingress works without touching AWS-managed SGs.
@@ -171,8 +176,16 @@ export class EcsExpress extends Construct {
       },
       networkConfiguration: {
         securityGroups: props.network.securityGroups.map((sg) => sg.securityGroupId),
-        subnets: props.network.vpc.selectSubnets({ subnetType: props.network.subnetType })
-          .subnetIds,
+        // ECS Express Mode places its managed ALB in the subnets given here.
+        // We use PRIVATE_WITH_EGRESS so the managed ALB is INTERNAL and the
+        // tasks stay private (no public IPs). Public internet access is provided
+        // by a CloudFront distribution with a VPC Origin in front of the
+        // internal ALB (see the CloudFront wiring below). NOTE: subnet type is
+        // immutable on an Express service - changing it requires REPLACING the
+        // service (CloudFormation update is rejected by ECS).
+        subnets: props.network.vpc.selectSubnets({
+          subnetType: props.network.subnetType ?? SubnetType.PRIVATE_WITH_EGRESS,
+        }).subnetIds,
       },
       scalingTarget: props.scaling,
     });

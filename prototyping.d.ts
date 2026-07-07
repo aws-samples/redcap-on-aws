@@ -9,6 +9,34 @@ export interface ProtoConfigOptions extends ConfigOptions {
   allowedCountries?: string[]; // WAF allowed country list,  ISO 3166-2.
 }
 
+/**
+ * Valid ECS Express (Fargate) CPU allocations, as CloudFormation strings.
+ * Powers of 2 between 256 and 4096.
+ */
+export type ExpressCpu = '256' | '512' | '1024' | '2048' | '4096';
+
+/**
+ * Valid ECS Express (Fargate) memory allocations, as CloudFormation strings
+ * (MiB). Must form a valid pair with the chosen `cpu`:
+ *  - 256:  512, 1024, 2048
+ *  - 512:  1024..4096 (1 GiB increments)
+ *  - 1024: 2048..8192 (1 GiB increments)
+ *  - 2048: 4096..16384 (1 GiB increments)
+ *  - 4096: 8192..30720 (1 GiB increments)
+ */
+export type ExpressMemory =
+  | '512'
+  | '1024'
+  | '2048'
+  | '3072'
+  | '4096'
+  | '5120'
+  | '6144'
+  | '7168'
+  | '8192'
+  | '16384'
+  | '30720';
+
 export interface RedCapConfig extends ProtoConfigOptions {
   generalLogRetention?: ServiceProps['logRetention']; // Optional general log retention period for <ecs fargate, aurora rds, vpc>
   bounceNotificationEmail?: string;
@@ -44,8 +72,10 @@ export interface RedCapConfig extends ProtoConfigOptions {
     // Override AppRunner/ECS deployment and use ECS Express Mode
     // (AWS::ECS::ExpressGatewayService). CPU/memory are CloudFormation
     // strings, e.g. cpu: '1024', memory: '2048'. Takes precedence over `ecs`.
-    memory?: string;
-    cpu?: string;
+    // Mutually exclusive with `ecs` - setting both throws at synth time.
+    // Values follow the valid AWS Fargate CPU/memory combinations.
+    memory?: ExpressMemory;
+    cpu?: ExpressCpu;
     scaling?: {
       autoScalingMetric?: 'AVERAGE_CPU' | 'AVERAGE_MEMORY' | 'REQUEST_COUNT_PER_TARGET';
       autoScalingTargetValue?: number;

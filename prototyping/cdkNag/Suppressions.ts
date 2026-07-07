@@ -225,6 +225,32 @@ const Suppressions = {
     }
   },
 
+  // Suppresses findings on SST-generated resources that exist on every Backend
+  // stack (e.g. the sourcemap uploader policy and deploy lambdas), independent
+  // of the chosen runtime or optional stacks like the EC2 server.
+  BackendStackSuppressions(scope: Construct) {
+    try {
+      const stack = Stack.of(scope);
+      NagSuppressions.addStackSuppressions(stack, [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason:
+            'SST SourcemapUploaderPolicy uses * because the full stack ARN is not available at deploy time',
+        },
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'SST deploy lambdas use AWS managed policies',
+        },
+        {
+          id: 'AwsSolutions-L1',
+          reason: 'SST-managed lambda runtime version',
+        },
+      ]);
+    } catch {
+      /* empty */
+    }
+  },
+
   SesSuppressions(ses: SimpleEmailService) {
     try {
       const stack = Stack.of(ses);
@@ -235,6 +261,7 @@ const Suppressions = {
           `${stack.stackName}/get-credentials/ServiceRole/Resource`,
           `${stack.stackName}/get-credentials/ServiceRole/DefaultPolicy/Resource`,
           `${stack.stackName}/get-credentials/Resource`,
+          `${stack.stackName}/${ses.node.id}/user-policy/Resource`,
         ],
         [
           {
@@ -252,6 +279,24 @@ const Suppressions = {
           {
             id: 'AwsSolutions-L1',
             reason: 'SST lambda version',
+          },
+        ],
+        true,
+      );
+
+      // The SES user-policy (ses:SendRawEmail/SendEmail on '*') is created
+      // under the SimpleEmailService construct. Suppress at the construct level
+      // so it is covered regardless of the stage/app name prefix in its path.
+      NagSuppressions.addResourceSuppressions(
+        ses,
+        [
+          {
+            id: 'AwsSolutions-IAM5',
+            reason: 'SES SendRawEmail/SendEmail require * resource; scoped to the SES IAM user',
+          },
+          {
+            id: 'AwsSolutions-SMG4',
+            reason: 'SES credential secret is managed by the createSesCredentials lambda',
           },
         ],
         true,

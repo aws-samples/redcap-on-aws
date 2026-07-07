@@ -50,6 +50,12 @@ export function Backend({ stack, app }: StackContext) {
   const allowedCountries = get(stage, [stack.stage, 'allowedCountries'], undefined);
   const ecsConfig = get(stage, [stack.stage, 'ecs']);
   const expressConfig = get(stage, [stack.stage, 'express']);
+
+  if (ecsConfig && expressConfig) {
+    throw new Error(
+      "Configure only one runtime override per stage: set either 'ecs' or 'express', not both.",
+    );
+  }
   const email = get(stage, [stack.stage, 'email']);
   const bounceNotificationEmail = get(stage, [stack.stage, 'bounceNotificationEmail']);
   const port = get(stage, [stack.stage, 'port']);
@@ -232,6 +238,7 @@ export function Backend({ stack, app }: StackContext) {
   });
 
   // Suppress cdk nag offenses.
+  Suppressions.BackendStackSuppressions(stack);
   Suppressions.SesSuppressions(ses);
   Suppressions.WebWafSuppressions(waf);
   Suppressions.RedCapAwsAccessUserSuppressions([redCapS3AccessUser, redCapSESAccessUser]);
