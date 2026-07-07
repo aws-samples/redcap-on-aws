@@ -11,6 +11,7 @@ import { assign, get, isEmpty, random } from 'lodash';
 import { Bucket, type StackContext, use } from 'sst/constructs';
 // Nag suppressions
 import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { DatabaseConnection } from '../prototyping/constructs/DatabaseConnection';
 // Construct and other assets
 import { RedCapAwsAccessUser } from '../prototyping/constructs/RedCapAwsAccessUser';
 import {
@@ -32,12 +33,12 @@ const { createHmac } = await import('node:crypto');
 
 export function Backend({ stack, app }: StackContext) {
   const { networkVpc } = use(Network);
-  const { dbAllowedSg, auroraClusterV2 } = use(Database);
+  const { dbAllowedSg } = use(Database);
   const repository = use(BuildImage);
 
-  if (!auroraClusterV2.aurora.secret) {
-    throw new Error('No database secret found');
-  }
+  // Resolve DB attributes from SSM (see DatabaseConnection) instead of
+  // cross-stack exports, so the cluster can be replaced without breaking deploys.
+  const dbConnection = new DatabaseConnection(stack, stack.stage);
 
   // Config
   const domain = get(stage, [stack.stage, 'domain']);
@@ -149,30 +150,28 @@ export function Backend({ stack, app }: StackContext) {
   const environmentVariables = {
     S3_BUCKET: redcapApplicationBucket.bucketName,
     USE_IAM_DB_AUTH: 'true',
-    DB_SECRET_NAME: auroraClusterV2.aurora.secret.secretName,
+    DB_SECRET_NAME: dbConnection.secretName,
     SMTP_EMAIL: email,
-    DB_SECRET_ID: auroraClusterV2.aurora.secret.secretArn,
+    DB_SECRET_ID: dbConnection.secretArn,
     DB_SALT_SECRET_ID: dbSalt.secretArn,
     SES_CREDENTIALS_SECRET_ID: ses.sesUserCredentials.secretArn,
     S3_SECRET_ID: redCapS3AccessUser.secret.secretArn,
     PHP_TIMEZONE: phpTimezone || 'UTC',
   };
 
-  if (auroraClusterV2?.aurora.clusterReadEndpoint.hostname) {
-    assign(environmentVariables, {
-      READ_REPLICA_HOSTNAME: auroraClusterV2.aurora.clusterReadEndpoint.hostname,
-    });
-  }
+  assign(environmentVariables, {
+    READ_REPLICA_HOSTNAME: dbConnection.readEndpoint,
+  });
 
   const service = new RedcapService(stack, app, {
-    databaseCluster: auroraClusterV2.aurora,
+    dbConnection,
     domain,
     subdomain,
     publicHostedZone,
     waf,
     secrets: {
       dbSalt,
-      dbSecret: auroraClusterV2.aurora.secret,
+      dbSecret: dbConnection.secret,
       redCapS3AccessUser,
       ses,
     },

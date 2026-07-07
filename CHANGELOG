@@ -2,6 +2,11 @@
 
 # CHANGELOG
 
+## 1.2.3
+
+- Fix a deployment failure when restoring the database from a different snapshot (`Cannot update export ... as it is in use by ...-Backend`). The database cluster's volatile attributes (secret, read endpoint, cluster resource id, security group) are now shared with the Backend and EC2Server stacks through SSM Parameter Store instead of CloudFormation cross-stack exports, so replacing the cluster (which happens whenever `db.dbSnapshotId` changes) no longer conflicts with in-use exports.
+- The `ServerlessAuroraDatabaseFromSnapshot` construct's logical id no longer depends on the snapshot identifier.
+
 ## 1.2.2
 
 - Bug fixes regarding php and aws-sdk for REDCap versions 16. The included aws-sdk in REDCap is now modified from the default instalation from compose and RDS library is not present. The setup script will now match REDCap SDK version and install the same to avoid version mismatch issues.

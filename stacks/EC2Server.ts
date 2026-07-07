@@ -25,6 +25,7 @@ import { get } from 'lodash';
 import { type StackContext, Function as sstFunction, use } from 'sst/constructs';
 
 import Suppressions from '../prototyping/cdkNag/Suppressions';
+import { DatabaseConnection } from '../prototyping/constructs/DatabaseConnection';
 import * as stage from '../stages';
 import { Backend } from './Backend';
 import { BuildImage } from './BuildImage';
@@ -58,7 +59,10 @@ export function EC2Server({ stack, app }: StackContext) {
   const repository = use(BuildImage);
   const { networkVpc } = use(Network);
   const { dbSalt, s3UserCredentials, sesUserCredentials, environmentVariables } = use(Backend);
-  const { dbAllowedSg, auroraClusterV2 } = use(Database);
+  const { dbAllowedSg } = use(Database);
+
+  // Resolve DB attributes from SSM
+  const dbConnection = new DatabaseConnection(stack, stack.stage);
 
   const userData = UserData.forLinux({ shebang: '#!/bin/bash' });
 
@@ -113,14 +117,14 @@ export function EC2Server({ stack, app }: StackContext) {
   });
 
   // Allow secrets read for EC2 instance
-  auroraClusterV2.aurora.secret?.grantRead(ec2ServerInstance.role);
+  dbConnection.grantSecretRead(ec2ServerInstance.role);
   dbSalt.grantRead(ec2ServerInstance.role);
   s3UserCredentials.grantRead(ec2ServerInstance.role);
   sesUserCredentials.grantRead(ec2ServerInstance.role);
   repository.grantPull(ec2ServerInstance.role);
 
   // Allow RDS IAM connect
-  auroraClusterV2.aurora.grantConnect(ec2ServerInstance.role, 'redcap_user');
+  dbConnection.grantConnect(ec2ServerInstance.role, 'redcap_user');
 
   const wait = new Wait(stack, `wait`, {
     time: WaitTime.duration(ec2StackDuration),

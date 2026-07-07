@@ -6,12 +6,12 @@ import type { Repository } from 'aws-cdk-lib/aws-ecr';
 import { type Connection, HttpMethod } from 'aws-cdk-lib/aws-events';
 import { ApiDestination } from 'aws-cdk-lib/aws-events-targets';
 import type { IGrantable } from 'aws-cdk-lib/aws-iam';
-import type { DatabaseCluster } from 'aws-cdk-lib/aws-rds';
 import type { IPublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import type { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { get, isNumber } from 'lodash';
 import type { App, ServiceProps, Stack } from 'sst/constructs';
 import { AppRunner } from '../../prototyping/constructs/AppRunner';
+import type { DatabaseConnection } from '../../prototyping/constructs/DatabaseConnection';
 import { EcsFargate } from '../../prototyping/constructs/EcsFargate';
 import type { RedCapAwsAccessUser } from '../../prototyping/constructs/RedCapAwsAccessUser';
 import type { SimpleEmailService } from '../../prototyping/constructs/SimpleEmailService';
@@ -43,7 +43,7 @@ export class RedcapService {
         ses: SimpleEmailService;
         redCapS3AccessUser: RedCapAwsAccessUser;
       };
-      databaseCluster: DatabaseCluster;
+      dbConnection: DatabaseConnection;
       vpc: Vpc;
       servicePort: number;
       repository: Repository;
@@ -64,7 +64,7 @@ export class RedcapService {
     this.common.secrets.dbSalt.grantRead(grantee);
     this.common.secrets.ses.sesUserCredentials.grantRead(grantee);
     this.common.secrets.redCapS3AccessUser.secret.grantRead(grantee);
-    this.common.databaseCluster.grantConnect(grantee, 'redcap_user');
+    this.common.dbConnection.grantConnect(grantee, 'redcap_user');
   }
 
   private associateWaf(resourceArn: string, serviceType: string) {
@@ -149,7 +149,7 @@ export class RedcapService {
       domain: this.common.domain,
       subdomain: this.common.subdomain,
       environmentVariables: this.common.environmentVariables,
-      databaseCluster: this.common.databaseCluster,
+      databaseCluster: this.common.dbConnection,
       containerInsights: true,
       publicHostedZone: this.common.publicHostedZone,
       certificate: {
