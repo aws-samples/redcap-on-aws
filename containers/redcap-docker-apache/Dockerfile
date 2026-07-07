@@ -37,16 +37,14 @@ RUN mkdir -p /usr/local/share/redcap/aws
 RUN curl "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" \
     -o "/usr/local/share/redcap/global-bundle.pem"
 
-# Allow REDCap to process PDFs. ImageMagick 6 denied PDF via a dedicated line;
-# ImageMagick 7 (trixie) denies all coders, so add an explicit PDF policy.
-# Tolerates either file being absent.
+# Ensure REDCap can process PDFs regardless of the ImageMagick default policy.
 RUN set -eu; \
     im6=/etc/ImageMagick-6/policy.xml; \
     im7=/etc/ImageMagick-7/policy.xml; \
     if [ -f "$im6" ]; then \
         sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/d' "$im6"; \
     fi; \
-    if [ -f "$im7" ]; then \
+    if [ -f "$im7" ] && ! grep -q 'pattern="PDF"' "$im7"; then \
         sed -i '/<\/policymap>/i\  <policy domain="coder" rights="read|write" pattern="PDF" \/>' "$im7"; \
     fi
 
