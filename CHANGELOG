@@ -2,6 +2,10 @@
 
 # CHANGELOG
 
+## 1.3.1
+
+- Upgrade the REDCap container base image from `php:8.2-apache` to `php:8.4-apache` (still Debian trixie / ImageMagick 7), pinned by digest. All required PHP extensions (`imagick`, `apcu`, `gd`, `zip`, `mysqli`, `opcache`) build and load on PHP 8.4.
+
 ## 1.3.0
 
 - Add **Amazon ECS Express Mode** (`AWS::ECS::ExpressGatewayService`) as a new REDCap runtime, configured via the `express` stage option. This is the recommended replacement for AWS App Runner, which is [closed to new customers as of April 30, 2026](https://docs.aws.amazon.com/apprunner/latest/relnotes/relnotes.html). The `express` and `ecs` options are mutually exclusive.
