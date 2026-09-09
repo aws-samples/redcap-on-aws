@@ -6820,10 +6820,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csv-parse@npm:^5.6.0":
-  version: 5.6.0
-  resolution: "csv-parse@npm:5.6.0"
-  checksum: 10c0/52f5e6c45359902e0c8e57fc2eeed41366dc6b6d283b495b538dd50c8e8510413d6f924096ea056319cbbb8ed26e111c3a3485d7985c021bcf5abaa9e92425c7
+"csv-parse@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "csv-parse@npm:7.0.2"
+  checksum: 10c0/52ffaafbf7be37201ad782ec3eda37bc24ee0ec6e8967b5a68d5ad2973f10b4154fd11a5b90a002615ef98395c4cd699a13d13509b10067297795b9d3c9320e9
   languageName: node
   linkType: hard
 
@@ -9871,7 +9871,7 @@ __metadata:
     aws-cdk-lib: "npm:2.224.0"
     cdk-nag: "npm:^2.28.195"
     constructs: "npm:10.3.0"
-    csv-parse: "npm:^5.6.0"
+    csv-parse: "npm:^7.0.2"
     globals: "npm:^15.15.0"
     hygen: "npm:^6.2.11"
     moment: "npm:^2.30.1"
