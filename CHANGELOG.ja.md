@@ -2,6 +2,10 @@ JP | [EN](./CHANGELOG)
 
 # CHANGELOG
 
+## 1.3.2
+
+- REDCap コンテナのベースイメージを `php:8.4.27-apache` にアップグレードしました。このリリースでは、認証なしのリモートコード実行につながる重大な脆弱性 CVE-2026-109618 および CVE-2026-109619 が修正されています。イメージは引き続きダイジェストで固定されています。
+
 ## 1.3.1
 
 - REDCap コンテナのベースイメージを `php:8.2-apache` から `php:8.4-apache`（引き続き Debian trixie / ImageMagick 7）にアップグレードし、ダイジェストで固定しました。必要な PHP 拡張（`imagick`、`apcu`、`gd`、`zip`、`mysqli`、`opcache`）はすべて PHP 8.4 でビルドおよびロードできることを確認しました。
